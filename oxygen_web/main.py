@@ -3573,6 +3573,7 @@ class Game:
             self.coin_multiplier_timer = max(0.0, self.coin_multiplier_timer - dt)
 
         mobile_fire = False
+        mobile_dash = False
         mobile_jump = False
         mobile_menu = False
         try:
@@ -3587,15 +3588,33 @@ class Game:
             if mobile_menu:
                 browser_platform.window.oxygen_touch_menu = False
             mobile_fire = bool(browser_platform.window.oxygen_touch_fire)
+            mobile_dash = bool(browser_platform.window.oxygen_touch_dash)
+            if mobile_dash:
+                browser_platform.window.oxygen_touch_dash = False
             controls = browser_platform.window.document.getElementById("mobile-controls")
             controls.style.display = "flex" if self.mode in ("playing", "safehouse", "paused") else "none"
+            # Show only the character's actual special-action button.
+            action = browser_platform.window.document.getElementById("mobile-fire")
+            if self.player.character_id == "runner":
+                action.innerText = "DASH"
+                action.style.display = "block"
+                action.setAttribute("data-action", "dash")
+            elif self.player.character_id == "jumper":
+                action.style.display = "none"
+            else:
+                action.innerText = "FIRE"
+                action.style.display = "block"
+                action.setAttribute("data-action", "fire")
         except Exception:
             mobile_axis = 0.0
             mobile_jump = False
             mobile_menu = False
+            mobile_dash = False
         self.player.mobile_axis = max(-1.0, min(1.0, mobile_axis))
         self.player.mobile_jump = mobile_jump
         self.mobile_fire = mobile_fire
+        if mobile_dash and self.mode == "playing" and self.player.character_id == "runner":
+            self.process_dash_event()
         # A tap is a one-shot jump request; no key-up event is required.
         if mobile_jump and self.mode in ("playing", "safehouse"):
             if self.player.character_id == "flyer" and not self.player.on_ground:
