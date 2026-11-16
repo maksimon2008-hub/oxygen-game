@@ -5016,7 +5016,7 @@ class Game:
         pygame.draw.line(self.screen, (28, 66, 89), (72, 144), (1028, 144), 5)
         pygame.draw.line(self.screen, (65, 111, 129), (72, 149), (1028, 149), 1)
         lights_restored = self.save_data.get("safehouse_lighting_upgraded", False)
-        lamp_positions = (185, 735, 930, 500, 845) if lights_restored else (185, 735, 930)
+        lamp_positions = (185, 735, 930, 350, 845) if lights_restored else (185, 735, 930)
         for lamp_index, lamp_x in enumerate(lamp_positions):
             pulse = 0.72 + 0.28 * math.sin(self.time * 1.7 + lamp_index * 1.9)
             brightness = 1.28 if lights_restored else 1.0
