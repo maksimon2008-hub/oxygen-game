@@ -219,13 +219,13 @@ function show_infobox() {
 
         /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
         /* average size of droid screen 470dp x 320dp  */
-        /* Fit the visible game canvas to the viewport and override Pygbag inline sizing. */
+        /* Slight inset with the game's native 1100:620 aspect ratio. */
         #canvas {
             display: block !important;
             border: 0 !important;
             background: #070A19 !important;
-            width: min(100vw, 177.7778vh) !important;
-            height: min(100vh, 56.25vw) !important;
+            width: min(96vw, 170.3226vh) !important;
+            height: min(96vh, 54.1091vw) !important;
             padding: 0 !important;
             margin: 0 !important;
             position: fixed !important;
