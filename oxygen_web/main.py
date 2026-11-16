@@ -2307,11 +2307,11 @@ class Game:
             if self.is_arena_mode:
                 scene = "arena"
             else:
-                boss = self.level.boss
-                if boss is not None and boss.active and not boss.defeated:
-                    scene = "boss_05" if self.level_index == 4 else "boss_10" if self.level_index == 9 else "campaign_01_05"
-                else:
-                    scene = "campaign_01_05" if self.level_index <= 4 else "campaign_06_09"
+                # Keep the campaign stream running through boss activation.
+                # Loading a second large OGG at the exact boss trigger can stall
+                # the browser audio backend and freeze the Pygbag game loop.
+                # Boss encounters therefore change visuals/gameplay, not stream.
+                scene = "campaign_01_05" if self.level_index <= 4 else "campaign_06_09"
         elif self.mode in ("safehouse", "safehouse_dialog", "ability_mods"):
             scene = "hub"
         elif self.mode == "victory":
@@ -3419,8 +3419,9 @@ class Game:
 
             elif self.mode == "paused":
                 if event.key == pygame.K_ESCAPE:
-                    self.mode = "menu"
-                    self.menu_selection = 0
+                    # ESC closes the pause screen and resumes the same run.
+                    # Returning to the menu is an explicit pause-menu action.
+                    self.mode = "playing"
                 elif event.key in (pygame.K_UP, pygame.K_w):
                     self.pause_selection = (self.pause_selection - 1) % 5
                 elif event.key in (pygame.K_DOWN, pygame.K_s):
