@@ -36,11 +36,12 @@ jobs:
           cp -a oxygen_web/locales /tmp/oxygen-web-package/assets/locales
           tar -czf oxygen_web.tar.gz -C /tmp/oxygen-web-package assets
           echo "Archive contents:"
-          tar -tzf oxygen_web.tar.gz | head -40
+          tar -tzf oxygen_web.tar.gz > /tmp/oxygen-archive-contents.txt
+          sed -n '1,40p' /tmp/oxygen-archive-contents.txt
           test -s oxygen_web.tar.gz
-          tar -tzf oxygen_web.tar.gz | grep -qx 'assets/main.py'
-          tar -tzf oxygen_web.tar.gz | grep -qx 'assets/locales/ru.json'
-          if tar -tzf oxygen_web.tar.gz | grep -Eq '(^|/)savegame[.]json$'; then
+          grep -qx 'assets/main.py' /tmp/oxygen-archive-contents.txt
+          grep -qx 'assets/locales/ru.json' /tmp/oxygen-archive-contents.txt
+          if grep -Eq '(^|/)savegame[.]json$' /tmp/oxygen-archive-contents.txt; then
             echo "ERROR: browser archive must never contain a bundled savegame"
             exit 1
           fi
