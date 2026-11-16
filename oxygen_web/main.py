@@ -1495,7 +1495,7 @@ def make_gradient() -> pygame.Surface:
 
 def draw_text(surface: pygame.Surface, font: pygame.font.Font, text: str,
               color: tuple[int, int, int], pos: tuple[int, int],
-              center: bool = False, shadow: bool = True) -> pygame.Rect:
+              center: bool = False, shadow: bool = False) -> pygame.Rect:
     text = localize(text)
     image = font.render(text, True, color)
     rect = image.get_rect()
