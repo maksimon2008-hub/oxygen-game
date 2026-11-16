@@ -1991,7 +1991,17 @@ class Game:
                 if stored_text:
                     candidate = json.loads(str(stored_text))
                     if isinstance(candidate, dict):
-                        loaded = candidate
+                        if (
+                            sys.platform == "emscripten"
+                            and is_bundled_test_save(candidate)
+                            and not self.migrate_legacy_seed
+                        ):
+                            # A previous web release may already have copied
+                            # the bundled test profile into localStorage.
+                            # Normal visitors must not inherit that profile.
+                            loaded = None
+                        else:
+                            loaded = candidate
 
             # One-time migration for a genuinely changed legacy browser save.
             # The known 194-coin bundled test profile is deliberately ignored.
