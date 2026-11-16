@@ -667,6 +667,9 @@ class SafehouseWorld:
     wall_jump_enabled = False
 
     def __init__(self):
+        # Shared player physics checks this collection after hard landings.
+        # The refuge has no launch pads, so expose an empty collection here.
+        self.launch_pads = []
         self.solids = [
             pygame.Rect(25, 500, 1050, 50),
             pygame.Rect(25, 72, 18, 428),
@@ -4175,14 +4178,17 @@ class Game:
         draw_text(self.screen, self.font_xs, f"SCORE {self.score:06d}",
                   MUTED, (WIDTH - 110, 35), shadow=False)
 
-        # Health pips.
-        draw_text(self.screen, self.font_xs, "SIGNAL", MUTED, (28, HEIGHT - 35), shadow=False)
+        # Keep health above the bottom touch controls on phones.
+        health_panel = pygame.Rect(22, 104, 190, 48)
+        pygame.draw.rect(self.screen, (7, 12, 27), health_panel, border_radius=8)
+        pygame.draw.rect(self.screen, (43, 71, 92), health_panel, 1, border_radius=8)
+        draw_text(self.screen, self.font_xs, "LIVES", MUTED, (34, 119), shadow=False)
         for i in range(self.player.max_hp):
-            x = 100 + i * 24
+            x = 91 + i * 31
             color = PINK if i < self.player.hp else (53, 61, 83)
             pygame.draw.polygon(self.screen, color,
-                                [(x, HEIGHT - 31), (x + 7, HEIGHT - 37),
-                                 (x + 14, HEIGHT - 31), (x + 7, HEIGHT - 20)])
+                                [(x, 130), (x + 9, 122), (x + 18, 130),
+                                 (x + 9, 140)])
 
         if self.coin_multiplier_timer > 0:
             boost_label = self.font_xs.render(
@@ -4206,12 +4212,21 @@ class Game:
         else:
             ability_ready = self.player.flight_fuel / self.player.flight_fuel_max
             ability_label = "FLIGHT"
-        draw_text(self.screen, self.font_xs, ability_label, MUTED,
-                  (WIDTH - 158, HEIGHT - 35), shadow=False)
-        bar = pygame.Rect(WIDTH - 105, HEIGHT - 31, 78, 10)
+        # Keep ability charge above the bottom-right mobile action buttons.
+        ability_panel = pygame.Rect(WIDTH - 230, 104, 208, 48)
+        pygame.draw.rect(self.screen, (7, 12, 27), ability_panel, border_radius=8)
+        pygame.draw.rect(self.screen, (43, 71, 92), ability_panel, 1, border_radius=8)
+        draw_text(self.screen, self.font_xs, ability_label, WHITE,
+                  (WIDTH - 216, 111), shadow=False)
+        charge_pct = int(max(0.0, min(1.0, ability_ready)) * 100)
+        draw_text(self.screen, self.font_xs, f"{charge_pct}%", cfg["accent"],
+                  (WIDTH - 36, 111), shadow=False)
+        bar = pygame.Rect(WIDTH - 216, 132, 180, 9)
         pygame.draw.rect(self.screen, (29, 41, 62), bar, border_radius=5)
-        pygame.draw.rect(self.screen, cfg["accent"],
-                         (bar.x, bar.y, int(bar.w * ability_ready), bar.h), border_radius=5)
+        if charge_pct > 0:
+            pygame.draw.rect(self.screen, cfg["accent"],
+                             (bar.x, bar.y, max(3, int(bar.w * ability_ready)), bar.h),
+                             border_radius=5)
 
         boss = self.level.boss
         if boss is not None and boss.active and not boss.defeated:
