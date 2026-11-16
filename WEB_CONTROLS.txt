@@ -1,0 +1,8 @@
+OXYGEN WEB controls
+A / D or arrows — move
+SPACE — jump / character ability
+SHIFT or X — dash (VANTA)
+J / C / left mouse — shoot (CIPHER / AERIS)
+E / ENTER — interact in SAFEHOUSE
+R — restart sector
+ESC — pause

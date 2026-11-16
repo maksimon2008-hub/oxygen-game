@@ -1,0 +1,15 @@
+OXYGEN — WEBASSEMBLY PORT (FIRST DEVELOPMENT BUILD)
+
+This package contains two separate versions:
+- neon_ruins_platformer/: original Windows/Python game, kept as the desktop build.
+- oxygen_web/: browser-targeted Python + Pygame CE source for Pygbag/WebAssembly.
+
+To try the browser build on Windows:
+1. Install Python 3.12 x64.
+2. Extract the entire archive.
+3. Run oxygen_web/run_web.bat.
+4. The script installs Pygbag if needed, then starts the local build/server.
+5. Open http://localhost:8000 and click the game canvas to enable input/audio.
+
+First run requires internet to install Pygbag and download its WebAssembly runtime.
+This is a development preview, not yet a hosted public website. Browser testing is still required for input, audio, save persistence and performance.
