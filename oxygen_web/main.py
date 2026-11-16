@@ -1196,6 +1196,7 @@ class Player:
         # Browser touch input; desktop keyboard controls remain unchanged.
         self.mobile_axis = 0.0
         self.mobile_jump = False
+        self.mobile_jump_held = False
 
     @property
     def rect(self) -> pygame.Rect:
@@ -1234,7 +1235,7 @@ class Player:
         left = keys[pygame.K_a] or keys[pygame.K_LEFT] or self.mobile_axis < -0.18
         right = keys[pygame.K_d] or keys[pygame.K_RIGHT] or self.mobile_axis > 0.18
         jump_held = (keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]
-                     or self.mobile_jump)
+                     or self.mobile_jump_held)
 
         if left:
             self.facing = -1
@@ -1273,7 +1274,7 @@ class Player:
                 # VANTA and CIPHER receive a campaign-specific lift in sectors 06–10
                 # so the vertical routes remain fair without changing earlier worlds.
                 vertical_boost = level.index >= 5 and self.character_id in ("runner", "shooter")
-                self.vy = -735.0 if vertical_boost else -650.0
+                self.vy = -800.0 if vertical_boost else -720.0
                 self.jump_count += 1
             elif can_wall_jump:
                 direction = 1 if self.touching_left else -1
@@ -1290,7 +1291,7 @@ class Player:
                                               burst_color, random.uniform(-110, 110),
                                               random.uniform(-170, 30), 0.42, 3.5))
             else:
-                self.vy = -625.0
+                self.vy = -700.0
                 self.jump_count += 1
             self.on_ground = False
             self.coyote = 0.0
@@ -3575,6 +3576,7 @@ class Game:
         mobile_fire = False
         mobile_dash = False
         mobile_jump = False
+        mobile_jump_held = False
         mobile_menu = False
         try:
             import platform as browser_platform
@@ -3582,6 +3584,7 @@ class Game:
             # Jump/menu are queued in JavaScript until this frame consumes them,
             # so a quick tap cannot disappear between two game frames.
             mobile_jump = bool(browser_platform.window.oxygen_touch_jump)
+            mobile_jump_held = bool(browser_platform.window.oxygen_touch_jump_held)
             mobile_menu = bool(browser_platform.window.oxygen_touch_menu)
             if mobile_jump:
                 browser_platform.window.oxygen_touch_jump = False
@@ -3608,10 +3611,12 @@ class Game:
         except Exception:
             mobile_axis = 0.0
             mobile_jump = False
+            mobile_jump_held = False
             mobile_menu = False
             mobile_dash = False
         self.player.mobile_axis = max(-1.0, min(1.0, mobile_axis))
         self.player.mobile_jump = mobile_jump
+        self.player.mobile_jump_held = mobile_jump_held
         self.mobile_fire = mobile_fire
         if mobile_dash and self.mode == "playing" and self.player.character_id == "runner":
             self.process_dash_event()
