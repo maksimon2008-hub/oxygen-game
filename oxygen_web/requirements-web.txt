@@ -1,0 +1,2 @@
+# Pygbag supplies the Python/WebAssembly runtime and a pygame-ce build.
+# Install pygbag on the development machine; see README_WEB.md.
