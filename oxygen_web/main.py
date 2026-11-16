@@ -3573,31 +3573,37 @@ class Game:
             self.coin_multiplier_timer = max(0.0, self.coin_multiplier_timer - dt)
 
         mobile_fire = False
+        mobile_jump = False
         mobile_menu = False
         try:
             import platform as browser_platform
             mobile_axis = float(browser_platform.window.oxygen_touch_axis or 0.0)
+            # Jump/menu are queued in JavaScript until this frame consumes them,
+            # so a quick tap cannot disappear between two game frames.
             mobile_jump = bool(browser_platform.window.oxygen_touch_jump)
-            mobile_fire = bool(browser_platform.window.oxygen_touch_fire)
             mobile_menu = bool(browser_platform.window.oxygen_touch_menu)
+            if mobile_jump:
+                browser_platform.window.oxygen_touch_jump = False
             if mobile_menu:
                 browser_platform.window.oxygen_touch_menu = False
+            mobile_fire = bool(browser_platform.window.oxygen_touch_fire)
             controls = browser_platform.window.document.getElementById("mobile-controls")
-            controls.style.display = "flex" if self.mode in ("playing", "safehouse") else "none"
+            controls.style.display = "flex" if self.mode in ("playing", "safehouse", "paused") else "none"
         except Exception:
             mobile_axis = 0.0
             mobile_jump = False
+            mobile_menu = False
         self.player.mobile_axis = max(-1.0, min(1.0, mobile_axis))
         self.player.mobile_jump = mobile_jump
         self.mobile_fire = mobile_fire
-        # Touch jump is an edge-triggered action, just like a keyboard press.
-        if mobile_jump and not self.mobile_jump_was_down and self.mode in ("playing", "safehouse"):
+        # A tap is a one-shot jump request; no key-up event is required.
+        if mobile_jump and self.mode in ("playing", "safehouse"):
             if self.player.character_id == "flyer" and not self.player.on_ground:
                 self.player.flight_requested = True
             else:
-                self.player.jump_buffer = 0.13
-        self.mobile_jump_was_down = mobile_jump
-        if mobile_menu and self.mode in ("playing", "safehouse"):
+                self.player.jump_buffer = 0.16
+        self.mobile_jump_was_down = False
+        if mobile_menu and self.mode in ("playing", "safehouse", "paused"):
             self.mode = "menu"
             self.menu_selection = 0
         self.update_music_scene()
