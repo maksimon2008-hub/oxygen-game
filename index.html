@@ -188,8 +188,7 @@ function show_infobox() {
     <title>OXYGEN</title>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="viewport" content="height=device-height, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes"/>
 
@@ -261,6 +260,85 @@ function show_infobox() {
             display: none !important;
         }
 
+        #rotate-hint {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99990;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+            box-sizing: border-box;
+            background: radial-gradient(ellipse at center, #101a2b, #03050b);
+            color: #c5ff9d;
+            font: 700 15px Arial, sans-serif;
+            letter-spacing: .12em;
+            text-align: center;
+        }
+        @media (orientation: portrait) and (max-width: 900px) {
+            #rotate-hint { display: flex; }
+            #canvas { visibility: hidden !important; }
+            #mobile-controls { display: none !important; }
+        }
+
+        #mobile-controls {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            pointer-events: none;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: max(18px, env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        #mobile-stick {
+            width: 124px;
+            height: 124px;
+            border: 2px solid #9cff5770;
+            border-radius: 50%;
+            background: #071323aa;
+            box-shadow: 0 0 22px #9cff571c, inset 0 0 18px #9cff5710;
+            position: relative;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        #mobile-stick-knob {
+            position: absolute;
+            width: 54px;
+            height: 54px;
+            left: 33px;
+            top: 33px;
+            border: 2px solid #baff82;
+            border-radius: 50%;
+            background: #9cff5740;
+            box-shadow: 0 0 16px #9cff5750;
+            pointer-events: none;
+        }
+        .mobile-action {
+            width: 76px;
+            height: 76px;
+            border: 2px solid #9cff5790;
+            border-radius: 50%;
+            background: #071323cc;
+            color: #caffaa;
+            font: 800 13px Arial, sans-serif;
+            letter-spacing: .08em;
+            box-shadow: 0 0 18px #9cff5720;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        #mobile-buttons {
+            display: flex;
+            align-items: flex-end;
+            gap: 14px;
+            padding-bottom: 8px;
+        }
+        .mobile-action:active { background: #9cff5755; }
+
         body {
             font-family: arial;
             margin: 0;
@@ -329,7 +407,16 @@ function show_infobox() {
 
     <div id="transfer" hidden></div>
 
-
+    <div id="rotate-hint">ПОВЕРНИТЕ ТЕЛЕФОН ГОРИЗОНТАЛЬНО<br><br>OXYGEN // LANDSCAPE MODE</div>
+    <div id="mobile-controls" aria-label="Мобильное управление">
+        <div id="mobile-stick" aria-label="Джойстик движения">
+            <div id="mobile-stick-knob"></div>
+        </div>
+        <div id="mobile-buttons">
+            <button class="mobile-action" id="mobile-fire" type="button">FIRE</button>
+            <button class="mobile-action" id="mobile-jump" type="button">JUMP</button>
+        </div>
+    </div>
 
     <canvas class="emscripten" id="canvas"
 width="1px"
@@ -403,6 +490,71 @@ frameborder="1"
     </div>
 
     <script type="application/javascript">
+    (() => {
+        const stick = document.getElementById("mobile-stick");
+        const knob = document.getElementById("mobile-stick-knob");
+        const jump = document.getElementById("mobile-jump");
+        const fire = document.getElementById("mobile-fire");
+        if (!stick || !knob || !jump || !fire) return;
+
+        window.oxygen_touch_axis = 0;
+        window.oxygen_touch_jump = false;
+        window.oxygen_touch_fire = false;
+
+        let activePointer = null;
+        function moveStick(event) {
+            if (activePointer !== event.pointerId) return;
+            const rect = stick.getBoundingClientRect();
+            const dx = event.clientX - (rect.left + rect.width / 2);
+            const dy = event.clientY - (rect.top + rect.height / 2);
+            const limit = rect.width * 0.34;
+            const x = Math.max(-1, Math.min(1, dx / limit));
+            const y = Math.max(-1, Math.min(1, dy / limit));
+            window.oxygen_touch_axis = Math.abs(x) < 0.13 ? 0 : x;
+            knob.style.transform = "translate(" + (x * limit) + "px," + (y * limit) + "px)";
+        }
+        function releaseStick(event) {
+            if (activePointer !== event.pointerId) return;
+            activePointer = null;
+            window.oxygen_touch_axis = 0;
+            knob.style.transform = "translate(0,0)";
+        }
+        stick.addEventListener("pointerdown", event => {
+            event.preventDefault();
+            activePointer = event.pointerId;
+            stick.setPointerCapture(event.pointerId);
+            moveStick(event);
+        });
+        stick.addEventListener("pointermove", event => {
+            event.preventDefault();
+            moveStick(event);
+        });
+        stick.addEventListener("pointerup", releaseStick);
+        stick.addEventListener("pointercancel", releaseStick);
+
+        function bindHold(button, key) {
+            const set = value => { window[key] = value; };
+            button.addEventListener("pointerdown", event => {
+                event.preventDefault();
+                button.setPointerCapture(event.pointerId);
+                set(true);
+            });
+            ["pointerup", "pointercancel", "lostpointercapture"].forEach(name =>
+                button.addEventListener(name, () => set(false))
+            );
+        }
+        bindHold(jump, "oxygen_touch_jump");
+        bindHold(fire, "oxygen_touch_fire");
+
+        const prompt = document.getElementById("loader-prompt");
+        if (prompt) prompt.addEventListener("click", () => {
+            try {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock("landscape").catch(() => {});
+                }
+            } catch (_) {}
+        });
+    })();
 
     globalThis.__canvas_resized = (self, ecw, ech) => {
         console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
