@@ -1143,6 +1143,37 @@ class Level:
             {"rect": pygame.Rect(x, y, w, h), "name": name, "found": False}
             for x, y, w, h, name in data.get("secrets", [])
         ]
+        self.cassettes = []
+        target_x = int(self.width * (0.27 + 0.045 * index))
+        cassette_candidates = []
+        for platform in floor_platforms:
+            if platform.w < 120:
+                continue
+            left = int(platform.x) + 30
+            right = int(platform.x + platform.w) - 30
+            if right < left:
+                continue
+            cassette_x = max(left, min(right, target_x))
+            cassette_y = int(platform.y) - 34
+            if any(spike.inflate(76, 24).collidepoint(cassette_x, cassette_y)
+                   for spike in self.spikes):
+                continue
+            if any(abs(cassette_x - checkpoint.x) < 72 for checkpoint in self.checkpoints):
+                continue
+            cassette_candidates.append((abs(cassette_x - target_x), cassette_x, cassette_y))
+        if cassette_candidates:
+            _distance, cassette_x, cassette_y = min(cassette_candidates, key=lambda item: item[0])
+        elif floor_platforms:
+            platform = max(floor_platforms, key=lambda item: item.w)
+            cassette_x = int(platform.x + platform.w / 2)
+            cassette_y = int(platform.y) - 34
+        else:
+            cassette_x, cassette_y = self.spawn[0] + 30, self.spawn[1] - 34
+        self.cassettes.append({
+            "id": str(index), "x": float(cassette_x), "y": float(cassette_y),
+            "rect": pygame.Rect(cassette_x - 20, cassette_y - 13, 40, 26),
+            "collected": False,
+        })
         # Story fragments are no longer world collectibles; the campaign lore
         # is delivered through the safehouse crew dialogue instead.
         self.notes = []
@@ -1961,6 +1992,11 @@ class Game:
         self.safehouse_dialog_npc = None
         self.safehouse_dialog_selection = 0
         self.safehouse_interaction_hint = ""
+        self.cassette_selection = 0
+        self.cassette_playing = False
+        self.secret_167_page = 0
+        self.safehouse_event_active = False
+        self.safehouse_event_elapsed = 0.0
         self.personnel_selection = 0
         self.personnel_open = False
         self.mods_return_mode = "safehouse"
@@ -2034,7 +2070,9 @@ class Game:
                     "level_ratings": {}, "last_level": -1, "language": "en",
                     "selected_character": "runner", "character_selected": False,
                     "filter_charge": 35, "filter_boost": False,
-                    "collected_doublers": [], "music_volume": 0.75,
+                    "collected_doublers": [], "collected_cassettes": [],
+                    "postgame_event_pending": False, "postgame_event_seen": False,
+                    "secret_167_unlocked": False, "music_volume": 0.75,
                     "sfx_volume": 0.75}
         def is_bundled_test_save(data: dict) -> bool:
             # This exact profile was accidentally shipped to every new player
@@ -2121,7 +2159,8 @@ class Game:
         raw_coins = defaults.get("collected_coins", [])
         defaults["collected_coins"] = [str(v) for v in raw_coins] if isinstance(raw_coins, list) else []
         for key in ("found_secrets", "achievements", "completed_levels",
-                    "quest_claimed", "quest_active", "achievement_rewards", "collected_doublers"):
+                    "quest_claimed", "quest_active", "achievement_rewards",
+                    "collected_doublers", "collected_cassettes"):
             raw = defaults.get(key, [])
             defaults[key] = [str(v) for v in raw] if isinstance(raw, list) else []
         raw_skills = defaults.get("skills", {})
@@ -2133,6 +2172,14 @@ class Game:
             defaults["quest_baselines"] = {}
         defaults["arena_best_wave"] = max(0, safe_int(defaults.get("arena_best_wave", 0)))
         defaults["warden_cleared"] = bool(defaults.get("warden_cleared", False))
+        defaults["postgame_event_pending"] = bool(defaults.get("postgame_event_pending", False))
+        defaults["postgame_event_seen"] = bool(defaults.get("postgame_event_seen", False))
+        defaults["secret_167_unlocked"] = bool(
+            defaults.get("secret_167_unlocked", False) or defaults["postgame_event_seen"])
+        defaults["collected_cassettes"] = sorted(
+            {str(value) for value in defaults["collected_cassettes"]
+             if str(value).isdigit() and 0 <= int(value) < len(LEVELS)},
+            key=lambda value: int(value))
         raw_stats = defaults.get("stats", {})
         if not isinstance(raw_stats, dict):
             raw_stats = {}
@@ -2383,7 +2430,8 @@ class Game:
                 scene = "arena"
             else:
                 scene = "campaign_01_05" if self.level_index <= 4 else "campaign_06_09"
-        elif self.mode in ("safehouse", "safehouse_dialog", "ability_mods"):
+        elif self.mode in ("safehouse", "safehouse_dialog", "ability_mods",
+                           "cassette_deck", "secret_room_167"):
             scene = "hub"
         elif self.mode == "victory":
             scene = "ending"
@@ -2456,6 +2504,34 @@ class Game:
         self.safehouse_interaction_hint = ""
         self.projectiles.clear()
         self.stop_flight_sfx()
+        if (len(set(self.save_data.get("completed_levels", []))) >= len(LEVELS)
+                and not self.save_data.get("postgame_event_seen", False)):
+            self.save_data["postgame_event_pending"] = True
+        if (self.save_data.get("postgame_event_pending", False)
+                and not self.save_data.get("postgame_event_seen", False)):
+            self.begin_167_signal_event()
+
+    def begin_167_signal_event(self) -> None:
+        self.safehouse_event_active = True
+        self.safehouse_event_elapsed = 0.0
+        self.cassette_playing = False
+        self.mode = "safehouse"
+
+    def collected_cassette_ids(self) -> list[str]:
+        found = self.save_data.get("collected_cassettes", [])
+        return sorted(
+            {str(value) for value in found
+             if str(value).isdigit() and 0 <= int(value) < len(LEVELS)},
+            key=lambda value: int(value))
+
+    def toggle_cassette_playback(self) -> None:
+        tapes = self.collected_cassette_ids()
+        if not tapes:
+            self.cassette_playing = False
+            return
+        self.cassette_selection = max(0, min(self.cassette_selection, len(tapes) - 1))
+        # The deck transport can be tested now; no audio has been linked yet.
+        self.cassette_playing = not self.cassette_playing
 
     def nearby_safehouse_object(self) -> tuple[str, int] | None:
         px = self.player.x + self.player.w / 2
@@ -2464,6 +2540,11 @@ class Game:
             return ("filter", 0)
         if abs(px - self.hub_gate_x) < 68:
             return ("gate", 0)
+        if abs(px - 650) < 76 and self.player.y > 390:
+            return ("cassette_deck", 0)
+        if abs(px - 410) < 62 and self.player.y > 390:
+            return ("secret_167" if self.save_data.get("secret_167_unlocked", False)
+                    else "locked_167", 0)
         for i, npc_x in enumerate(self.hub_npc_positions):
             if abs(px - npc_x) < 72 and self.player.y > 400:
                 return ("npc", i)
@@ -2509,6 +2590,16 @@ class Game:
             self.mods_selection = 0
             self.mods_return_mode = "safehouse"
             self.mode = "ability_mods"
+        elif kind == "cassette_deck":
+            self.cassette_selection = 0
+            self.cassette_playing = False
+            self.mode = "cassette_deck"
+        elif kind == "secret_167":
+            self.secret_167_page = 0
+            self.mode = "secret_room_167"
+        elif kind == "locked_167":
+            self.menu_notice = "167 ARCHIVE // SIGNAL REQUIRED"
+            self.menu_notice_timer = 2.4
 
     def safehouse_dialog_action(self) -> None:
         if self.safehouse_dialog_npc is None:
@@ -2949,6 +3040,9 @@ class Game:
             self.level.coin_doubler.collected = True
         for coin_index, coin in enumerate(self.level.coins):
             coin.collected = f"{index}:{coin_index}" in self.collected_coin_keys
+        found_cassettes = self.collected_cassette_ids()
+        for cassette in self.level.cassettes:
+            cassette["collected"] = cassette["id"] in found_cassettes
         self.player = Player(self.level.spawn, self.character_id,
                              speed_level=self.save_data["speed_level"])
         self.apply_player_skills()
@@ -4003,8 +4097,25 @@ class Game:
                 self.play_sfx("coin")
                 self.save_progress()
 
-        # Coins.
+        # Recover the sector's unique EXP cassette. This is a separate,
+        # permanent collection from coins and survives level revisits.
         player_rect = self.player.rect
+        for cassette in self.level.cassettes:
+            if not cassette["collected"] and player_rect.colliderect(cassette["rect"]):
+                cassette["collected"] = True
+                cassette_id = str(cassette["id"])
+                collected = self.save_data.setdefault("collected_cassettes", [])
+                if cassette_id not in collected:
+                    collected.append(cassette_id)
+                    collected.sort(key=lambda value: int(value))
+                    self.save_progress()
+                    self.notice = f"EXP CASSETTE {int(cassette_id) + 1:02d}/10 // RECOVERED"
+                    self.notice_timer = 3.0
+                    self.make_burst(cassette["x"], cassette["y"],
+                                    THEMES[self.level_index]["accent"], 22)
+                    self.play_sfx("checkpoint")
+
+        # Coins.
         coin_pickup_rect = player_rect.inflate(84, 84) if self.save_data["skills"].get("coin_echo") else player_rect
         for coin_index, coin in enumerate(self.level.coins):
             if not coin.collected and coin_pickup_rect.colliderect(
@@ -4312,6 +4423,11 @@ class Game:
         draw_exit(self.screen, self.level.exit_rect, self.camera_x, exit_color, self.time)
         for coin in self.level.coins:
             draw_coin(self.screen, coin, self.camera_x, self.time, accent)
+        for cassette in self.level.cassettes:
+            if not cassette["collected"]:
+                self.draw_cassette_prop(
+                    self.screen, int(cassette["x"] - self.camera_x), int(cassette["y"]),
+                    accent, 0.72, self.time)
         if self.healing_crystal is not None:
             self.healing_crystal.draw(self.screen, self.camera_x)
         if self.level.coin_doubler is not None and not self.level.coin_doubler.collected:
