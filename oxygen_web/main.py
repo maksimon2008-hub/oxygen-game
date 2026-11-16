@@ -1964,7 +1964,9 @@ class Game:
         self.music_root = self.audio_root / "music"
         self.sfx_root = self.audio_root / "sfx"
         self.sfx: dict[str, pygame.mixer.Sound] = {}
-        self.flight_sfx_channel = None
+        self.boss_music: dict[str, pygame.mixer.Sound] = {}
+        self.boss_music_channel = None
+        self.active_boss_music: str | None = None
         self.load_audio_assets()
         self.healing_crystal: HealingCrystal | None = None
         self.boss_crystal_timer = 0.0  # campaign-play cooldown (30 minutes)
@@ -2200,10 +2202,23 @@ class Game:
         if not self.music_enabled:
             return
         try:
-            pygame.mixer.set_num_channels(max(8, pygame.mixer.get_num_channels()))
+            pygame.mixer.set_num_channels(max(10, pygame.mixer.get_num_channels()))
             self.flight_sfx_channel = pygame.mixer.Channel(7)
+            self.boss_music_channel = pygame.mixer.Channel(8)
         except pygame.error:
             self.flight_sfx_channel = None
+            self.boss_music_channel = None
+        # Decode boss themes during the initial audio setup, not at the exact
+        # moment a boss appears. Sound channels can then switch instantly while
+        # the campaign music stream remains loaded and ready to resume.
+        for key, filename in (("boss_05", "boss_sector_05.ogg"),
+                              ("boss_10", "boss_sector_10.ogg")):
+            path = self.music_root / filename
+            if path.exists():
+                try:
+                    self.boss_music[key] = pygame.mixer.Sound(str(path))
+                except Exception as exc:
+                    print(f"OXYGEN boss music preload failed ({filename}): {exc}", file=sys.stderr)
         for name in ("shoot", "dash", "double_jump", "flight", "coin", "achievement"):
             extension = "ogg" if sys.platform == "emscripten" else "wav"
             path = self.sfx_root / f"{name}.{extension}"
@@ -2217,8 +2232,12 @@ class Game:
     def apply_music_volume(self) -> None:
         if self.music_enabled:
             try:
-                pygame.mixer.music.set_volume(self.music_track_volume * self.music_volume)
-            except pygame.error:
+                # The campaign stream stays loaded underneath a boss theme.
+                stream_volume = 0.0 if self.active_boss_music else self.music_track_volume
+                pygame.mixer.music.set_volume(stream_volume * self.music_volume)
+                if self.active_boss_music and self.boss_music_channel:
+                    self.boss_music_channel.set_volume(self.music_volume)
+            except Exception:
                 pass
 
     def set_audio_slider(self, name: str, value: float, save: bool = False) -> None:
@@ -2301,16 +2320,12 @@ class Game:
             self.music_transition_target = None
 
     def update_music_scene(self, dt: float = 0.0) -> None:
-        # Keep scene selection in the game loop, but never wait on a fade timer.
-        # Pausing must freeze gameplay without changing the active level music.
+        # Keep scene selection in the game loop, but never decode a large OGG
+        # at the boss trigger. Boss themes are preloaded as Sound objects.
         if self.mode in ("playing", "paused"):
             if self.is_arena_mode:
                 scene = "arena"
             else:
-                # Keep the campaign stream running through boss activation.
-                # Loading a second large OGG at the exact boss trigger can stall
-                # the browser audio backend and freeze the Pygbag game loop.
-                # Boss encounters therefore change visuals/gameplay, not stream.
                 scene = "campaign_01_05" if self.level_index <= 4 else "campaign_06_09"
         elif self.mode in ("safehouse", "safehouse_dialog", "ability_mods"):
             scene = "hub"
@@ -2319,6 +2334,37 @@ class Game:
         else:
             scene = "menu"
         self.set_music_scene(scene)
+
+        boss = getattr(self.level, "boss", None) if self.mode in ("playing", "paused") and not self.is_arena_mode else None
+        boss_key = None
+        if boss is not None and boss.active and not boss.defeated:
+            boss_key = "boss_05" if self.level_index <= 4 else "boss_10"
+
+        if boss_key != self.active_boss_music:
+            if self.boss_music_channel:
+                try:
+                    self.boss_music_channel.stop()
+                except Exception:
+                    pass
+            self.active_boss_music = boss_key
+            if boss_key and boss_key in self.boss_music and self.boss_music_channel:
+                try:
+                    self.boss_music_channel.play(self.boss_music[boss_key], loops=-1)
+                    self.boss_music_channel.set_volume(self.music_volume)
+                except Exception as exc:
+                    print(f"OXYGEN boss music playback failed ({boss_key}): {exc}", file=sys.stderr)
+                    self.active_boss_music = None
+            self.apply_music_volume()
+
+        # ESC pauses both the game and its currently active boss theme.
+        if self.boss_music_channel and self.active_boss_music:
+            try:
+                if self.mode == "paused":
+                    self.boss_music_channel.pause()
+                else:
+                    self.boss_music_channel.unpause()
+            except Exception:
+                pass
 
     def raw_quest_metric(self, metric: str) -> int:
         if metric == "secrets":
