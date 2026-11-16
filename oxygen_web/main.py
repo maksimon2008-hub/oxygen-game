@@ -2262,6 +2262,7 @@ class Game:
             pass
 
     def set_music_scene(self, scene: str) -> None:
+        """Switch music without asynchronous fades that can stall browser audio."""
         if not self.music_enabled or scene == self.music_scene:
             return
         tracks = {
@@ -2281,38 +2282,26 @@ class Game:
         volume = 0.22 if scene.startswith("boss") else 0.17
         self.music_track_volume = volume
         self.music_scene = scene
+        self.music_transition_target = None
+        self.music_transition_timer = 0.0
         try:
+            # Stop first, then replace the stream. Browser/Pygbag audio backends
+            # can become unresponsive when fadeout and a delayed load overlap.
+            pygame.mixer.music.stop()
             if not path.exists():
-                self.music_transition_target = None
-                pygame.mixer.music.stop()
                 return
-            # Fade out the current track before loading and fading in the next.
-            if pygame.mixer.music.get_busy():
-                self.music_transition_target = (str(path), volume)
-                self.music_transition_timer = 0.40
-                pygame.mixer.music.fadeout(400)
-            else:
-                pygame.mixer.music.load(str(path))
-                pygame.mixer.music.set_volume(volume * self.music_volume)
-                pygame.mixer.music.play(-1, fade_ms=700)
-                self.music_transition_target = None
-                self.music_transition_timer = 0.0
-        except pygame.error:
+            pygame.mixer.music.load(str(path))
+            pygame.mixer.music.set_volume(volume * self.music_volume)
+            pygame.mixer.music.play(-1)
+        except Exception as exc:
+            # Audio is optional: a decoder/backend error must never stop gameplay
+            # or prevent keyboard events from being processed.
+            print(f"OXYGEN music switch failed ({scene}): {exc}", file=sys.stderr)
             self.music_enabled = False
             self.music_transition_target = None
 
     def update_music_scene(self, dt: float = 0.0) -> None:
-        if self.music_transition_target is not None:
-            self.music_transition_timer = max(0.0, self.music_transition_timer - max(0.0, dt))
-            if self.music_transition_timer <= 0.0:
-                path, volume = self.music_transition_target
-                self.music_transition_target = None
-                try:
-                    pygame.mixer.music.load(path)
-                    pygame.mixer.music.set_volume(volume * self.music_volume)
-                    pygame.mixer.music.play(-1, fade_ms=700)
-                except pygame.error:
-                    self.music_enabled = False
+        # Keep scene selection in the game loop, but never wait on a fade timer.
         if self.mode == "playing":
             if self.is_arena_mode:
                 scene = "arena"
