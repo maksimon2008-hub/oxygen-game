@@ -73,8 +73,8 @@ async def custom_site():
         # now make a prompt
         msg  = "Нажмите, чтобы войти в OXYGEN"
         platform.window.infobox.innerText = msg
-        platform.document.getElementById("status").innerText = "SYSTEM READY"
-        platform.document.getElementById("loader-prompt").hidden = False
+        platform.window.document.getElementById("status").innerText = "SYSTEM READY"
+        platform.window.document.getElementById("loader-prompt").style.display = "inline-flex"
         print("\n"*4, f"    * Waiting for media user engagement. {msg} *" , "\n"*4)
 
         while not platform.window.MM.UME:
@@ -218,8 +218,8 @@ function show_infobox() {
         #progress::-webkit-progress-value { background: #a3ff62; box-shadow: 0 0 14px #a3ff62; }
         #progress::-moz-progress-bar { background: #a3ff62; box-shadow: 0 0 14px #a3ff62; }
         #status { color: #9aa9b4; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; }
-        #loader-prompt { margin-top: 30px; color: #b7ff83; font-size: 12px; font-weight: bold; letter-spacing: .2em; animation: oxygen-pulse 1.5s ease-in-out infinite; }
-        #loader-prompt[hidden] { display: none !important; }
+        #loader-prompt { display: none; margin: 30px auto 0; padding: 15px 22px; align-items: center; justify-content: center; border: 1px solid #9cff57; border-radius: 2px; background: #9cff5710; color: #c5ff9d; font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; letter-spacing: .16em; cursor: pointer; animation: oxygen-pulse 1.5s ease-in-out infinite; }
+        #loader-prompt:hover { background: #9cff5725; box-shadow: 0 0 22px #9cff5730; }
         @keyframes oxygen-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; text-shadow: 0 0 16px #a3ff62; } }
 
         #infobox {
@@ -321,7 +321,7 @@ function show_infobox() {
                 <progress value="0" max="100" id="progress"></progress>
             </div>
             <div class="emscripten" id="status">Подготовка системы...</div>
-            <div id="loader-prompt" hidden>[ НАЖМИТЕ, ЧТОБЫ ПРОДОЛЖИТЬ ]</div>
+            <button id="loader-prompt" type="button">[ НАЖМИТЕ, ЧТОБЫ ПРОДОЛЖИТЬ ]</button>
         </div>
     </div>
 
