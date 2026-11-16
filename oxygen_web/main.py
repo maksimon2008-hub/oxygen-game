@@ -2390,7 +2390,7 @@ class Game:
         keys = pygame.key.get_pressed()
         mouse_buttons = pygame.mouse.get_pressed()
         if self.player.character_id in ("shooter", "flyer") and (
-                keys[pygame.K_j] or keys[pygame.K_c] or mobile_fire
+                keys[pygame.K_j] or keys[pygame.K_c] or self.mobile_fire
                 or (mouse_buttons and mouse_buttons[0])):
             self.fire_player_shot()
         previous_jump_count = self.player.jump_count
@@ -3583,6 +3583,7 @@ class Game:
             mobile_jump = False
         self.player.mobile_axis = max(-1.0, min(1.0, mobile_axis))
         self.player.mobile_jump = mobile_jump
+        self.mobile_fire = mobile_fire
         self.update_music_scene()
         if self.mode == "safehouse":
             self.update_safehouse(dt)
