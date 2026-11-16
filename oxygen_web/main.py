@@ -2081,6 +2081,7 @@ class Game:
                     "collected_doublers": [], "collected_cassettes": [],
                     "postgame_event_pending": False, "postgame_event_seen": False,
                     "secret_167_unlocked": False, "safehouse_lighting_upgraded": False,
+                    "radio_log_index": 0, "last_run_deaths": 0,
                     "music_volume": 0.75,
                     "sfx_volume": 0.75}
         def is_bundled_test_save(data: dict) -> bool:
@@ -2562,6 +2563,8 @@ class Game:
             return ("gate", 0)
         if abs(px - 650) < 76 and self.player.y > 390:
             return ("cassette_deck", 0)
+        if abs(px - 861) < 78 and self.player.y > 390:
+            return ("radio", 0)
         if abs(px - 410) < 62 and self.player.y > 390:
             return ("secret_167" if self.save_data.get("secret_167_unlocked", False)
                     else "locked_167", 0)
@@ -2603,6 +2606,19 @@ class Game:
             self.deploy_from_safehouse()
         elif kind == "filter":
             self.service_oxygen_filter()
+        elif kind == "radio":
+            transmissions = [
+                "RADIO // ...IF ANYONE HEARS THIS, DO NOT ANSWER THE SECOND SIGNAL.",
+                "UNKNOWN VOICE // THE SHELTER IS NOT THE ONLY PLACE STILL LIT.",
+                "STATIC // 167 IS NOT A FREQUENCY. REPEAT: NOT A FREQUENCY.",
+                "DISTANT TRANSMISSION // WE COUNTED SIX. THERE WERE SEVEN.",
+                "RADIO // CARRIER LOST. SOMETHING IS LISTENING."
+            ]
+            index = int(self.save_data.get("radio_log_index", 0)) % len(transmissions)
+            self.menu_notice = transmissions[index]
+            self.save_data["radio_log_index"] = index + 1
+            self.save_progress()
+            self.menu_notice_timer = 5.0
         elif kind == "npc":
             self.safehouse_dialog_npc = index
             self.safehouse_dialog_selection = 0
@@ -2706,6 +2722,8 @@ class Game:
             self.safehouse_interaction_hint = "E  //  SERVICE OXYGEN FILTER"
         elif target and target[0] == "gate":
             self.safehouse_interaction_hint = "E  //  CHOOSE RUNNER AND DEPLOY"
+        elif target and target[0] == "radio":
+            self.safehouse_interaction_hint = "E  //  LISTEN TO RADIO"
         elif target and target[0] == "npc":
             self.safehouse_interaction_hint = "E  //  TALK TO " + QUESTS[target[1]]["npc"]
         elif target and target[0] == "armory":
@@ -3366,6 +3384,7 @@ class Game:
         self.level_deaths += 1
         self.save_data.setdefault("stats", {}).setdefault("deaths", 0)
         self.save_data["stats"]["deaths"] += 1
+        self.save_data["last_run_deaths"] = int(self.save_data.get("last_run_deaths", 0)) + 1
         self.shake = 0.25
         self.make_burst(self.player.x + 15, self.player.y + 20, RED, 22)
         if self.player.hp <= 0:
@@ -3373,10 +3392,11 @@ class Game:
             self.save_data["filter_charge"] = max(0, int(self.save_data.get("filter_charge", 0)) - 10)
             self.pending_next_level = None
             self.save_progress()
+            deaths = int(self.save_data.get("last_run_deaths", 0))
             self.notice = "SIGNAL LOST // CREW RECOVERED YOU"
             self.notice_timer = 3.0
             self.enter_safehouse()
-            self.menu_notice = "SECTOR FAILED // RETURN TO THE AIRLOCK TO DEPLOY AGAIN"
+            self.menu_notice = f"RECOVERY LOG // {deaths} FATAL SIGNALS RECORDED"
             self.menu_notice_timer = 3.2
         else:
             self.player.respawn(self.level.checkpoint_spawn, keep_hp=True)
@@ -5064,6 +5084,24 @@ class Game:
         draw_text(self.screen, self.font_xs,
                   "167 // OPEN" if self.save_data.get("secret_167_unlocked", False) else "167 // SEALED",
                   door_color, (410, 480), center=True, shadow=False)
+        # Trophy shelf grows with major campaign milestones.
+        trophies = []
+        if self.save_data.get("boss_cleared"):
+            trophies.append(("CORE", (255, 188, 91)))
+        if len(set(self.save_data.get("completed_levels", []))) >= 3:
+            trophies.append(("SECTOR", (91, 220, 190)))
+        if self.save_data.get("postgame_event_seen"):
+            trophies.append(("167", (166, 139, 255)))
+        if trophies:
+            pygame.draw.rect(self.screen, (10, 25, 39), (718, 410, 94, 90), border_radius=6)
+            pygame.draw.rect(self.screen, (60, 100, 117), (718, 410, 94, 90), 1, border_radius=6)
+            for trophy_i, (label, tint) in enumerate(trophies[:3]):
+                tx = 735 + trophy_i * 27
+                draw_glow(self.screen, tx, 444, tint, 13)
+                pygame.draw.polygon(self.screen, tint, [(tx, 427), (tx + 9, 436), (tx + 6, 451), (tx - 6, 451), (tx - 9, 436)])
+                pygame.draw.rect(self.screen, (112, 126, 133), (tx - 5, 452, 10, 5))
+                draw_text(self.screen, self.font_xs, label, tint, (tx, 470), center=True, shadow=False)
+            draw_text(self.screen, self.font_xs, "FIELD RELICS", MUTED, (765, 493), center=True, shadow=False)
         # Physical EXP cassette deck. Its transport controls are real; sound is added later.
         pygame.draw.rect(self.screen, (10, 24, 39), (610, 422, 92, 78), border_radius=8)
         pygame.draw.rect(self.screen, (59, 105, 125), (610, 422, 92, 78), 2, border_radius=8)
