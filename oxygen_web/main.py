@@ -1995,6 +1995,19 @@ class Game:
 
             # One-time migration for a genuinely changed legacy browser save.
             # The known 194-coin bundled test profile is deliberately ignored.
+            # Allow the owner's one-time recovery link to replace only a
+            # pristine localStorage save created by an earlier rollout.
+            if (
+                self.migrate_legacy_seed
+                and isinstance(loaded, dict)
+                and int(loaded.get("coins", 0) or 0) == 0
+                and not loaded.get("collected_coins")
+                and int(loaded.get("unlocked_levels", 1) or 1) <= 1
+                and not loaded.get("completed_levels")
+                and not loaded.get("achievements")
+            ):
+                loaded = None
+
             if loaded is None and self.save_path.exists():
                 candidate = json.loads(self.save_path.read_text(encoding="utf-8"))
                 if isinstance(candidate, dict) and (
