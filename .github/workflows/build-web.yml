@@ -1,0 +1,48 @@
+name: Build OXYGEN web archive
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "oxygen_web/**"
+      - ".github/workflows/build-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package browser game
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/oxygen-web-package
+          mkdir -p /tmp/oxygen-web-package/assets
+          cp oxygen_web/main.py /tmp/oxygen-web-package/assets/main.py
+          cp -a oxygen_web/assets /tmp/oxygen-web-package/assets/assets
+          cp -a oxygen_web/locales /tmp/oxygen-web-package/assets/locales
+          tar -czf oxygen_web.tar.gz -C /tmp/oxygen-web-package assets
+          echo "Archive contents:"
+          tar -tzf oxygen_web.tar.gz | head -40
+          test -s oxygen_web.tar.gz
+
+      - name: Commit updated browser archive
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add oxygen_web.tar.gz
+          if git diff --cached --quiet; then
+            echo "Browser archive is already up to date."
+            exit 0
+          fi
+          git commit -m "Build updated OXYGEN browser archive"
+          git push origin HEAD:main
