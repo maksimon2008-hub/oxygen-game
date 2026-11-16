@@ -1197,6 +1197,9 @@ class Player:
         self.mobile_axis = 0.0
         self.mobile_jump = False
         self.mobile_jump_held = False
+        # Preserve a brief minimum hold after a touch tap, even if the finger
+        # is lifted between browser frames (otherwise mobile jumps become tiny).
+        self.mobile_jump_hold_timer = 0.0
 
     @property
     def rect(self) -> pygame.Rect:
@@ -1228,6 +1231,7 @@ class Player:
         self.dash_cooldown = max(0.0, self.dash_cooldown - dt)
         self.dash_time = max(0.0, self.dash_time - dt)
         self.jump_buffer = max(0.0, self.jump_buffer - dt)
+        self.mobile_jump_hold_timer = max(0.0, self.mobile_jump_hold_timer - dt)
         self.shoot_cooldown = max(0.0, self.shoot_cooldown - dt)
         self.stomp_grace = max(0.0, self.stomp_grace - dt)
         self.wall_jump_lock = max(0.0, self.wall_jump_lock - dt)
@@ -1235,7 +1239,7 @@ class Player:
         left = keys[pygame.K_a] or keys[pygame.K_LEFT] or self.mobile_axis < -0.18
         right = keys[pygame.K_d] or keys[pygame.K_RIGHT] or self.mobile_axis > 0.18
         jump_held = (keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]
-                     or self.mobile_jump_held)
+                     or self.mobile_jump_held or self.mobile_jump_hold_timer > 0.0)
 
         if left:
             self.facing = -1
@@ -3622,6 +3626,9 @@ class Game:
             self.process_dash_event()
         # A tap is a one-shot jump request; no key-up event is required.
         if mobile_jump and self.mode in ("playing", "safehouse"):
+            # A touch tap can begin and end between two WASM frames. Keep the
+            # jump held briefly so the variable-height impulse is not cut off.
+            self.player.mobile_jump_hold_timer = max(self.player.mobile_jump_hold_timer, 0.20)
             if self.player.character_id == "flyer" and not self.player.on_ground:
                 self.player.flight_requested = True
             else:
