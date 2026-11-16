@@ -1832,6 +1832,7 @@ class Game:
         self.browser_save_key = "oxygen_savegame_v2"
         self.browser_storage = None
         self.browser_storage_error = None
+        self.migrate_legacy_seed = False
         if sys.platform == "emscripten":
             # Pygbag's documented browser persistence API. localStorage is
             # isolated per browser profile and is synchronous, so coin pickups
@@ -1839,6 +1840,8 @@ class Game:
             try:
                 import platform as browser_platform
                 self.browser_storage = browser_platform.window.localStorage
+                query = str(browser_platform.window.location.search or "")
+                self.migrate_legacy_seed = "keep_legacy_save=1" in query
             except Exception as exc:
                 self.browser_storage_error = str(exc)
             # Keep the previous file path only as a one-time migration source.
@@ -1995,7 +1998,9 @@ class Game:
             if loaded is None and self.save_path.exists():
                 candidate = json.loads(self.save_path.read_text(encoding="utf-8"))
                 if isinstance(candidate, dict) and (
-                    sys.platform != "emscripten" or not is_bundled_test_save(candidate)
+                    sys.platform != "emscripten"
+                    or not is_bundled_test_save(candidate)
+                    or self.migrate_legacy_seed
                 ):
                     loaded = candidate
 
