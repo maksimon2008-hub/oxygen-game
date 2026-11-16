@@ -3973,11 +3973,11 @@ class Game:
             particle.draw(self.screen, self.camera_x)
         self.player.draw(self.screen, self.camera_x)
 
-        # Fine scan texture makes the vector materials read better on large displays.
-        self.screen.blit(self.surface_grain, (0, 0))
-
-        # Faint top/bottom vignette.
-        self.screen.blit(self.vignette, (0, 0))
+        # Full-screen texture overlays are expensive in WebAssembly/mobile browsers.
+        # Keep the richer desktop look, but skip these two full-canvas blits on web.
+        if sys.platform != "emscripten":
+            self.screen.blit(self.surface_grain, (0, 0))
+            self.screen.blit(self.vignette, (0, 0))
 
     def draw_hud(self) -> None:
         theme = THEMES[self.level_index]
