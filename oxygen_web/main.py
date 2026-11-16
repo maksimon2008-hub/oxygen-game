@@ -1193,6 +1193,9 @@ class Player:
         self.extra_jumps = 0
         self.is_flying = False
         self.flight_requested = False
+        # Browser touch input; desktop keyboard controls remain unchanged.
+        self.mobile_axis = 0.0
+        self.mobile_jump = False
 
     @property
     def rect(self) -> pygame.Rect:
@@ -1228,9 +1231,10 @@ class Player:
         self.stomp_grace = max(0.0, self.stomp_grace - dt)
         self.wall_jump_lock = max(0.0, self.wall_jump_lock - dt)
 
-        left = keys[pygame.K_a] or keys[pygame.K_LEFT]
-        right = keys[pygame.K_d] or keys[pygame.K_RIGHT]
-        jump_held = keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]
+        left = keys[pygame.K_a] or keys[pygame.K_LEFT] or self.mobile_axis < -0.18
+        right = keys[pygame.K_d] or keys[pygame.K_RIGHT] or self.mobile_axis > 0.18
+        jump_held = (keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]
+                     or self.mobile_jump)
 
         if left:
             self.facing = -1
@@ -2386,7 +2390,8 @@ class Game:
         keys = pygame.key.get_pressed()
         mouse_buttons = pygame.mouse.get_pressed()
         if self.player.character_id in ("shooter", "flyer") and (
-                keys[pygame.K_j] or keys[pygame.K_c] or (mouse_buttons and mouse_buttons[0])):
+                keys[pygame.K_j] or keys[pygame.K_c] or mobile_fire
+                or (mouse_buttons and mouse_buttons[0])):
             self.fire_player_shot()
         previous_jump_count = self.player.jump_count
         self.player.update(dt, keys, self.safehouse_world, self.particles)
@@ -3564,6 +3569,20 @@ class Game:
         self.achievement_popup_timer = max(0.0, self.achievement_popup_timer - dt)
         if self.mode == "playing":
             self.coin_multiplier_timer = max(0.0, self.coin_multiplier_timer - dt)
+
+        mobile_fire = False
+        try:
+            import platform as browser_platform
+            mobile_axis = float(browser_platform.window.oxygen_touch_axis or 0.0)
+            mobile_jump = bool(browser_platform.window.oxygen_touch_jump)
+            mobile_fire = bool(browser_platform.window.oxygen_touch_fire)
+            controls = browser_platform.window.document.getElementById("mobile-controls")
+            controls.style.display = "flex" if self.mode in ("playing", "safehouse") else "none"
+        except Exception:
+            mobile_axis = 0.0
+            mobile_jump = False
+        self.player.mobile_axis = max(-1.0, min(1.0, mobile_axis))
+        self.player.mobile_jump = mobile_jump
         self.update_music_scene()
         if self.mode == "safehouse":
             self.update_safehouse(dt)
@@ -3574,7 +3593,7 @@ class Game:
 
         keys = pygame.key.get_pressed()
         mouse_buttons = pygame.mouse.get_pressed()
-        shoot_held = (keys[pygame.K_j] or keys[pygame.K_c]
+        shoot_held = (keys[pygame.K_j] or keys[pygame.K_c] or mobile_fire
                       or (len(mouse_buttons) > 0 and mouse_buttons[0]))
         if self.player.character_id in ("shooter", "flyer") and shoot_held:
             self.fire_player_shot()
