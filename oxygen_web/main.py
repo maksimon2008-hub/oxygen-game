@@ -4430,49 +4430,102 @@ class Game:
         return texture
 
     def make_skyline(self, level_index: int) -> pygame.Surface:
-        """Build a stable, softly lit skyline for one level.
-
-        The whole city is one cached image: windows are part of their
-        buildings rather than being animated or positioned independently.
-        """
+        """Bake a layered industrial horizon for each sector; deterministic and cheap to draw."""
         tile_width = 210
         parallax_speed = 0.10
         max_camera = max(0, LEVELS[level_index]["width"] - WIDTH)
         layer_width = WIDTH + int(max_camera * parallax_speed) + tile_width * 2
         layer = pygame.Surface((layer_width, HEIGHT), pygame.SRCALPHA)
         rng = random.Random(167 + level_index * 7919)
-        base = 458
         accent = THEMES[level_index]["accent"]
+        accent2 = THEMES[level_index]["accent2"]
+        base = 470
 
-        # Muted window color: atmospheric detail, not bright UI-like dashes.
-        window_color = tuple(max(15, int(channel * 0.30)) for channel in accent)
-        highlight_color = tuple(max(20, int(channel * 0.46)) for channel in accent)
+        # Distant, low-contrast mountain of industrial silhouettes.
+        for x in range(-30, layer_width + 100, 145):
+            h = rng.randint(55, 145)
+            w = rng.randint(85, 155)
+            rect = pygame.Rect(x, base - h, w, h + 90)
+            pygame.draw.rect(layer, (9, 15, 30, 185), rect)
+            pygame.draw.line(layer, (25, 39, 58, 170), rect.topleft,
+                             (rect.right, rect.top), 2)
+            # Rooftop vents and antenna masts.
+            if rng.random() < 0.72:
+                ax = x + rng.randint(12, max(14, w - 12))
+                ah = rng.randint(18, 52)
+                pygame.draw.line(layer, (31, 53, 72, 190),
+                                 (ax, rect.top), (ax, rect.top - ah), 2)
+                pygame.draw.circle(layer, (*accent2, 95),
+                                   (ax, rect.top - ah), 2)
+            if rng.random() < 0.55:
+                vx = x + rng.randint(8, max(10, w - 18))
+                pygame.draw.rect(layer, (18, 29, 45, 210),
+                                 (vx, rect.top - 9, 19, 9))
+                pygame.draw.line(layer, (43, 61, 78, 170),
+                                 (vx + 3, rect.top - 9), (vx + 16, rect.top - 9), 1)
 
+        # Larger foreground factories with structural ribs, windows and pipework.
         tile_count = math.ceil(layer_width / tile_width) + 2
         for tile_index in range(-1, tile_count):
             bx = tile_index * tile_width
-            h = 80 + ((tile_index * 47 + level_index * 23) % 120)
-            bw = 90 + ((tile_index * 31) % 65)
-            building = pygame.Rect(bx, base - h, bw, h)
-            pygame.draw.rect(layer, (13, 20, 39), building)
-            pygame.draw.line(layer, (31, 51, 73), building.topleft,
+            h = 100 + ((tile_index * 47 + level_index * 23) % 145)
+            bw = 105 + ((tile_index * 31) % 78)
+            building = pygame.Rect(bx, base - h, bw, h + 80)
+            pygame.draw.rect(layer, (12, 19, 35, 238), building)
+            pygame.draw.line(layer, (34, 54, 75, 220), building.topleft,
                              (building.right, building.top), 2)
+            pygame.draw.line(layer, (20, 34, 52, 220),
+                             (building.left + 8, building.top + 12),
+                             (building.left + 8, base), 2)
+            for rib_x in range(building.left + 24, building.right - 8, 31):
+                pygame.draw.line(layer, (22, 37, 55, 210),
+                                 (rib_x, building.top + 8), (rib_x, base), 1)
 
-            # Irregular, deterministic windows. A local RNG keeps every
-            # window fixed in the same place for the entire play session.
             window_rng = random.Random(167 + level_index * 100003 + tile_index * 9176)
-            slots = []
-            for wy in range(building.top + 18, base - 14, 27):
-                for wx in range(bx + 13, bx + bw - 10, 22):
-                    slots.append((wx, wy))
-            window_rng.shuffle(slots)
-            lit_count = min(len(slots), window_rng.randint(2, 5))
-            for window_number, (wx, wy) in enumerate(slots[:lit_count]):
-                ww = window_rng.choice((3, 4, 5))
-                wh = window_rng.choice((5, 7, 9))
-                color = highlight_color if window_number == 0 else window_color
-                pygame.draw.rect(layer, color, (wx, wy, ww, wh), border_radius=1)
+            for wy in range(building.top + 18, base - 8, 25):
+                for wx in range(bx + 15, bx + bw - 10, 23):
+                    if window_rng.random() < 0.24:
+                        ww = window_rng.choice((3, 4, 6))
+                        wh = window_rng.choice((5, 7, 9))
+                        color = (*accent, window_rng.randint(35, 85))
+                        pygame.draw.rect(layer, color, (wx, wy, ww, wh), border_radius=1)
 
+            # External pipes and a few broken catwalks make each skyline less generic.
+            pipe_x = bx + bw - 13
+            pygame.draw.line(layer, (43, 57, 73, 210),
+                             (pipe_x, building.top + 5), (pipe_x, base + 24), 3)
+            pygame.draw.line(layer, (24, 39, 55, 220),
+                             (pipe_x + 5, building.top + 34), (pipe_x + 5, base + 24), 2)
+            if tile_index % 2 == 0:
+                cat_y = building.top + 48
+                pygame.draw.line(layer, (42, 56, 72, 190),
+                                 (bx - 20, cat_y), (bx + bw + 18, cat_y), 2)
+                for support_x in (bx + 4, bx + bw - 4):
+                    pygame.draw.line(layer, (34, 48, 65, 180),
+                                     (support_x, cat_y), (support_x, cat_y + 17), 2)
+
+            # Occasional smokestack with a dark plume.
+            if tile_index % 3 == 1:
+                sx = bx + bw // 2
+                sh = 35 + (level_index * 7 % 24)
+                pygame.draw.rect(layer, (20, 29, 43, 245),
+                                 (sx, building.top - sh, 13, sh))
+                pygame.draw.rect(layer, (48, 61, 76, 220),
+                                 (sx - 2, building.top - sh, 17, 5))
+                for puff in range(3):
+                    py = building.top - sh - 10 - puff * 13
+                    pygame.draw.circle(layer, (39, 49, 67, 32 - puff * 7),
+                                       (sx + 8 + puff * 5, py), 8 + puff * 3)
+
+        # A few long cables crossing the upper skyline.
+        cable_color = (37, 57, 78, 135)
+        for cable_y, sag in ((150, 24), (218, 17), (285, 29)):
+            points = []
+            for px in range(0, layer_width + 24, 24):
+                py = cable_y + int(math.sin(px / 180.0 + level_index) * sag)
+                points.append((px, py))
+            if len(points) > 1:
+                pygame.draw.lines(layer, cable_color, False, points, 1)
         return layer
 
     def draw_background(self, theme, background_level_index: int | None = None) -> None:
