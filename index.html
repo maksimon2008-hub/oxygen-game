@@ -413,6 +413,7 @@ function show_infobox() {
             <div id="mobile-stick-knob"></div>
         </div>
         <div id="mobile-buttons">
+            <button class="mobile-action" id="mobile-menu" type="button">MENU</button>
             <button class="mobile-action" id="mobile-fire" type="button">FIRE</button>
             <button class="mobile-action" id="mobile-jump" type="button">JUMP</button>
         </div>
@@ -495,11 +496,17 @@ frameborder="1"
         const knob = document.getElementById("mobile-stick-knob");
         const jump = document.getElementById("mobile-jump");
         const fire = document.getElementById("mobile-fire");
-        if (!stick || !knob || !jump || !fire) return;
+        const menu = document.getElementById("mobile-menu");
+        if (!stick || !knob || !jump || !fire || !menu) return;
 
         window.oxygen_touch_axis = 0;
         window.oxygen_touch_jump = false;
         window.oxygen_touch_fire = false;
+        window.oxygen_touch_menu = false;
+        menu.addEventListener("click", event => {
+            event.preventDefault();
+            window.oxygen_touch_menu = true;
+        });
 
         let activePointer = null;
         function moveStick(event) {
