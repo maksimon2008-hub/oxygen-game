@@ -286,6 +286,12 @@ function show_infobox() {
             #mobile-controls { display: none !important; }
         }
 
+        /* Desktop PCs without touch input never show the mobile overlay,
+           even when the Python game loop toggles its inline display style. */
+        html:not(.touch-device) #mobile-controls {
+            display: none !important;
+        }
+
         #mobile-controls {
             display: none;
             position: fixed;
@@ -511,6 +517,10 @@ frameborder="1"
 
     <script type="application/javascript">
     (() => {
+        // Enable touch controls only on devices that actually support touch.
+        if (("ontouchstart" in window) || navigator.maxTouchPoints > 0) {
+            document.documentElement.classList.add("touch-device");
+        }
         const stick = document.getElementById("mobile-stick");
         const knob = document.getElementById("mobile-stick-knob");
         const jump = document.getElementById("mobile-jump");
