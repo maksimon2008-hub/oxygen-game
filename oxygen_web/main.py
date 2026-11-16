@@ -14,12 +14,14 @@ Controls:
 from __future__ import annotations
 
 import asyncio
+import io
 import json
 import math
 from array import array
 import random
 import shutil
 import sys
+import wave
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -143,7 +145,16 @@ def make_synth_sfx(duration: float, start_freq: float, end_freq: float,
         envelope = attack * release
         sample = (tone + rng.uniform(-1.0, 1.0) * noise) * volume * envelope
         samples.append(int(max(-1.0, min(1.0, sample)) * 32767))
-    return pygame.mixer.Sound(buffer=samples.tobytes())
+    # Decode a real PCM WAV instead of passing a raw buffer. This is more
+    # reliable in the browser/Pygbag mixer backend.
+    wav_buffer = io.BytesIO()
+    with wave.open(wav_buffer, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(samples.tobytes())
+    wav_buffer.seek(0)
+    return pygame.mixer.Sound(file=wav_buffer)
 
 THEMES = [
     {"accent": (62, 242, 224), "accent2": (255, 79, 161), "sky": (8, 17, 36)},
@@ -2282,7 +2293,7 @@ class Game:
             for name, sound in generated.items():
                 self.sfx[name] = sound
                 sound.set_volume(self.sfx_volume * self.sfx_gains[name])
-        except (pygame.error, ValueError, OverflowError) as exc:
+        except Exception as exc:
             print(f"OXYGEN generated SFX unavailable: {exc}", file=sys.stderr)
 
     def apply_music_volume(self) -> None:
