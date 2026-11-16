@@ -1,4 +1,5 @@
-<html lang="en-us"><script src="https://pygame-web.github.io/cdn/0.9.3/pythons.js" type=module id="site" data-python="python3.14" data-LINES=42 data-COLUMNS=132 data-os="vtx,snd,gui" async defer>#<!--
+<!doctype html>
+<html lang="ru"><script src="https://pygame-web.github.io/cdn/0.9.3/pythons.js" type=module id="site" data-python="python3.14" data-LINES=42 data-COLUMNS=132 data-os="vtx,snd,gui" async defer>#<!--
 
 print("""
 Loading oxygen_web from oxygen_web.apk
@@ -25,8 +26,8 @@ async def custom_site():
     import embed
     platform.document.body.style.background = "#070A19";
 
-    platform.window.transfer.hidden = true
-    platform.window.canvas.style.visibility = "visible"
+    platform.window.transfer.hidden = false
+    platform.window.canvas.style.visibility = "hidden"
 
 
     bundle = "oxygen_web"
@@ -94,6 +95,8 @@ async def custom_site():
     # your main.py has an infinite sync loop somewhere !
 
     platform.window.infobox.style.display = "none"
+    platform.window.canvas.style.visibility = "visible"
+    platform.window.oxygen_loader.hidden = true
     platform.window.config.gui_divider = 1
     platform.window.window_resize()
     print("default.tmpl: done")
@@ -178,7 +181,7 @@ function show_infobox() {
 
 </script>
 
-    <title>oxygen_web</title>
+    <title>OXYGEN</title>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -190,19 +193,29 @@ function show_infobox() {
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
 
     <style>
-        #status {
-            display: inline-block;
-            vertical-align: top;
-            margin-top: 20px;
-            margin-left: 30px;
-            font-weight: bold;
-            color: rgb(120, 120, 120);
+        #oxygen-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 1000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+            background: radial-gradient(ellipse at 50% 45%, #101a2b 0%, #080d19 48%, #03050b 100%);
+            color: #e8f4f2;
+            font-family: Arial, sans-serif;
         }
-
-        #progress {
-            height: 20px;
-            width: 300px;
-        }
+        #oxygen-loader[hidden] { display: none !important; }
+        .loader-panel { width: min(460px, 90vw); text-align: center; }
+        .loader-mark { color: #9cff57; font-size: clamp(42px, 10vw, 76px); font-weight: 900; letter-spacing: .22em; text-indent: .22em; text-shadow: 0 0 28px #8dff5540; }
+        .loader-subtitle { margin-top: 12px; color: #80909d; font-size: 11px; letter-spacing: .32em; }
+        .loader-line { height: 3px; margin: 42px 0 16px; overflow: hidden; background: #1b2935; }
+        #progress { display: block; width: 100%; height: 3px; border: 0; appearance: none; background: transparent; }
+        #progress::-webkit-progress-bar { background: #1b2935; }
+        #progress::-webkit-progress-value { background: #a3ff62; box-shadow: 0 0 14px #a3ff62; }
+        #progress::-moz-progress-bar { background: #a3ff62; box-shadow: 0 0 14px #a3ff62; }
+        #status { color: #9aa9b4; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; }
 
         #infobox {
             position: fixed; /* center relative to viewport */
@@ -295,13 +308,18 @@ function show_infobox() {
 
 <body>
 
-    <div id="transfer" align=center>
-<!--        <div class="spinner" id='spinner'></div> -->
-        <div class="emscripten" id="status">Downloading...</div>
-        <div class="emscripten">
-            <progress value="0" max="100" id="progress"></progress>
+    <div id="oxygen-loader">
+        <div class="loader-panel">
+            <div class="loader-mark">OXYGEN</div>
+            <div class="loader-subtitle">SYSTEM INITIALIZATION</div>
+            <div class="loader-line">
+                <progress value="0" max="100" id="progress"></progress>
+            </div>
+            <div class="emscripten" id="status">Подготовка системы...</div>
         </div>
     </div>
+
+    <div id="transfer" hidden></div>
 
 
 
@@ -389,7 +407,7 @@ frameborder="1"
 
         pyconsole.hidden = debug_hidden
         system.hidden = debug_hidden
-        transfer.hidden = debug_hidden
+        transfer.hidden = true
         info.hidden = debug_hidden
         box.hidden =  debug_hidden
 
