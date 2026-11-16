@@ -1956,6 +1956,10 @@ class Game:
         self.music_transition_target: tuple[str, float] | None = None
         self.music_transition_timer = 0.0
         self.music_enabled = bool(pygame.mixer.get_init())
+        self.music_volume = max(0.0, min(1.0, float(self.save_data.get("music_volume", 0.75))))
+        self.sfx_volume = max(0.0, min(1.0, float(self.save_data.get("sfx_volume", 0.75))))
+        self.music_track_volume = 0.17
+        self.settings_drag: str | None = None
         self.audio_root = Path(__file__).with_name("assets") / "audio"
         self.music_root = self.audio_root / "music"
         self.sfx_root = self.audio_root / "sfx"
@@ -1989,7 +1993,8 @@ class Game:
                     "level_ratings": {}, "last_level": -1, "language": "en",
                     "selected_character": "runner", "character_selected": False,
                     "filter_charge": 35, "filter_boost": False,
-                    "collected_doublers": []}
+                    "collected_doublers": [], "music_volume": 0.75,
+                    "sfx_volume": 0.75}
         def is_bundled_test_save(data: dict) -> bool:
             # This exact profile was accidentally shipped to every new player
             # in an older web archive. Do not migrate it into a fresh browser.
@@ -2205,10 +2210,36 @@ class Game:
             if path.exists():
                 try:
                     self.sfx[name] = pygame.mixer.Sound(str(path))
+                    self.sfx[name].set_volume(self.sfx_volume)
                 except pygame.error:
                     pass
 
-    def play_sfx(self, name: str) -> None:
+    def apply_music_volume(self) -> None:
+        if self.music_enabled:
+            try:
+                pygame.mixer.music.set_volume(self.music_track_volume * self.music_volume)
+            except pygame.error:
+                pass
+
+    def set_audio_slider(self, name: str, value: float, save: bool = False) -> None:
+        value = max(0.0, min(1.0, float(value)))
+        if name == "music":
+            self.music_volume = value
+            self.save_data["music_volume"] = value
+            self.apply_music_volume()
+        elif name == "sfx":
+            self.sfx_volume = value
+            self.save_data["sfx_volume"] = value
+            for sound in self.sfx.values():
+                sound.set_volume(value)
+        if save:
+            self.save_progress()
+
+    def audio_slider_value_from_x(self, x: int) -> float:
+        left, right = 430, 720
+        return max(0.0, min(1.0, (x - left) / (right - left)))
+
+    def play_sfx(self, name: str) -> None
         if not self.music_enabled:
             return
         sound = self.sfx.get(name)
@@ -2248,6 +2279,7 @@ class Game:
             return
         path = self.music_root / filename
         volume = 0.22 if scene.startswith("boss") else 0.17
+        self.music_track_volume = volume
         self.music_scene = scene
         try:
             if not path.exists():
@@ -2261,7 +2293,7 @@ class Game:
                 pygame.mixer.music.fadeout(400)
             else:
                 pygame.mixer.music.load(str(path))
-                pygame.mixer.music.set_volume(volume)
+                pygame.mixer.music.set_volume(volume * self.music_volume)
                 pygame.mixer.music.play(-1, fade_ms=700)
                 self.music_transition_target = None
                 self.music_transition_timer = 0.0
@@ -2277,7 +2309,7 @@ class Game:
                 self.music_transition_target = None
                 try:
                     pygame.mixer.music.load(path)
-                    pygame.mixer.music.set_volume(volume)
+                    pygame.mixer.music.set_volume(volume * self.music_volume)
                     pygame.mixer.music.play(-1, fade_ms=700)
                 except pygame.error:
                     self.music_enabled = False
@@ -3400,15 +3432,20 @@ class Game:
                     self.mode = "menu"
                     self.menu_selection = 0
                 elif event.key in (pygame.K_UP, pygame.K_w):
-                    self.pause_selection = (self.pause_selection - 1) % 3
+                    self.pause_selection = (self.pause_selection - 1) % 5
                 elif event.key in (pygame.K_DOWN, pygame.K_s):
-                    self.pause_selection = (self.pause_selection + 1) % 3
+                    self.pause_selection = (self.pause_selection + 1) % 5
+                elif event.key in (pygame.K_LEFT, pygame.K_a, pygame.K_RIGHT, pygame.K_d) and self.pause_selection in (3, 4):
+                    delta = -0.05 if event.key in (pygame.K_LEFT, pygame.K_a) else 0.05
+                    key = "music" if self.pause_selection == 3 else "sfx"
+                    current = self.music_volume if key == "music" else self.sfx_volume
+                    self.set_audio_slider(key, current + delta, save=True)
                 elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                     if self.pause_selection == 0:
                         self.mode = "playing"
                     elif self.pause_selection == 1:
                         self.restart_level()
-                    else:
+                    elif self.pause_selection == 2:
                         self.mode = "menu"
                         self.menu_selection = 0
 
@@ -3435,8 +3472,27 @@ class Game:
             self.achievement_scroll = max(0, min(max_scroll, self.achievement_scroll + delta))
             return
 
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if self.settings_drag is not None:
+                self.settings_drag = None
+                self.save_progress()
+            return
+
+        if event.type == pygame.MOUSEMOTION and self.settings_drag is not None:
+            mouse_pos = self.logical_mouse_pos(event.pos)
+            self.set_audio_slider(self.settings_drag, self.audio_slider_value_from_x(mouse_pos[0]))
+            return
+
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = self.logical_mouse_pos(event.pos)
+            if self.mode == "paused" and pygame.Rect(410, 446, 340, 34).collidepoint(mouse_pos):
+                self.settings_drag = "music"
+                self.set_audio_slider("music", self.audio_slider_value_from_x(mouse_pos[0]))
+                return
+            elif self.mode == "paused" and pygame.Rect(410, 504, 340, 34).collidepoint(mouse_pos):
+                self.settings_drag = "sfx"
+                self.set_audio_slider("sfx", self.audio_slider_value_from_x(mouse_pos[0]))
+                return
             if self.mode == "playing":
                 self.fire_player_shot()
 
@@ -3582,11 +3638,11 @@ class Game:
                     self.continue_from_level_result()
 
             elif self.mode == "paused":
-                if pygame.Rect(WIDTH // 2 - 145, 340, 290, 48).collidepoint(mouse_pos):
+                if pygame.Rect(WIDTH // 2 - 145, 300, 290, 44).collidepoint(mouse_pos):
                     self.mode = "playing"
-                elif pygame.Rect(WIDTH // 2 - 145, 400, 290, 48).collidepoint(mouse_pos):
+                elif pygame.Rect(WIDTH // 2 - 145, 352, 290, 44).collidepoint(mouse_pos):
                     self.restart_level()
-                elif pygame.Rect(WIDTH // 2 - 145, 460, 290, 48).collidepoint(mouse_pos):
+                elif pygame.Rect(WIDTH // 2 - 145, 404, 290, 44).collidepoint(mouse_pos):
                     self.mode = "menu"
                     self.menu_selection = 0
 
@@ -4781,12 +4837,32 @@ class Game:
     def draw_pause(self) -> None:
         self.screen.blit(self.pause_overlay, (0, 0))
         draw_text(self.screen, self.font_l, "PAUSED", WHITE,
-                  (WIDTH // 2, 245), center=True)
-        self.draw_button("CONTINUE", 340, self.pause_selection == 0)
-        self.draw_button("RESTART SECTOR", 400, self.pause_selection == 1)
-        self.draw_button("MAIN MENU", 460, self.pause_selection == 2)
-        draw_text(self.screen, self.font_xs, "ESC // MAIN MENU",
-                  MUTED, (WIDTH // 2, 535), center=True, shadow=False)
+                  (WIDTH // 2, 190), center=True)
+        self.draw_button_at("CONTINUE", pygame.Rect(WIDTH // 2 - 145, 300, 290, 44),
+                            self.pause_selection == 0)
+        self.draw_button_at("RESTART SECTOR", pygame.Rect(WIDTH // 2 - 145, 352, 290, 44),
+                            self.pause_selection == 1)
+        self.draw_button_at("MAIN MENU", pygame.Rect(WIDTH // 2 - 145, 404, 290, 44),
+                            self.pause_selection == 2)
+        for label, value, y, selected in (
+            ("MUSIC", self.music_volume, 462, self.pause_selection == 3),
+            ("SFX", self.sfx_volume, 520, self.pause_selection == 4),
+        ):
+            draw_text(self.screen, self.font_xs, label, CYAN if selected else MUTED,
+                      (WIDTH // 2 - 310, y + 7), shadow=False)
+            track = pygame.Rect(430, y, 290, 12)
+            pygame.draw.rect(self.screen, (24, 43, 61), track, border_radius=6)
+            fill = pygame.Rect(track.x, track.y, int(track.w * value), track.h)
+            if fill.w:
+                pygame.draw.rect(self.screen, CYAN if selected else CYAN_DARK,
+                                 fill, border_radius=6)
+            knob_x = track.x + int(track.w * value)
+            pygame.draw.circle(self.screen, WHITE if selected else CYAN,
+                               (knob_x, track.centery), 9 if selected else 7)
+            draw_text(self.screen, self.font_xs, f"{round(value * 100)}%",
+                      WHITE, (track.right + 42, y + 7), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs, "ESC // MAIN MENU     ARROWS // ADJUST VOLUME",
+                  MUTED, (WIDTH // 2, 590), center=True, shadow=False)
 
     def draw_end_screen(self, victory: bool) -> None:
         self.draw_background(THEMES[2] if victory else THEMES[0], 2 if victory else 0)
