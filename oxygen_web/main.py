@@ -1795,14 +1795,21 @@ _BACKGROUND_WASH_CACHE: dict[tuple[tuple[int, int, int], tuple[int, int, int]], 
 
 class Game:
     def __init__(self):
+        # Browser audio needs a little more buffering than desktop audio.
+        # A larger WebAssembly mixer buffer helps prevent audible underruns
+        # when the game is rendering effects and several animated objects.
+        if sys.platform == "emscripten":
+            mixer_config = {"frequency": 44100, "size": -16, "channels": 2, "buffer": 2048}
+        else:
+            mixer_config = {"frequency": 22050, "size": -16, "channels": 1, "buffer": 512}
         try:
-            pygame.mixer.pre_init(frequency=22050, size=-16, channels=1, buffer=512)
+            pygame.mixer.pre_init(**mixer_config)
         except pygame.error:
             pass
         pygame.init()
         try:
             if not pygame.mixer.get_init():
-                pygame.mixer.init(frequency=22050, size=-16, channels=1, buffer=512)
+                pygame.mixer.init(**mixer_config)
         except pygame.error:
             pass
         pygame.display.set_caption(TITLE + "  |  v2.0")
