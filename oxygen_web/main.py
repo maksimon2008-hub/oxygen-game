@@ -2635,6 +2635,17 @@ class Game:
         self.safehouse_dialog_npc = None
 
     def update_safehouse(self, dt: float) -> None:
+        if self.safehouse_event_active:
+            self.safehouse_event_elapsed += dt
+            if self.safehouse_event_elapsed >= 8.0:
+                self.safehouse_event_active = False
+                self.save_data["postgame_event_pending"] = False
+                self.save_data["postgame_event_seen"] = True
+                self.save_data["secret_167_unlocked"] = True
+                self.save_progress()
+                self.menu_notice = "167 SIGNAL // ARCHIVE ACCESS GRANTED"
+                self.menu_notice_timer = 4.0
+            return
         keys = pygame.key.get_pressed()
         mouse_buttons = pygame.mouse.get_pressed()
         if self.player.character_id in ("shooter", "flyer") and (
@@ -2675,6 +2686,12 @@ class Game:
             self.safehouse_interaction_hint = "E  //  TALK TO " + QUESTS[target[1]]["npc"]
         elif target and target[0] == "armory":
             self.safehouse_interaction_hint = "E  //  OPEN ABILITY MODULES"
+        elif target and target[0] == "cassette_deck":
+            self.safehouse_interaction_hint = "E  //  OPEN EXP TAPE DECK"
+        elif target and target[0] == "secret_167":
+            self.safehouse_interaction_hint = "E  //  ENTER ROOM 167"
+        elif target and target[0] == "locked_167":
+            self.safehouse_interaction_hint = "167 // SIGNAL LOCKED"
         else:
             self.safehouse_interaction_hint = ""
 
@@ -2737,9 +2754,9 @@ class Game:
             next_level = self.pending_next_level
             self.pending_next_level = None
             self.load_level(next_level)
+        elif self.save_data.get("postgame_event_pending", False):
+            self.enter_safehouse()
         else:
-            # Campaign finale returns to the main console; SAFEHOUSE stays available
-            # as a separate destination from the main menu.
             self.mode = "menu"
 
     def deploy_from_safehouse(self) -> None:
@@ -3242,6 +3259,9 @@ class Game:
             self.pending_next_level = None
             self.save_data["warden_cleared"] = True
             self.notice = "OXYGEN // THE WARDEN IS SILENT"
+            if (len(set(self.save_data.get("completed_levels", []))) >= len(LEVELS)
+                    and not self.save_data.get("postgame_event_seen", False)):
+                self.save_data["postgame_event_pending"] = True
         self.save_data["last_level"] = (self.pending_next_level if self.pending_next_level is not None
                                          else self.level_index)
         self.notice_timer = 3.2
@@ -3465,6 +3485,8 @@ class Game:
                     self.running = False
 
             elif self.mode == "safehouse":
+                if self.safehouse_event_active:
+                    return
                 if event.key in (pygame.K_SPACE, pygame.K_w, pygame.K_UP):
                     if self.player.character_id == "flyer" and not self.player.on_ground:
                         self.player.flight_requested = True
@@ -3482,6 +3504,28 @@ class Game:
                 elif event.key == pygame.K_ESCAPE:
                     self.mode = "menu"
                     self.menu_selection = 0
+
+            elif self.mode == "cassette_deck":
+                tapes = self.collected_cassette_ids()
+                if event.key in (pygame.K_LEFT, pygame.K_a) and tapes:
+                    self.cassette_selection = (self.cassette_selection - 1) % len(tapes)
+                    self.cassette_playing = False
+                elif event.key in (pygame.K_RIGHT, pygame.K_d) and tapes:
+                    self.cassette_selection = (self.cassette_selection + 1) % len(tapes)
+                    self.cassette_playing = False
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    self.toggle_cassette_playback()
+                elif event.key == pygame.K_ESCAPE:
+                    self.cassette_playing = False
+                    self.mode = "safehouse"
+
+            elif self.mode == "secret_room_167":
+                if event.key in (pygame.K_LEFT, pygame.K_a):
+                    self.secret_167_page = (self.secret_167_page - 1) % 3
+                elif event.key in (pygame.K_RIGHT, pygame.K_d, pygame.K_RETURN, pygame.K_SPACE):
+                    self.secret_167_page = (self.secret_167_page + 1) % 3
+                elif event.key in (pygame.K_ESCAPE, pygame.K_e):
+                    self.mode = "safehouse"
 
             elif self.mode == "safehouse_dialog":
                 if event.key in (pygame.K_LEFT, pygame.K_a, pygame.K_RIGHT, pygame.K_d):
@@ -3683,6 +3727,8 @@ class Game:
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = self.logical_mouse_pos(event.pos)
+            if self.mode == "safehouse" and self.safehouse_event_active:
+                return
             if self.mode == "paused" and pygame.Rect(410, 446, 340, 34).collidepoint(mouse_pos):
                 self.settings_drag = "music"
                 self.set_audio_slider("music", self.audio_slider_value_from_x(mouse_pos[0]))
@@ -3723,7 +3769,19 @@ class Game:
                         self.interact_safehouse()
                         break
                 else:
-                    if pygame.Rect(self.hub_armory_x - 55, 385, 110, 125).collidepoint(mouse_pos):
+                    if pygame.Rect(600, 410, 112, 100).collidepoint(mouse_pos):
+                        self.player.x = float(650 - self.player.w / 2)
+                        self.player.y = 457.0
+                        self.player.vy = 0.0
+                        self.player.on_ground = True
+                        self.interact_safehouse()
+                    elif pygame.Rect(365, 355, 90, 150).collidepoint(mouse_pos):
+                        self.player.x = float(410 - self.player.w / 2)
+                        self.player.y = 457.0
+                        self.player.vy = 0.0
+                        self.player.on_ground = True
+                        self.interact_safehouse()
+                    elif pygame.Rect(self.hub_armory_x - 55, 385, 110, 125).collidepoint(mouse_pos):
                         self.player.x = float(self.hub_armory_x - self.player.w / 2)
                         self.player.y = 457.0
                         self.player.vy = 0.0
@@ -3735,6 +3793,29 @@ class Game:
                         self.player.vy = 0.0
                         self.player.on_ground = True
                         self.interact_safehouse()
+
+            elif self.mode == "cassette_deck":
+                tapes = self.collected_cassette_ids()
+                for index in range(10):
+                    col, row = index % 5, index // 5
+                    slot = pygame.Rect(65 + col * 198, 145 + row * 112, 184, 94)
+                    if slot.collidepoint(mouse_pos) and str(index) in tapes:
+                        self.cassette_selection = tapes.index(str(index))
+                        self.cassette_playing = False
+                        return
+                if pygame.Rect(250, 386, 600, 150).collidepoint(mouse_pos):
+                    self.toggle_cassette_playback()
+                elif mouse_pos[1] > 550:
+                    self.cassette_playing = False
+                    self.mode = "safehouse"
+
+            elif self.mode == "secret_room_167":
+                if mouse_pos[1] > 540:
+                    self.mode = "safehouse"
+                elif mouse_pos[0] < WIDTH // 2:
+                    self.secret_167_page = (self.secret_167_page - 1) % 3
+                else:
+                    self.secret_167_page = (self.secret_167_page + 1) % 3
 
             elif self.mode == "safehouse_dialog":
                 if pygame.Rect(180, 497, 440, 42).collidepoint(mouse_pos):
@@ -3914,7 +3995,8 @@ class Game:
             else:
                 self.player.jump_buffer = 0.16
         self.mobile_jump_was_down = False
-        if mobile_menu and self.mode in ("playing", "safehouse", "paused"):
+        if (mobile_menu and self.mode in ("playing", "safehouse", "paused")
+                and not self.safehouse_event_active):
             self.mode = "menu"
             self.menu_selection = 0
         self.update_music_scene(dt)
@@ -4890,6 +4972,66 @@ class Game:
         self.draw_hub_npc(self.hub_npc_positions[0], 500, (85, 231, 210), "RHEA", "ENGINEER")
         self.draw_hub_npc(self.hub_npc_positions[1], 500, (176, 132, 255), "NOX", "SUPPLY KEEPER")
         self.draw_hub_npc(self.hub_npc_positions[2], 500, (255, 170, 91), "DRIFTER", "SCOUT")
+        # Overhead power conduit and three soft-flickering utility lamps.
+        pygame.draw.line(self.screen, (28, 66, 89), (72, 144), (1028, 144), 5)
+        pygame.draw.line(self.screen, (65, 111, 129), (72, 149), (1028, 149), 1)
+        for lamp_index, lamp_x in enumerate((185, 735, 930)):
+            pulse = 0.72 + 0.28 * math.sin(self.time * 1.7 + lamp_index * 1.9)
+            lamp_color = (int(66 + 38 * pulse), int(148 + 70 * pulse), int(166 + 60 * pulse))
+            draw_glow(self.screen, lamp_x, 168, lamp_color, int(18 + 9 * pulse))
+            pygame.draw.line(self.screen, (62, 93, 112), (lamp_x, 145), (lamp_x, 158), 3)
+            pygame.draw.rect(self.screen, (28, 59, 75), (lamp_x - 10, 157, 20, 8), border_radius=3)
+            pygame.draw.circle(self.screen, lamp_color, (lamp_x, 166), 4)
+        # Ventilation fan slowly turns above the crew's living area.
+        pygame.draw.circle(self.screen, (30, 61, 79), (330, 205), 24, 4)
+        for blade in range(4):
+            angle = self.time * 1.15 + blade * math.pi / 2
+            end = (330 + int(math.cos(angle) * 19), 205 + int(math.sin(angle) * 19))
+            pygame.draw.line(self.screen, (83, 133, 151), (330, 205), end, 5)
+        pygame.draw.circle(self.screen, CYAN_DARK, (330, 205), 5)
+        # Bunk and lockers: the shelter should look inhabited, not like a lobby.
+        pygame.draw.rect(self.screen, (16, 34, 51), (145, 425, 100, 63), border_radius=7)
+        pygame.draw.rect(self.screen, (71, 104, 122), (145, 425, 100, 63), 2, border_radius=7)
+        pygame.draw.rect(self.screen, (81, 114, 129), (153, 432, 83, 14), border_radius=5)
+        pygame.draw.rect(self.screen, (31, 55, 72), (152, 450, 85, 31), border_radius=4)
+        pygame.draw.line(self.screen, (91, 132, 146), (153, 484), (239, 484), 4)
+        for locker_x in (300, 345):
+            pygame.draw.rect(self.screen, (15, 31, 49), (locker_x, 410, 34, 88), border_radius=4)
+            pygame.draw.rect(self.screen, (53, 92, 113), (locker_x, 410, 34, 88), 1, border_radius=4)
+            pygame.draw.line(self.screen, (84, 130, 145), (locker_x + 7, 436), (locker_x + 27, 436), 2)
+            pygame.draw.circle(self.screen, YELLOW, (locker_x + 27, 450), 2)
+        # Radio receiver scans for a carrier in the background.
+        radio_pulse = 0.5 + 0.5 * math.sin(self.time * 3.1)
+        pygame.draw.rect(self.screen, (7, 19, 32), (805, 286, 112, 70), border_radius=7)
+        pygame.draw.rect(self.screen, (57, 100, 122), (805, 286, 112, 70), 2, border_radius=7)
+        pygame.draw.rect(self.screen, (2, 10, 20), (816, 298, 70, 34), border_radius=3)
+        for bar in range(7):
+            h = 4 + int((3 + 5 * radio_pulse) * abs(math.sin(self.time * 2.0 + bar)))
+            pygame.draw.line(self.screen, CYAN, (823 + bar * 8, 325), (823 + bar * 8, 325 - h), 2)
+        pygame.draw.circle(self.screen, (int(70 + radio_pulse * 120), 220, 180), (899, 307), 4)
+        draw_text(self.screen, self.font_xs, "RADIO // SCAN", MUTED, (861, 365), center=True, shadow=False)
+        # 167 access panel, sealed until the end-of-campaign transmission.
+        pygame.draw.rect(self.screen, (5, 17, 31), (378, 365, 64, 135), border_radius=8)
+        door_color = (92, 220, 199) if self.save_data.get("secret_167_unlocked", False) else (73, 92, 111)
+        pygame.draw.rect(self.screen, door_color, (378, 365, 64, 135), 2, border_radius=8)
+        pygame.draw.rect(self.screen, (14, 39, 54), (387, 377, 46, 123), border_radius=5)
+        pygame.draw.circle(self.screen, door_color, (427, 438), 3)
+        draw_text(self.screen, self.font_xs,
+                  "167 // OPEN" if self.save_data.get("secret_167_unlocked", False) else "167 // SEALED",
+                  door_color, (410, 480), center=True, shadow=False)
+        # Physical EXP cassette deck. Its transport controls are real; sound is added later.
+        pygame.draw.rect(self.screen, (10, 24, 39), (610, 422, 92, 78), border_radius=8)
+        pygame.draw.rect(self.screen, (59, 105, 125), (610, 422, 92, 78), 2, border_radius=8)
+        pygame.draw.rect(self.screen, (2, 10, 20), (620, 431, 72, 34), border_radius=4)
+        pygame.draw.circle(self.screen, CYAN, (629, 448), 3)
+        pygame.draw.circle(self.screen, YELLOW if self.cassette_playing else MUTED, (684, 448), 3)
+        pygame.draw.line(self.screen, (72, 120, 140), (625, 472), (687, 472), 2)
+        draw_text(self.screen, self.font_xs, "EXP TAPE DECK", CYAN, (656, 487), center=True, shadow=False)
+        # Small dust motes in the utility lights; no per-frame random allocation.
+        for mote in range(18):
+            mx = 55 + int((mote * 67 + self.time * (9 + mote % 4)) % 980)
+            my = 235 + int((mote * 43 + math.sin(self.time * 0.55 + mote) * 12) % 220)
+            pygame.draw.circle(self.screen, (66, 101, 121), (mx, my), 1)
         # Ability module station remains on the far right.
         draw_glow(self.screen, self.hub_armory_x, 447, (255, 190, 90), 34)
         pygame.draw.rect(self.screen, (14, 28, 45), (self.hub_armory_x - 38, 395, 76, 103), border_radius=9)
@@ -4913,9 +5055,176 @@ class Game:
                   YELLOW, (WIDTH - 130, 585), center=True, shadow=False)
         draw_text(self.screen, self.font_xs, "AIRLOCK // DEPLOY", MUTED,
                   (95, 585), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs,
+                  f"EXP ARCHIVE  //  {len(self.collected_cassette_ids())}/10",
+                  THEMES[5]["accent"], (WIDTH // 2, 585), center=True, shadow=False)
         if self.menu_notice_timer > 0:
             draw_text(self.screen, self.font_xs, self.menu_notice, YELLOW,
                       (WIDTH // 2, 552), center=True, shadow=False)
+
+    def draw_cassette_prop(self, surface: pygame.Surface, x: int, y: int,
+                           accent: tuple[int, int, int], scale: float = 1.0,
+                           animation_time: float = 0.0) -> None:
+        width, height = max(18, int(48 * scale)), max(14, int(32 * scale))
+        left, top = x - width // 2, y - height // 2
+        radius = max(2, int(5 * scale))
+        pygame.draw.rect(surface, (1, 7, 15),
+                         (left - 2, top - 2, width + 4, height + 4), border_radius=radius)
+        pygame.draw.rect(surface, (29, 43, 57), (left, top, width, height), border_radius=radius)
+        pygame.draw.rect(surface, (93, 118, 133), (left, top, width, height), 1, border_radius=radius)
+        pygame.draw.rect(surface, accent,
+                         (left + int(5 * scale), top + int(4 * scale),
+                          max(4, width - int(10 * scale)), max(3, int(6 * scale))),
+                         border_radius=2)
+        reel_y = top + int(height * 0.66)
+        reel_radius = max(3, int(6 * scale))
+        for reel_x in (left + int(width * 0.31), left + int(width * 0.69)):
+            pygame.draw.circle(surface, (4, 12, 21), (reel_x, reel_y), reel_radius)
+            pygame.draw.circle(surface, (122, 145, 156), (reel_x, reel_y), max(2, reel_radius - 2), 1)
+            angle = animation_time * (5.0 if self.cassette_playing else 0.45)
+            spoke_x = reel_x + int(math.cos(angle) * max(1, reel_radius - 2))
+            spoke_y = reel_y + int(math.sin(angle) * max(1, reel_radius - 2))
+            pygame.draw.line(surface, accent, (reel_x, reel_y), (spoke_x, spoke_y), 1)
+        pygame.draw.line(surface, (151, 169, 177),
+                         (left + int(width * 0.37), top + int(height * 0.69)),
+                         (left + int(width * 0.63), top + int(height * 0.69)), 1)
+
+    def draw_cassette_deck(self) -> None:
+        self.draw_background(THEMES[5], 5)
+        self.screen.fill((4, 9, 20), special_flags=pygame.BLEND_RGBA_MULT)
+        tapes = self.collected_cassette_ids()
+        selected_id = tapes[self.cassette_selection] if tapes else None
+        draw_text(self.screen, self.font_l, "EXP // CASSETTE ARCHIVE", WHITE,
+                  (WIDTH // 2, 58), center=True)
+        draw_text(self.screen, self.font_xs, "RECOVERED MEDIA // PERSONAL ARCHIVE NODE",
+                  CYAN, (WIDTH // 2, 101), center=True, shadow=False)
+        for index in range(10):
+            col, row = index % 5, index // 5
+            rect = pygame.Rect(65 + col * 198, 145 + row * 112, 184, 94)
+            collected = str(index) in tapes
+            selected = str(index) == selected_id
+            pygame.draw.rect(self.screen, (20, 43, 59) if selected else (9, 22, 39),
+                             rect, border_radius=8)
+            pygame.draw.rect(self.screen, CYAN if selected else (52, 82, 104),
+                             rect, 2 if selected else 1, border_radius=8)
+            if collected:
+                self.draw_cassette_prop(self.screen, rect.x + 42, rect.centery,
+                                        THEMES[index]["accent"], 0.76, self.time)
+                title, state, color = f"EXP // {index + 1:02d}", "RECOVERED", WHITE
+            else:
+                pygame.draw.rect(self.screen, (22, 31, 43),
+                                 (rect.x + 17, rect.y + 24, 50, 42), border_radius=5)
+                pygame.draw.line(self.screen, (57, 67, 83), (rect.x + 23, rect.y + 36),
+                                 (rect.x + 61, rect.y + 36), 2)
+                title, state, color = f"EXP // {index + 1:02d}", "NO SIGNAL", MUTED
+            draw_text(self.screen, self.font_s, title, color, (rect.x + 78, rect.y + 23), shadow=False)
+            draw_text(self.screen, self.font_xs, state, CYAN if collected else MUTED,
+                      (rect.x + 78, rect.y + 54), shadow=False)
+        deck = pygame.Rect(250, 386, 600, 150)
+        pygame.draw.rect(self.screen, (7, 18, 31), deck, border_radius=12)
+        pygame.draw.rect(self.screen, (67, 111, 132), deck, 2, border_radius=12)
+        pygame.draw.rect(self.screen, (2, 8, 16), (deck.x + 22, deck.y + 20, 238, 110), border_radius=8)
+        if selected_id is not None:
+            self.draw_cassette_prop(self.screen, deck.x + 141, deck.y + 75,
+                                    THEMES[int(selected_id)]["accent"], 2.45, self.time)
+            draw_text(self.screen, self.font_m, f"EXP // {int(selected_id) + 1:02d}",
+                      WHITE, (deck.x + 320, deck.y + 44), shadow=False)
+            status = ("DECK MOTOR RUNNING // AUDIO NOT INSTALLED"
+                      if self.cassette_playing else "CASSETTE READY // SELECT PLAY")
+            draw_text(self.screen, self.font_xs, status,
+                      CYAN if self.cassette_playing else MUTED,
+                      (deck.x + 320, deck.y + 83), shadow=False)
+            draw_text(self.screen, self.font_s,
+                      "STOP DECK" if self.cassette_playing else "START DECK",
+                      YELLOW, (deck.x + 320, deck.y + 108), shadow=False)
+        else:
+            draw_text(self.screen, self.font_m, "NO EXP TAPES FOUND", WHITE,
+                      (deck.x + 300, deck.y + 55), center=True)
+            draw_text(self.screen, self.font_xs, "SEARCH THE TEN CAMPAIGN SECTORS",
+                      MUTED, (deck.x + 300, deck.y + 88), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs,
+                  f"ARCHIVE // {len(tapes):02d} OF 10 RECOVERED",
+                  CYAN, (WIDTH // 2, 563), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs,
+                  "LEFT / RIGHT: SELECT TAPE  //  ENTER: START / STOP  //  ESC: SAFEHOUSE",
+                  MUTED, (WIDTH // 2, 595), center=True, shadow=False)
+
+    def draw_secret_room_167(self) -> None:
+        self.screen.fill((2, 5, 15))
+        for x in range(45, WIDTH, 85):
+            pygame.draw.line(self.screen, (13, 29, 43), (x, 40), (x, HEIGHT - 42), 1)
+        for y in range(50, HEIGHT, 54):
+            pygame.draw.line(self.screen, (10, 24, 38), (35, y), (WIDTH - 35, y), 1)
+        for rack_x in (72, 150, 872, 950):
+            pygame.draw.rect(self.screen, (8, 19, 32), (rack_x, 124, 52, 374), border_radius=5)
+            pygame.draw.rect(self.screen, (44, 83, 103), (rack_x, 124, 52, 374), 1, border_radius=5)
+            for shelf_y in range(145, 475, 42):
+                pygame.draw.line(self.screen, (41, 77, 96), (rack_x + 8, shelf_y),
+                                 (rack_x + 44, shelf_y), 2)
+                led = (80, 218, 190) if (shelf_y // 42 + rack_x) % 3 else (255, 176, 84)
+                pygame.draw.circle(self.screen, led, (rack_x + 14, shelf_y - 8), 2)
+        draw_glow(self.screen, WIDTH // 2, 244, (58, 202, 190), 85)
+        pygame.draw.rect(self.screen, (5, 15, 28), (260, 120, 580, 290), border_radius=12)
+        pygame.draw.rect(self.screen, (65, 137, 151), (260, 120, 580, 290), 2, border_radius=12)
+        pygame.draw.rect(self.screen, (1, 8, 16), (286, 148, 528, 218), border_radius=7)
+        pulse = 0.72 + 0.28 * math.sin(self.time * 2.4)
+        signal_color = (int(45 + 40 * pulse), int(220 + 28 * pulse), int(182 + 35 * pulse))
+        pygame.draw.rect(self.screen, (12, 42, 50), (310, 170, 480, 174), 1, border_radius=4)
+        draw_text(self.screen, self.font_l, "ROOM 167", signal_color, (WIDTH // 2, 203), center=True)
+        logs = (
+            "LOG 01 // THE SIGNAL ARRIVED 167 SECONDS BEFORE THE FIRST FAILURE.",
+            "LOG 02 // THE SHELTER WAS BUILT AROUND THIS ROOM.",
+            "LOG 03 // IF YOU FOUND THIS, THE ARCHIVE FOUND YOU FIRST.",
+        )
+        draw_text(self.screen, self.font_s, logs[self.secret_167_page], WHITE,
+                  (WIDTH // 2, 277), center=True, shadow=False)
+        found = self.collected_cassette_ids()
+        for index in range(10):
+            col, row = index % 5, index // 5
+            self.draw_cassette_prop(
+                self.screen, 330 + col * 88, 390 + row * 42,
+                THEMES[index]["accent"] if str(index) in found else (42, 54, 69),
+                0.52, self.time)
+        draw_text(self.screen, self.font_xs, f"ARCHIVE FRAGMENTS // {len(found)}/10",
+                  CYAN, (WIDTH // 2, 490), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs,
+                  "LEFT / RIGHT OR ENTER: CYCLE LOG  //  E / ESC: RETURN TO SAFEHOUSE",
+                  MUTED, (WIDTH // 2, 585), center=True, shadow=False)
+
+    def draw_167_signal_event(self) -> None:
+        elapsed = self.safehouse_event_elapsed
+        self.screen.fill((1, 3, 10))
+        if elapsed < 1.35:
+            draw_text(self.screen, self.font_l, "POWER FAILURE", (174, 194, 207),
+                      (WIDTH // 2, HEIGHT // 2), center=True)
+            draw_text(self.screen, self.font_xs, "SAFEHOUSE GRID // OFFLINE",
+                      MUTED, (WIDTH // 2, HEIGHT // 2 + 44), center=True, shadow=False)
+        elif elapsed < 3.7:
+            draw_text(self.screen, self.font_m, "RADIO // UNKNOWN CARRIER",
+                      (156, 220, 205), (WIDTH // 2, 238), center=True)
+            wave_y = 315
+            for index in range(49):
+                wave_x = 250 + index * 12
+                wave_h = int(7 + 22 * abs(math.sin(index * 0.57 + elapsed * 7.0))
+                             * (0.45 + 0.55 * abs(math.sin(index * 0.13 + elapsed))))
+                pygame.draw.line(self.screen, CYAN, (wave_x, wave_y - wave_h),
+                                 (wave_x, wave_y + wave_h), 2)
+            draw_text(self.screen, self.font_xs, "UNKNOWN RECORDING // 00:00:17",
+                      WHITE, (WIDTH // 2, 368), center=True, shadow=False)
+        else:
+            flicker = int(32 * abs(math.sin(elapsed * 23.0)))
+            signal = (max(25, 54 + flicker), min(255, 220 + flicker), min(255, 195 + flicker))
+            pygame.draw.rect(self.screen, (1, 12, 21), (220, 165, 660, 270), border_radius=12)
+            pygame.draw.rect(self.screen, signal, (220, 165, 660, 270), 2, border_radius=12)
+            pygame.draw.rect(self.screen, (4, 25, 34), (246, 190, 608, 220), border_radius=7)
+            for scan_y in range(198, 405, 8):
+                pygame.draw.line(self.screen, (13, 47, 55), (253, scan_y), (847, scan_y), 1)
+            draw_text(self.screen, self.font_s, "INCOMING TRANSMISSION // NODE 167",
+                      signal, (WIDTH // 2, 244), center=True, shadow=False)
+            draw_text(self.screen, self.font_l, "167 SIGNAL DETECTED",
+                      WHITE, (WIDTH // 2, 302), center=True)
+            draw_text(self.screen, self.font_xs, "ARCHIVE LOCK // RELEASED",
+                      CYAN, (WIDTH // 2, 365), center=True, shadow=False)
 
     def draw_safehouse_dialog(self) -> None:
         if self.safehouse_dialog_npc is None:
@@ -5130,6 +5439,12 @@ class Game:
             self.draw_store()
         elif self.mode == "safehouse":
             self.draw_safehouse()
+            if self.safehouse_event_active:
+                self.draw_167_signal_event()
+        elif self.mode == "cassette_deck":
+            self.draw_cassette_deck()
+        elif self.mode == "secret_room_167":
+            self.draw_secret_room_167()
         elif self.mode == "safehouse_dialog":
             self.draw_safehouse()
             self.draw_safehouse_dialog()
