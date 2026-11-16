@@ -1953,6 +1953,8 @@ class Game:
         self.mods_selection = 0
         self.ranking_scroll = 0
         self.music_scene = None
+        self.music_transition_target: tuple[str, float] | None = None
+        self.music_transition_timer = 0.0
         self.music_enabled = bool(pygame.mixer.get_init())
         self.audio_root = Path(__file__).with_name("assets") / "audio"
         self.music_root = self.audio_root / "music"
@@ -2241,23 +2243,44 @@ class Game:
             "boss_10": "boss_sector_10.ogg",
             "ending": "main_menu.ogg",
         }
-        self.music_scene = scene
         filename = tracks.get(scene)
         if not filename:
             return
         path = self.music_root / filename
+        volume = 0.22 if scene.startswith("boss") else 0.17
+        self.music_scene = scene
         try:
-            pygame.mixer.music.fadeout(180)
             if not path.exists():
+                self.music_transition_target = None
                 pygame.mixer.music.stop()
                 return
-            pygame.mixer.music.load(str(path))
-            pygame.mixer.music.set_volume(0.22 if scene.startswith("boss") else 0.17)
-            pygame.mixer.music.play(-1, fade_ms=250)
+            # Fade out the current track before loading and fading in the next.
+            if pygame.mixer.music.get_busy():
+                self.music_transition_target = (str(path), volume)
+                self.music_transition_timer = 0.40
+                pygame.mixer.music.fadeout(400)
+            else:
+                pygame.mixer.music.load(str(path))
+                pygame.mixer.music.set_volume(volume)
+                pygame.mixer.music.play(-1, fade_ms=700)
+                self.music_transition_target = None
+                self.music_transition_timer = 0.0
         except pygame.error:
             self.music_enabled = False
+            self.music_transition_target = None
 
-    def update_music_scene(self) -> None:
+    def update_music_scene(self, dt: float = 0.0) -> None:
+        if self.music_transition_target is not None:
+            self.music_transition_timer = max(0.0, self.music_transition_timer - max(0.0, dt))
+            if self.music_transition_timer <= 0.0:
+                path, volume = self.music_transition_target
+                self.music_transition_target = None
+                try:
+                    pygame.mixer.music.load(path)
+                    pygame.mixer.music.set_volume(volume)
+                    pygame.mixer.music.play(-1, fade_ms=700)
+                except pygame.error:
+                    self.music_enabled = False
         if self.mode == "playing":
             if self.is_arena_mode:
                 scene = "arena"
@@ -3640,7 +3663,7 @@ class Game:
         if mobile_menu and self.mode in ("playing", "safehouse", "paused"):
             self.mode = "menu"
             self.menu_selection = 0
-        self.update_music_scene()
+        self.update_music_scene(dt)
         if self.mode == "safehouse":
             self.update_safehouse(dt)
             return
