@@ -21,6 +21,11 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Validate browser Python source
+        run: |
+          set -euo pipefail
+          python3 -m py_compile oxygen_web/main.py
+
       - name: Package browser game
         run: |
           set -euo pipefail
@@ -33,6 +38,26 @@ jobs:
           echo "Archive contents:"
           tar -tzf oxygen_web.tar.gz | head -40
           test -s oxygen_web.tar.gz
+          tar -tzf oxygen_web.tar.gz | grep -qx 'assets/main.py'
+          tar -tzf oxygen_web.tar.gz | grep -qx 'assets/locales/ru.json'
+          if tar -tzf oxygen_web.tar.gz | grep -Eq '(^|/)savegame\.json
+
+      - name: Commit updated browser archive
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add oxygen_web.tar.gz
+          if git diff --cached --quiet; then
+            echo "Browser archive is already up to date."
+            exit 0
+          fi
+          git commit -m "Build updated OXYGEN browser archive"
+          git push origin HEAD:main
+; then
+            echo "ERROR: browser archive must never contain a bundled savegame"
+            exit 1
+          fi
 
       - name: Commit updated browser archive
         run: |
