@@ -2512,6 +2512,7 @@ class Game:
         if (len(set(self.save_data.get("completed_levels", []))) >= len(LEVELS)
                 and not self.save_data.get("postgame_event_seen", False)):
             self.save_data["postgame_event_pending"] = True
+            self.save_progress()
         if (self.save_data.get("postgame_event_pending", False)
                 and not self.save_data.get("postgame_event_seen", False)):
             self.begin_167_signal_event()
