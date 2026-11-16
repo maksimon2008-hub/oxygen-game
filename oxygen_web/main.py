@@ -1830,18 +1830,16 @@ class Game:
                                rng.choice([0.08, 0.14, 0.22, 0.32]),
                                rng.randrange(1, 3), rng.random() * math.tau))
         if sys.platform == "emscripten":
-            # Pygbag mounts /data on persistent browser storage (BrowserFS/IndexedDB).
+            # Each browser profile gets its own persistent /data storage.
+            # Never copy the developer's bundled desktop save into a new browser:
+            # first-time visitors must start with a clean profile.
             self.save_path = Path("/data/savegame.json")
             try:
                 self.save_path.parent.mkdir(parents=True, exist_ok=True)
-                # Import the bundled desktop save once, then keep browser progress
-                # in Pygbag's persistent /data filesystem on later sessions.
-                bundled_save = Path(__file__).with_name("savegame.json")
-                if not self.save_path.exists() and bundled_save.exists():
-                    shutil.copy2(bundled_save, self.save_path)
             except OSError:
                 pass
         else:
+            # Desktop builds continue using the local save beside main.py.
             self.save_path = Path(__file__).with_name("savegame.json")
         self.save_data = self.load_save_data()
         self.language = self.save_data.get("language", "en")
