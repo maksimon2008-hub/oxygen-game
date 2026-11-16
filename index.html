@@ -219,21 +219,27 @@ function show_infobox() {
 
         /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
         /* average size of droid screen 470dp x 320dp  */
-        canvas.emscripten {
-    border: 0;
-    background-color: #070A19;
-    width: min(100vw, 177.7778vh);
-    height: min(100vh, 56.25vw);
-    padding: 0;
-    margin: 0;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    right: auto;
-    bottom: auto;
-    transform: translate(-50%, -50%);
-    z-index: 5;
-}
+        /* Fit the visible game canvas to the viewport and override Pygbag inline sizing. */
+        #canvas {
+            display: block !important;
+            border: 0 !important;
+            background: #070A19 !important;
+            width: min(100vw, 177.7778vh) !important;
+            height: min(100vh, 56.25vw) !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 5 !important;
+        }
+
+        #canvas3d {
+            display: none !important;
+        }
 
         body {
             font-family: arial;
