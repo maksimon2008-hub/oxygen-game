@@ -164,8 +164,10 @@ config = {
     autorun : 0,
     PYBUILD : "3.14",
     fb_ar   :  1.77,
-    fb_width : "1280",
-    fb_height : "720"
+    // A lighter framebuffer improves mobile GPU performance; the game keeps
+    // its full logical resolution and is scaled cleanly to the screen.
+    fb_width : "960",
+    fb_height : "540"
 }
 
 function show_infobox() {
@@ -243,8 +245,9 @@ function show_infobox() {
             display: block !important;
             border: 0 !important;
             background: #070A19 !important;
-            width: min(92vw, 163.2258vh) !important;
-            height: min(92vh, 51.8045vw) !important;
+            /* Use the whole landscape viewport while preserving the game's 16:9 ratio. */
+            width: min(100vw, 177.4194vh) !important;
+            height: min(100vh, 56.3636vw) !important;
             padding: 0 !important;
             margin: 0 !important;
             position: fixed !important;
