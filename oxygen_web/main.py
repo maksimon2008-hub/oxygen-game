@@ -1830,9 +1830,11 @@ class Game:
                                rng.choice([0.08, 0.14, 0.22, 0.32]),
                                rng.randrange(1, 3), rng.random() * math.tau))
         self.browser_save_key = "oxygen_savegame_v2"
+        self.browser_owner_marker_key = "oxygen_owner_save_recovered_v1"
         self.browser_storage = None
         self.browser_storage_error = None
         self.migrate_legacy_seed = False
+        self.keep_legacy_seed = False
         if sys.platform == "emscripten":
             # Pygbag's documented browser persistence API. localStorage is
             # isolated per browser profile and is synchronous, so coin pickups
@@ -1842,6 +1844,14 @@ class Game:
                 self.browser_storage = browser_platform.window.localStorage
                 query = str(browser_platform.window.location.search or "")
                 self.migrate_legacy_seed = "keep_legacy_save=1" in query
+                self.keep_legacy_seed = (
+                    self.migrate_legacy_seed
+                    or str(self.browser_storage.getItem(self.browser_owner_marker_key)) == "1"
+                )
+                if self.migrate_legacy_seed:
+                    # Remember that this profile intentionally owns the
+                    # recovered legacy save, even after the URL is cleaned.
+                    self.browser_storage.setItem(self.browser_owner_marker_key, "1")
             except Exception as exc:
                 self.browser_storage_error = str(exc)
             # Keep the previous file path only as a one-time migration source.
@@ -1994,7 +2004,7 @@ class Game:
                         if (
                             sys.platform == "emscripten"
                             and is_bundled_test_save(candidate)
-                            and not self.migrate_legacy_seed
+                            and not self.keep_legacy_seed
                         ):
                             # A previous web release may already have copied
                             # the bundled test profile into localStorage.
@@ -2023,7 +2033,7 @@ class Game:
                 if isinstance(candidate, dict) and (
                     sys.platform != "emscripten"
                     or not is_bundled_test_save(candidate)
-                    or self.migrate_legacy_seed
+                    or self.keep_legacy_seed
                 ):
                     loaded = candidate
 
