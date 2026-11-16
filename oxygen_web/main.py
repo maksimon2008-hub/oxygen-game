@@ -4441,6 +4441,41 @@ class Game:
         accent2 = THEMES[level_index]["accent2"]
         base = 470
 
+        # A distant orbital body gives every sector a strong focal point.
+        for planet_x in range(420, layer_width + 900, 1550):
+            planet_y = 126 + (level_index % 3) * 18
+            planet_r = 54 + (level_index % 2) * 12
+            halo = pygame.Surface((planet_r * 5, planet_r * 5), pygame.SRCALPHA)
+            pygame.draw.circle(halo, (*accent2, 13),
+                               (planet_r * 2, planet_r * 2), int(planet_r * 1.85))
+            pygame.draw.circle(halo, (*accent2, 20),
+                               (planet_r * 2, planet_r * 2), int(planet_r * 1.42), 3)
+            layer.blit(halo, (planet_x - planet_r * 2, planet_y - planet_r * 2))
+            pygame.draw.circle(layer, (15, 24, 43, 225), (planet_x, planet_y), planet_r)
+            pygame.draw.arc(layer, (*accent2, 95),
+                            (planet_x - planet_r, planet_y - planet_r,
+                             planet_r * 2, planet_r * 2), 0.35, 2.75, 2)
+            for crater in range(7):
+                cx = planet_x + int(math.sin(crater * 8.1 + level_index) * planet_r * 0.62)
+                cy = planet_y + int(math.cos(crater * 5.7 + level_index) * planet_r * 0.55)
+                pygame.draw.circle(layer, (38, 49, 69, 125), (cx, cy), 3 + crater % 4, 1)
+
+        # Thin distant towers and broken megastructures establish extra depth.
+        for x in range(-80, layer_width + 180, 92):
+            tower_rng = random.Random(1670 + level_index * 701 + x * 13)
+            top = tower_rng.randint(155, 330)
+            tower_w = tower_rng.randint(18, 52)
+            pygame.draw.rect(layer, (7, 13, 27, 155), (x, top, tower_w, 390))
+            mast_x = x + tower_w // 2
+            pygame.draw.line(layer, (24, 39, 59, 150),
+                             (mast_x, top), (mast_x, top - tower_rng.randint(12, 48)), 2)
+            if tower_rng.random() < 0.42:
+                pygame.draw.line(layer, (*accent, 80), (mast_x, top + 22),
+                                 (mast_x, top + 75), 2)
+            if tower_rng.random() < 0.30:
+                pygame.draw.rect(layer, (25, 38, 57, 170),
+                                 (x - 8, top + 34, tower_w + 16, 5))
+
         # Distant, low-contrast mountain of industrial silhouettes.
         for x in range(-30, layer_width + 100, 145):
             h = rng.randint(55, 145)
@@ -4463,6 +4498,27 @@ class Game:
                                  (vx, rect.top - 9, 19, 9))
                 pygame.draw.line(layer, (43, 61, 78, 170),
                                  (vx + 3, rect.top - 9), (vx + 16, rect.top - 9), 1)
+
+        # Mid-distance gantries, elevated rails and broken transit bridges.
+        for span_index, bridge_x in enumerate(range(-120, layer_width + 420, 510)):
+            bridge_y = 292 + ((span_index * 37 + level_index * 19) % 78)
+            bridge_w = 250 + ((span_index * 53) % 145)
+            bridge_col = (22, 37, 56, 175)
+            pygame.draw.line(layer, bridge_col, (bridge_x, bridge_y),
+                             (bridge_x + bridge_w, bridge_y - 9), 5)
+            pygame.draw.line(layer, (42, 61, 81, 135),
+                             (bridge_x, bridge_y - 5),
+                             (bridge_x + bridge_w, bridge_y - 14), 1)
+            for support_x in (bridge_x + 24, bridge_x + bridge_w - 22):
+                pygame.draw.line(layer, (19, 32, 50, 180),
+                                 (support_x, bridge_y), (support_x - 10, 470), 3)
+            if span_index % 2 == 0:
+                sign_x = bridge_x + bridge_w // 2
+                pygame.draw.rect(layer, (8, 18, 32, 190),
+                                 (sign_x - 30, bridge_y - 42, 60, 25), 2)
+                pygame.draw.line(layer, (*accent2, 85),
+                                 (sign_x - 20, bridge_y - 30),
+                                 (sign_x + 20, bridge_y - 30), 2)
 
         # Larger foreground factories with structural ribs, windows and pipework.
         tile_count = math.ceil(layer_width / tile_width) + 2
@@ -4554,6 +4610,16 @@ class Game:
         skyline_offset = int(self.camera_x * 0.10)
         skyline_index = self.level_index if background_level_index is None else background_level_index
         self.screen.blit(self.skyline_layers[skyline_index], (-skyline_offset, 0))
+
+        # Subtle drifting industrial haze adds life without heavy effects.
+        haze_phase = self.time * 8.0
+        haze_color = theme["accent"]
+        mist = (haze_color[0] // 5, haze_color[1] // 5, haze_color[2] // 5)
+        for band in range(3):
+            haze_y = 382 + band * 31 + int(math.sin(haze_phase * 0.22 + band) * 5)
+            haze_x = int((self.time * (10 + band * 5) + band * 270) % (WIDTH + 360)) - 180
+            pygame.draw.line(self.screen, mist, (haze_x, haze_y),
+                             (haze_x + 220, haze_y - 3), 2)
 
         # Horizon scan lines.
         for y in range(465, HEIGHT, 18):
