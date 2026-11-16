@@ -1829,17 +1829,26 @@ class Game:
             self.stars.append((rng.randrange(0, 5000), rng.randrange(20, 440),
                                rng.choice([0.08, 0.14, 0.22, 0.32]),
                                rng.randrange(1, 3), rng.random() * math.tau))
+        self.browser_save_key = "oxygen_savegame_v2"
+        self.browser_storage = None
+        self.browser_storage_error = None
         if sys.platform == "emscripten":
-            # Each browser profile gets its own persistent /data storage.
-            # Never copy the developer's bundled desktop save into a new browser:
-            # first-time visitors must start with a clean profile.
+            # Pygbag's documented browser persistence API. localStorage is
+            # isolated per browser profile and is synchronous, so coin pickups
+            # are committed before the frame continues.
+            try:
+                import platform as browser_platform
+                self.browser_storage = browser_platform.window.localStorage
+            except Exception as exc:
+                self.browser_storage_error = str(exc)
+            # Keep the previous file path only as a one-time migration source
+            # and as a fallback if localStorage is unavailable.
             self.save_path = Path("/data/savegame.json")
             try:
                 self.save_path.parent.mkdir(parents=True, exist_ok=True)
             except OSError:
                 pass
         else:
-            # Desktop builds continue using the local save beside main.py.
             self.save_path = Path(__file__).with_name("savegame.json")
         self.save_data = self.load_save_data()
         self.language = self.save_data.get("language", "en")
@@ -1930,6 +1939,10 @@ class Game:
         self.boss_fight_elapsed = 0.0
         self.boss_crystal_delay = random.uniform(25.0, 50.0)
         self.set_music_scene("menu")
+        if sys.platform == "emscripten":
+            # Create a clean per-browser save immediately on first launch and
+            # persist any successfully migrated legacy progress.
+            self.save_progress()
 
     def load_save_data(self) -> dict:
         defaults = {"coins": 0, "unlocked_levels": 1, "boss_cleared": False,
@@ -1949,12 +1962,49 @@ class Game:
                     "selected_character": "runner", "character_selected": False,
                     "filter_charge": 35, "filter_boost": False,
                     "collected_doublers": []}
+        def is_bundled_test_save(data: dict) -> bool:
+            # This exact profile was accidentally shipped to every new player
+            # in an older web archive. Do not migrate it into a fresh browser.
+            stats = data.get("stats", {})
+            return (
+                data.get("coins") == 194
+                and data.get("unlocked_levels") == 4
+                and data.get("collected_coins") and len(data["collected_coins"]) == 58
+                and data.get("completed_levels") == ["0", "1", "2"]
+                and data.get("last_level") == 3
+                and set(data.get("achievements", [])) == {
+                    "first_signal", "coin_archive", "first_blood",
+                    "coin_runner", "machine_breaker", "contract_runner"
+                }
+                and isinstance(stats, dict)
+                and stats.get("coins_collected") == 219
+                and stats.get("kills") == 44
+                and stats.get("deaths") == 13
+            )
+
         try:
-            if self.save_path.exists():
-                loaded = json.loads(self.save_path.read_text(encoding="utf-8"))
-                if isinstance(loaded, dict):
-                    defaults.update(loaded)
-        except (OSError, json.JSONDecodeError, TypeError):
+            loaded = None
+            if self.browser_storage is not None:
+                stored_text = self.browser_storage.getItem(self.browser_save_key)
+                if stored_text:
+                    candidate = json.loads(str(stored_text))
+                    if isinstance(candidate, dict):
+                        loaded = candidate
+
+            # One-time migration for a genuinely changed legacy browser save.
+            # The known 194-coin bundled test profile is deliberately ignored.
+            if loaded is None and self.save_path.exists():
+                candidate = json.loads(self.save_path.read_text(encoding="utf-8"))
+                if isinstance(candidate, dict) and (
+                    sys.platform != "emscripten" or not is_bundled_test_save(candidate)
+                ):
+                    loaded = candidate
+
+            if isinstance(loaded, dict):
+                defaults.update(loaded)
+        except Exception:
+            # A damaged/blocked browser save should never prevent the game
+            # from starting; the next successful save will create a clean file.
             pass
         def safe_int(value, fallback=0):
             try:
@@ -2036,10 +2086,16 @@ class Game:
         self.save_data["coins"] = int(self.total_coins)
         self.save_data["collected_coins"] = sorted(self.collected_coin_keys)
         try:
-            self.save_path.write_text(json.dumps(self.save_data, indent=2), encoding="utf-8")
-        except OSError:
-            self.menu_notice = "SAVE FAILED // CHECK FOLDER PERMISSIONS"
-            self.menu_notice_timer = 3.0
+            payload = json.dumps(self.save_data, ensure_ascii=False, separators=(",", ":"))
+            if sys.platform == "emscripten" and self.browser_storage is not None:
+                self.browser_storage.setItem(self.browser_save_key, payload)
+            else:
+                self.save_path.write_text(payload, encoding="utf-8")
+        except Exception:
+            self.menu_notice = "SAVE FAILED // BROWSER STORAGE UNAVAILABLE"
+            self.menu_notice_timer = 4.0
+            self.notice = self.menu_notice
+            self.notice_timer = 4.0
 
     def level_is_unlocked(self, index: int) -> bool:
         return index < int(self.save_data.get("unlocked_levels", 1))
@@ -2804,11 +2860,7 @@ class Game:
         if pending:
             self.total_coins += 5 * len(pending)
             self.save_data["achievement_rewards"] = sorted(paid.union(pending))
-            self.save_data["coins"] = self.total_coins
-            try:
-                self.save_path.write_text(json.dumps(self.save_data, indent=2), encoding="utf-8")
-            except OSError:
-                pass
+            self.save_progress()
 
     def unlock_achievement(self, achievement_id: str) -> None:
         unlocked = self.save_data["achievements"]
