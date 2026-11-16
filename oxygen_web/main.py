@@ -4520,6 +4520,99 @@ class Game:
                                  (sign_x - 20, bridge_y - 30),
                                  (sign_x + 20, bridge_y - 30), 2)
 
+        # Sector landmarks: oversized silhouettes with readable neon details.
+        # These are baked into the parallax layer, so they add depth without
+        # creating per-frame geometry or surfaces.
+        landmark_step = 820
+        for landmark_index, landmark_x in enumerate(range(250, layer_width + landmark_step, landmark_step)):
+            style = (level_index + landmark_index) % 4
+            landmark_w = 190 + (style * 17)
+            landmark_top = 82 + ((landmark_index * 29 + level_index * 17) % 68)
+            landmark_bottom = 476
+            landmark = pygame.Rect(landmark_x, landmark_top, landmark_w, landmark_bottom - landmark_top)
+            dark = (5, 10, 23, 248)
+            edge = (30, 48, 70, 235)
+            pygame.draw.rect(layer, dark, landmark)
+            pygame.draw.line(layer, edge, landmark.topleft, (landmark.right, landmark.top), 4)
+            pygame.draw.line(layer, edge, landmark.bottomleft, landmark.bottomright, 3)
+
+            # Each sector gets a different industrial landmark silhouette.
+            if style == 0:
+                # Needle-like communications tower with stepped shoulders.
+                pygame.draw.polygon(layer, dark, [
+                    (landmark_x + 48, landmark_top + 90),
+                    (landmark_x + 82, landmark_top + 22),
+                    (landmark_x + 108, landmark_top - 38),
+                    (landmark_x + 137, landmark_top + 22),
+                    (landmark_x + 174, landmark_top + 90),
+                ])
+                pygame.draw.line(layer, (*accent, 205),
+                                 (landmark_x + 108, landmark_top - 34),
+                                 (landmark_x + 108, landmark_bottom - 10), 3)
+                pygame.draw.line(layer, (*accent2, 145),
+                                 (landmark_x + 65, landmark_top + 87),
+                                 (landmark_x + 151, landmark_top + 87), 3)
+            elif style == 1:
+                # Heavy cooling plant with a wide crown and narrow waist.
+                pygame.draw.polygon(layer, (7, 14, 28, 250), [
+                    (landmark_x + 24, landmark_top + 10),
+                    (landmark_x + landmark_w - 24, landmark_top + 10),
+                    (landmark_x + landmark_w - 58, landmark_bottom - 8),
+                    (landmark_x + 58, landmark_bottom - 8),
+                ])
+                for band_y in range(landmark_top + 45, landmark_bottom - 15, 54):
+                    pygame.draw.line(layer, (*accent2, 105),
+                                     (landmark_x + 38, band_y),
+                                     (landmark_x + landmark_w - 38, band_y), 2)
+            elif style == 2:
+                # Giant industrial ring / portal frame.
+                ring = pygame.Rect(landmark_x + 24, landmark_top + 30,
+                                   landmark_w - 48, 185)
+                pygame.draw.arc(layer, (*accent2, 175), ring, 0.0, math.tau, 5)
+                pygame.draw.arc(layer, (*accent, 110),
+                                ring.inflate(-18, -18), 0.0, math.tau, 2)
+                pygame.draw.line(layer, edge, (landmark_x + 24, ring.centery),
+                                 (landmark_x + 24, landmark_bottom), 8)
+                pygame.draw.line(layer, edge, (landmark.right - 24, ring.centery),
+                                 (landmark.right - 24, landmark_bottom), 8)
+            else:
+                # Twin towers connected by a suspended transit bridge.
+                for tower_x in (landmark_x + 24, landmark_x + landmark_w - 67):
+                    pygame.draw.rect(layer, (7, 14, 28, 250),
+                                     (tower_x, landmark_top + 18, 43, landmark_bottom - landmark_top - 18))
+                    pygame.draw.line(layer, (*accent, 170),
+                                     (tower_x + 21, landmark_top + 20),
+                                     (tower_x + 21, landmark_bottom - 12), 2)
+                bridge_y = landmark_top + 145
+                pygame.draw.rect(layer, (17, 31, 49, 245),
+                                 (landmark_x + 61, bridge_y, landmark_w - 122, 18))
+                pygame.draw.line(layer, (*accent2, 185),
+                                 (landmark_x + 61, bridge_y),
+                                 (landmark.right - 61, bridge_y), 3)
+
+            # Stronger window grids and vertical light bars make the scale legible.
+            for wx in range(landmark_x + 17, landmark.right - 10, 22):
+                for wy in range(landmark_top + 28, landmark_bottom - 20, 31):
+                    if ((wx // 22) * 3 + (wy // 31) + level_index + landmark_index) % 5 == 0:
+                        pygame.draw.rect(layer, (*accent, 125),
+                                         (wx, wy, 5, 11), border_radius=1)
+            for strip_x in (landmark_x + 12, landmark.right - 14):
+                pygame.draw.line(layer, (*accent2, 155),
+                                 (strip_x, landmark_top + 18),
+                                 (strip_x, landmark_bottom - 12), 2)
+
+            # A large, unmistakable sector signal panel.
+            panel_y = landmark_top + 235
+            panel = pygame.Rect(landmark_x + 30, panel_y, landmark_w - 60, 34)
+            pygame.draw.rect(layer, (4, 12, 25, 245), panel)
+            pygame.draw.rect(layer, (*accent, 190), panel, 2)
+            pygame.draw.line(layer, (*accent2, 220),
+                             (panel.left + 9, panel.centery),
+                             (panel.right - 9, panel.centery), 3)
+            for dot_x in range(panel.left + 12, panel.right - 8, 18):
+                pygame.draw.circle(layer, (*accent2, 190),
+                                   (dot_x, panel.centery), 2)
+
         # Larger foreground factories with structural ribs, windows and pipework.
         tile_count = math.ceil(layer_width / tile_width) + 2
         for tile_index in range(-1, tile_count):
