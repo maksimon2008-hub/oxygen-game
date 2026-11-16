@@ -2302,7 +2302,8 @@ class Game:
 
     def update_music_scene(self, dt: float = 0.0) -> None:
         # Keep scene selection in the game loop, but never wait on a fade timer.
-        if self.mode == "playing":
+        # Pausing must freeze gameplay without changing the active level music.
+        if self.mode in ("playing", "paused"):
             if self.is_arena_mode:
                 scene = "arena"
             else:
