@@ -2239,7 +2239,7 @@ class Game:
         left, right = 430, 720
         return max(0.0, min(1.0, (x - left) / (right - left)))
 
-    def play_sfx(self, name: str) -> None
+    def play_sfx(self, name: str) -> None:
         if not self.music_enabled:
             return
         sound = self.sfx.get(name)
