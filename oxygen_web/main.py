@@ -1816,12 +1816,13 @@ class Game:
         # The skyline is pre-rendered once per sector. Windows are baked into
         # the buildings, so they can never flicker or drift independently.
         self.skyline_layers = [self.make_skyline(i) for i in range(len(LEVELS))]
-        self.font_xs = pygame.font.SysFont("consolas", 14, bold=True)
-        self.font_s = pygame.font.SysFont("consolas", 17, bold=True)
-        self.font_m = pygame.font.SysFont("consolas", 23, bold=True)
-        self.font_l = pygame.font.SysFont("consolas", 38, bold=True)
-        self.font_xl = pygame.font.SysFont("consolas", 70, bold=True)
-        self.font_title = pygame.font.SysFont("consolas", 84, bold=True)
+        # Arial has more balanced proportions and remains readable after browser scaling.
+        self.font_xs = pygame.font.SysFont("arial", 14, bold=True)
+        self.font_s = pygame.font.SysFont("arial", 17, bold=True)
+        self.font_m = pygame.font.SysFont("arial", 23, bold=True)
+        self.font_l = pygame.font.SysFont("arial", 38, bold=True)
+        self.font_xl = pygame.font.SysFont("arial", 70, bold=True)
+        self.font_title = pygame.font.SysFont("arial", 84, bold=True)
         self.stars = []
         rng = random.Random(167)
         for _ in range(100):
@@ -4120,8 +4121,9 @@ class Game:
         draw_text(self.screen, self.font_xs, language_label, CYAN, language_rect.center, center=True, shadow=False)
         title = self.font_title.render("OXYGEN", True, WHITE)
         rect = title.get_rect(center=(WIDTH // 2, 125))
+        # Keep a restrained one-pixel pink accent instead of a heavy doubled title.
         echo = self.font_title.render("OXYGEN", True, PINK)
-        self.screen.blit(echo, (rect.x + 4, rect.y + 2))
+        self.screen.blit(echo, (rect.x + 1, rect.y + 1))
         self.screen.blit(title, rect)
         draw_text(self.screen, self.font_s, "BREATHE. CLIMB. SURVIVE.",
                   MUTED, (WIDTH // 2, 188), center=True, shadow=False)
