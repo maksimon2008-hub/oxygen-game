@@ -1841,8 +1841,7 @@ class Game:
                 self.browser_storage = browser_platform.window.localStorage
             except Exception as exc:
                 self.browser_storage_error = str(exc)
-            # Keep the previous file path only as a one-time migration source
-            # and as a fallback if localStorage is unavailable.
+            # Keep the previous file path only as a one-time migration source.
             self.save_path = Path("/data/savegame.json")
             try:
                 self.save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2087,8 +2086,14 @@ class Game:
         self.save_data["collected_coins"] = sorted(self.collected_coin_keys)
         try:
             payload = json.dumps(self.save_data, ensure_ascii=False, separators=(",", ":"))
-            if sys.platform == "emscripten" and self.browser_storage is not None:
+            if sys.platform == "emscripten":
+                if self.browser_storage is None:
+                    raise RuntimeError("Browser localStorage is unavailable")
                 self.browser_storage.setItem(self.browser_save_key, payload)
+                # Verify the write immediately rather than silently claiming
+                # that progress was saved when browser storage rejected it.
+                if str(self.browser_storage.getItem(self.browser_save_key)) != payload:
+                    raise RuntimeError("Browser save verification failed")
             else:
                 self.save_path.write_text(payload, encoding="utf-8")
         except Exception:
