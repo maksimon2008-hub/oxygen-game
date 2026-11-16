@@ -75,7 +75,7 @@ async def custom_site():
         platform.window.infobox.innerText = msg
         platform.window.document.getElementById("status").innerText = "SYSTEM READY"
         platform.window.document.getElementById("loader-prompt").style.display = "inline-flex"
-        print("\n"*4, f"    * Waiting for media user engagement. {msg} *" , "\n"*4)
+        print("\\n"*4, f"    * Waiting for media user engagement. {msg} *" , "\\n"*4)
 
         while not platform.window.MM.UME:
             await asyncio.sleep(.1)
@@ -106,9 +106,6 @@ async def custom_site():
     shell.interactive()
 
 asyncio.run( custom_site() )
-
-
-
 
 
 
@@ -242,8 +239,8 @@ function show_infobox() {
             display: block !important;
             border: 0 !important;
             background: #070A19 !important;
-            width: min(96vw, 170.3226vh) !important;
-            height: min(96vh, 54.1091vw) !important;
+            width: min(92vw, 163.2258vh) !important;
+            height: min(92vh, 51.8045vw) !important;
             padding: 0 !important;
             margin: 0 !important;
             position: fixed !important;
