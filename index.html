@@ -337,6 +337,20 @@ function show_infobox() {
             gap: 14px;
             padding-bottom: 8px;
         }
+        #mobile-menu {
+            position: fixed;
+            top: max(14px, env(safe-area-inset-top));
+            right: max(18px, env(safe-area-inset-right));
+            width: 62px;
+            height: 62px;
+            font-size: 11px;
+            z-index: 2;
+        }
+        /* Keep the game surface from triggering browser gestures or double-tap zoom. */
+        html, body, #canvas, #canvas3d {
+            touch-action: none;
+            overscroll-behavior: none;
+        }
         .mobile-action:active { background: #9cff5755; }
 
         body {
@@ -409,11 +423,11 @@ function show_infobox() {
 
     <div id="rotate-hint">ПОВЕРНИТЕ ТЕЛЕФОН ГОРИЗОНТАЛЬНО<br><br>OXYGEN // LANDSCAPE MODE</div>
     <div id="mobile-controls" aria-label="Мобильное управление">
+        <button class="mobile-action" id="mobile-menu" type="button">MENU</button>
         <div id="mobile-stick" aria-label="Джойстик движения">
             <div id="mobile-stick-knob"></div>
         </div>
         <div id="mobile-buttons">
-            <button class="mobile-action" id="mobile-menu" type="button">MENU</button>
             <button class="mobile-action" id="mobile-fire" type="button">FIRE</button>
             <button class="mobile-action" id="mobile-jump" type="button">JUMP</button>
         </div>
@@ -501,6 +515,7 @@ frameborder="1"
 
         window.oxygen_touch_axis = 0;
         window.oxygen_touch_jump = false;
+        window.oxygen_touch_jump_held = false;
         window.oxygen_touch_fire = false;
         window.oxygen_touch_dash = false;
         window.oxygen_touch_menu = false;
@@ -546,8 +561,10 @@ frameborder="1"
             button.addEventListener("pointerdown", event => {
                 event.preventDefault();
                 if (key === "oxygen_touch_jump") {
-                    // Jump is a queued tap consumed once by Python.
+                    // Queue the tap and keep the held state for variable jump height.
                     window[key] = true;
+                    window.oxygen_touch_jump_held = true;
+                    button.setPointerCapture(event.pointerId);
                 } else {
                     button.setPointerCapture(event.pointerId);
                     if (button.getAttribute("data-action") === "dash") {
@@ -557,16 +574,22 @@ frameborder="1"
                     }
                 }
             });
-            if (key !== "oxygen_touch_jump") {
-                ["pointerup", "pointercancel", "lostpointercapture"].forEach(name =>
-                    button.addEventListener(name, () => {
+            ["pointerup", "pointercancel", "lostpointercapture"].forEach(name =>
+                button.addEventListener(name, () => {
+                    if (key === "oxygen_touch_jump") {
+                        window.oxygen_touch_jump_held = false;
+                    } else {
                         window.oxygen_touch_fire = false;
-                    })
-                );
-            }
+                    }
+                })
+            );
         }
         bindHold(jump, "oxygen_touch_jump");
         bindHold(fire, "oxygen_touch_fire");
+
+        // Extra protection for mobile Safari's gesture and double-tap zoom.
+        document.addEventListener("gesturestart", event => event.preventDefault(), { passive: false });
+        document.addEventListener("dblclick", event => event.preventDefault(), { passive: false });
 
         const prompt = document.getElementById("loader-prompt");
         if (prompt) prompt.addEventListener("click", () => {
