@@ -116,6 +116,35 @@ PINK = (255, 70, 150)
 YELLOW = (255, 218, 104)
 RED = (255, 76, 91)
 
+
+def make_synth_sfx(duration: float, start_freq: float, end_freq: float,
+                   volume: float = 0.35, waveform: str = "sine",
+                   noise: float = 0.0, seed: int = 167) -> pygame.mixer.Sound:
+    """Build a tiny synthesized SFX in memory (no extra asset downloads)."""
+    sample_rate = 22050
+    count = max(1, int(sample_rate * duration))
+    samples = array("h")
+    rng = random.Random(seed)
+    phase = 0.0
+    for i in range(count):
+        t = i / max(1, count - 1)
+        frequency = start_freq + (end_freq - start_freq) * t
+        phase += (2.0 * math.pi * frequency) / sample_rate
+        if waveform == "square":
+            tone = 1.0 if math.sin(phase) >= 0 else -1.0
+        elif waveform == "triangle":
+            tone = (2.0 / math.pi) * math.asin(math.sin(phase))
+        elif waveform == "saw":
+            tone = 2.0 * ((phase / (2.0 * math.pi)) % 1.0) - 1.0
+        else:
+            tone = math.sin(phase)
+        attack = min(1.0, i / max(1.0, sample_rate * 0.008))
+        release = min(1.0, (count - i) / max(1.0, sample_rate * 0.035))
+        envelope = attack * release
+        sample = (tone + rng.uniform(-1.0, 1.0) * noise) * volume * envelope
+        samples.append(int(max(-1.0, min(1.0, sample)) * 32767))
+    return pygame.mixer.Sound(buffer=samples.tobytes())
+
 THEMES = [
     {"accent": (62, 242, 224), "accent2": (255, 79, 161), "sky": (8, 17, 36)},
     {"accent": (174, 111, 255), "accent2": (63, 222, 255), "sky": (18, 11, 39)},
@@ -1922,6 +1951,7 @@ class Game:
         self._shake_offset = 0
         self.level_elapsed = 0.0
         self.level_deaths = 0
+        self.footstep_timer = 0.0
         self.level_coins = 0
         self.level_secrets = 0
         self.pending_next_level: int | None = None
@@ -1971,6 +2001,8 @@ class Game:
         self.music_root = self.audio_root / "music"
         self.sfx_root = self.audio_root / "sfx"
         self.sfx: dict[str, pygame.mixer.Sound] = {}
+        self.sfx_gains = {"checkpoint": 0.58, "kill": 0.48, "death": 0.58,
+                          "footstep": 0.13, "landing": 0.20, "jump": 0.16}
         self.boss_music: dict[str, pygame.mixer.Sound] = {}
         self.boss_music_channel = None
         self.active_boss_music: str | None = None
@@ -2236,6 +2268,23 @@ class Game:
                 except pygame.error:
                     pass
 
+        # These small synthesized cues keep the repository lightweight and
+        # avoid adding more streamed audio files to the browser build.
+        try:
+            generated = {
+                "checkpoint": make_synth_sfx(0.34, 620, 1040, 0.30, "sine", 0.015, 11),
+                "kill": make_synth_sfx(0.17, 520, 145, 0.28, "triangle", 0.10, 23),
+                "death": make_synth_sfx(0.43, 360, 58, 0.32, "saw", 0.16, 37),
+                "footstep": make_synth_sfx(0.055, 105, 62, 0.20, "sine", 0.28, 41),
+                "landing": make_synth_sfx(0.12, 115, 48, 0.26, "sine", 0.34, 53),
+                "jump": make_synth_sfx(0.11, 210, 390, 0.20, "sine", 0.015, 67),
+            }
+            for name, sound in generated.items():
+                self.sfx[name] = sound
+                sound.set_volume(self.sfx_volume * self.sfx_gains[name])
+        except (pygame.error, ValueError, OverflowError) as exc:
+            print(f"OXYGEN generated SFX unavailable: {exc}", file=sys.stderr)
+
     def apply_music_volume(self) -> None:
         if self.music_enabled:
             try:
@@ -2243,7 +2292,7 @@ class Game:
                 stream_volume = 0.0 if self.active_boss_music else self.music_track_volume
                 pygame.mixer.music.set_volume(stream_volume * self.music_volume)
                 if self.active_boss_music and self.boss_music_channel:
-                    self.boss_music_channel.set_volume(self.music_volume)
+                    self.boss_music_channel.set_volume(self.music_volume * 0.72)
             except Exception:
                 pass
 
@@ -2256,8 +2305,8 @@ class Game:
         elif name == "sfx":
             self.sfx_volume = value
             self.save_data["sfx_volume"] = value
-            for sound in self.sfx.values():
-                sound.set_volume(value)
+            for name, sound in self.sfx.items():
+                sound.set_volume(value * self.sfx_gains.get(name, 1.0))
         if save:
             self.save_progress()
 
@@ -2357,7 +2406,7 @@ class Game:
             if boss_key and boss_key in self.boss_music and self.boss_music_channel:
                 try:
                     self.boss_music_channel.play(self.boss_music[boss_key], loops=-1)
-                    self.boss_music_channel.set_volume(self.music_volume)
+                    self.boss_music_channel.set_volume(self.music_volume * 0.72)
                 except Exception as exc:
                     print(f"OXYGEN boss music playback failed ({boss_key}): {exc}", file=sys.stderr)
                     self.active_boss_music = None
@@ -3165,6 +3214,7 @@ class Game:
         if self.player.invuln > 0:
             return
         self.player.hp -= 1
+        self.play_sfx("death")
         self.level_deaths += 1
         self.save_data.setdefault("stats", {}).setdefault("deaths", 0)
         self.save_data["stats"]["deaths"] += 1
@@ -3821,7 +3871,17 @@ class Game:
         self.player.wall_mastery = bool(self.save_data["skills"].get("wall_mastery", False))
         previous_wall_jumps = self.player.wall_jump_count
         previous_jump_count = self.player.jump_count
+        previous_on_ground = self.player.on_ground
+        self.footstep_timer = max(0.0, self.footstep_timer - dt)
         self.player.update(dt, keys, self.level, self.particles)
+        if self.player.jump_count > previous_jump_count:
+            self.play_sfx("jump")
+        if not previous_on_ground and self.player.on_ground:
+            self.play_sfx("landing")
+        if (self.player.on_ground and abs(self.player.vx) > 115
+                and self.player.dash_time <= 0 and self.footstep_timer <= 0):
+            self.play_sfx("footstep")
+            self.footstep_timer = 0.34
         if (self.player.character_id == "jumper" and previous_jump_count >= 1
                 and self.player.jump_count > previous_jump_count):
             self.play_sfx("double_jump")
@@ -3894,6 +3954,7 @@ class Game:
                             enemy.alive = False
                             self.score += 350 if enemy_kind in ("seeker", "spider") else 250
                             self.register_enemy_kill(enemy_kind)
+                            self.play_sfx("kill")
                             self.make_burst(enemy.x, enemy.y, enemy_color, 20 if enemy_kind in ("seeker", "spider") else 18)
                         else:
                             self.make_burst(enemy.x, enemy.y, enemy_color, 6)
@@ -3970,6 +4031,7 @@ class Game:
                 self.notice = "CHECKPOINT // SAVED"
                 self.notice_timer = 1.8
                 self.make_burst(cp.x, cp.y - 45, THEMES[self.level_index]["accent"], 16)
+                self.play_sfx("checkpoint")
 
         # Hidden alcoves reward exploration and progress secret-room quests.
         for secret_i, secret in enumerate(self.level.secret_rooms):
@@ -4006,6 +4068,7 @@ class Game:
                     enemy.alive = False
                     self.score += 350 if is_seeker else 250
                     self.register_enemy_kill(enemy_kind)
+                    self.play_sfx("kill")
                     self.make_burst(enemy.x, enemy.y, enemy_color, 20 if is_seeker else 18)
                 else:
                     self.player.vx = -self.player.facing * 300
@@ -4023,6 +4086,7 @@ class Game:
                     enemy.alive = False
                     self.score += 300 if is_seeker else 200
                     self.register_enemy_kill(enemy_kind)
+                    self.play_sfx("kill")
                     self.make_burst(enemy.x, enemy.y, enemy_color, 18 if is_seeker else 16)
                 else:
                     self.make_burst(enemy.x, enemy.y, enemy_color, 7)
