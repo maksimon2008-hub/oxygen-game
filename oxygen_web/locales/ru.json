@@ -259,5 +259,11 @@
   "167 SIGNAL // ARCHIVE ACCESS GRANTED": "СИГНАЛ 167 // ДОСТУП К АРХИВУ ОТКРЫТ",
   "167 ARCHIVE // SIGNAL REQUIRED": "АРХИВ 167 // ТРЕБУЕТСЯ СИГНАЛ",
   "OPEN EXP TAPE DECK": "ОТКРЫТЬ МАГНИТОФОН EXP",
-  "ENTER ROOM 167": "ВОЙТИ В КОМНАТУ 167"
+  "ENTER ROOM 167": "ВОЙТИ В КОМНАТУ 167",
+  "MARA": "МАРА",
+  "SHELTER ELECTRICIAN": "ЭЛЕКТРИК УБЕЖИЩА",
+  "BRING BACK THE LIGHTS": "ВЕРНУТЬ СВЕТ",
+  "The backup grid is almost dead. Clear twelve machines and I can reroute power to the lamps.": "Резервная сеть почти села. Уничтожь двенадцать машин — и я перенаправлю питание на лампы.",
+  "E  //  TALK TO MARA": "E  //  ПОГОВОРИТЬ С МАРОЙ",
+  "E  //  TALK TO": "E  //  ПОГОВОРИТЬ С"
 }
