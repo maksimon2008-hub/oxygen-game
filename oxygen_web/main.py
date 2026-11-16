@@ -1795,11 +1795,11 @@ _BACKGROUND_WASH_CACHE: dict[tuple[tuple[int, int, int], tuple[int, int, int]], 
 
 class Game:
     def __init__(self):
-        # Browser audio needs a little more buffering than desktop audio.
-        # A larger WebAssembly mixer buffer helps prevent audible underruns
-        # when the game is rendering effects and several animated objects.
+        # Keep the browser mixer lightweight: mono at 22.05 kHz uses
+        # substantially less processing than 44.1 kHz stereo. A larger buffer
+        # gives the WebAssembly audio callback more room during busy frames.
         if sys.platform == "emscripten":
-            mixer_config = {"frequency": 44100, "size": -16, "channels": 2, "buffer": 2048}
+            mixer_config = {"frequency": 22050, "size": -16, "channels": 1, "buffer": 2048}
         else:
             mixer_config = {"frequency": 22050, "size": -16, "channels": 1, "buffer": 512}
         try:
