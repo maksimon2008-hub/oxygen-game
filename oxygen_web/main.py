@@ -2551,7 +2551,17 @@ class Game:
                 or (mouse_buttons and mouse_buttons[0])):
             self.fire_player_shot()
         previous_jump_count = self.player.jump_count
+        previous_on_ground = self.player.on_ground
+        self.footstep_timer = max(0.0, self.footstep_timer - dt)
         self.player.update(dt, keys, self.safehouse_world, self.particles)
+        if self.player.jump_count > previous_jump_count:
+            self.play_sfx("jump")
+        if not previous_on_ground and self.player.on_ground:
+            self.play_sfx("landing")
+        if (self.player.on_ground and abs(self.player.vx) > 115
+                and self.player.dash_time <= 0 and self.footstep_timer <= 0):
+            self.play_sfx("footstep")
+            self.footstep_timer = 0.34
         if (self.player.character_id == "jumper" and previous_jump_count >= 1
                 and self.player.jump_count > previous_jump_count):
             self.play_sfx("double_jump")
