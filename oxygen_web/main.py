@@ -235,6 +235,9 @@ QUESTS = [
     {"id": "drifter_secrets", "npc": "THE DRIFTER", "role": "TUNNEL RUNNER",
      "title": "OFF THE MAP", "metric": "secrets", "target": 3,
      "reward": 80, "brief": "Find three hidden rooms. I marked their echoes, not their doors."},
+    {"id": "restore_lights", "npc": "MARA", "role": "SHELTER ELECTRICIAN",
+     "title": "BRING BACK THE LIGHTS", "metric": "kills", "target": 12,
+     "reward": 55, "brief": "The backup grid is almost dead. Clear twelve machines and I can reroute power to the lamps."},
 ]
 
 
@@ -2006,7 +2009,7 @@ class Game:
         self.personnel_open = False
         self.mods_return_mode = "safehouse"
         # Only the three actual quest-givers appear in the shelter.
-        self.hub_npc_positions = (270, 770, 900)
+        self.hub_npc_positions = (270, 770, 900, 490)
         self.hub_armory_x = 1015
         self.hub_gate_x = 85
         self.safehouse_world = SafehouseWorld()
@@ -2077,7 +2080,8 @@ class Game:
                     "filter_charge": 35, "filter_boost": False,
                     "collected_doublers": [], "collected_cassettes": [],
                     "postgame_event_pending": False, "postgame_event_seen": False,
-                    "secret_167_unlocked": False, "music_volume": 0.75,
+                    "secret_167_unlocked": False, "safehouse_lighting_upgraded": False,
+                    "music_volume": 0.75,
                     "sfx_volume": 0.75}
         def is_bundled_test_save(data: dict) -> bool:
             # This exact profile was accidentally shipped to every new player
@@ -2181,6 +2185,9 @@ class Game:
         defaults["postgame_event_seen"] = bool(defaults.get("postgame_event_seen", False))
         defaults["secret_167_unlocked"] = bool(
             defaults.get("secret_167_unlocked", False) or defaults["postgame_event_seen"])
+        defaults["safehouse_lighting_upgraded"] = bool(
+            defaults.get("safehouse_lighting_upgraded", False)
+            or "restore_lights" in defaults.get("quest_claimed", []))
         defaults["collected_cassettes"] = sorted(
             {str(value) for value in defaults["collected_cassettes"]
              if str(value).isdigit() and 0 <= int(value) < len(LEVELS)},
@@ -2401,12 +2408,18 @@ class Game:
             "campaign_06_09": "sectors_06_09.ogg",
             "boss_10": "boss_sector_10.ogg",
             "ending": "main_menu.ogg",
+            "signal_167": "167_signal.ogg",
         }
         filename = tracks.get(scene)
         if not filename:
             return
         path = self.music_root / filename
-        volume = 0.22 if scene.startswith("boss") else 0.17
+        if scene == "signal_167" and not path.exists():
+            # Until the user's custom track is uploaded, keep the normal refuge ambience.
+            scene = "hub"
+            filename = tracks[scene]
+            path = self.music_root / filename
+        volume = 0.20 if scene == "signal_167" else (0.22 if scene.startswith("boss") else 0.17)
         self.music_track_volume = volume
         self.music_scene = scene
         self.music_transition_target = None
@@ -2437,7 +2450,8 @@ class Game:
                 scene = "campaign_01_05" if self.level_index <= 4 else "campaign_06_09"
         elif self.mode in ("safehouse", "safehouse_dialog", "ability_mods",
                            "cassette_deck", "secret_room_167"):
-            scene = "hub"
+            scene = ("signal_167" if self.save_data.get("postgame_event_seen", False)
+                     else "hub")
         elif self.mode == "victory":
             scene = "ending"
         else:
@@ -2552,6 +2566,8 @@ class Game:
             return ("secret_167" if self.save_data.get("secret_167_unlocked", False)
                     else "locked_167", 0)
         for i, npc_x in enumerate(self.hub_npc_positions):
+            if i == 3 and len(set(self.save_data.get("completed_levels", []))) < 3:
+                continue
             if abs(px - npc_x) < 72 and self.player.y > 400:
                 return ("npc", i)
         if abs(px - self.hub_armory_x) < 76 and self.player.y > 390:
@@ -2630,6 +2646,8 @@ class Game:
             self.grant_coins(quest["reward"], reason="CONTRACT REWARD")
             claimed.append(quest_id)
             active.remove(quest_id)
+            if quest_id == "restore_lights":
+                self.save_data["safehouse_lighting_upgraded"] = True
             self.save_data.setdefault("stats", {})["contracts_completed"] = len(claimed)
             self.save_progress()
             self.unlock_achievement("contract_runner")
@@ -3767,6 +3785,8 @@ class Game:
                     self.interact_safehouse()
                     return
                 for i, npc_x in enumerate(self.hub_npc_positions):
+                    if i == 3 and len(set(self.save_data.get("completed_levels", []))) < 3:
+                        continue
                     if pygame.Rect(npc_x - 58, 365, 116, 145).collidepoint(mouse_pos):
                         self.player.x = float(npc_x - self.player.w / 2)
                         self.player.y = 457.0
@@ -4911,6 +4931,17 @@ class Game:
             pygame.draw.circle(self.screen, color, (x+6,y-66), 3)
             pygame.draw.rect(self.screen, (232, 166, 74), (x-14,y-17,28,7), border_radius=2)
             pygame.draw.line(self.screen, (222, 233, 233), (x+12,y-26), (x+23,y-42), 3)
+        elif name == "MARA":  # electrician: insulated coat and a glowing power tool
+            pygame.draw.rect(self.screen, (42, 57, 55), (x - 18, y - 52, 36, 47), border_radius=8)
+            pygame.draw.polygon(self.screen, (70, 91, 77),
+                                [(x - 18, y - 43), (x - 27, y - 8), (x - 13, y - 5), (x - 7, y - 34)])
+            pygame.draw.polygon(self.screen, (70, 91, 77),
+                                [(x + 18, y - 43), (x + 27, y - 8), (x + 13, y - 5), (x + 7, y - 34)])
+            pygame.draw.circle(self.screen, (190, 153, 119), (x, y - 66), 15)
+            pygame.draw.rect(self.screen, (17, 27, 34), (x - 14, y - 72, 28, 8), border_radius=3)
+            pygame.draw.line(self.screen, color, (x - 10, y - 66), (x + 10, y - 66), 3)
+            pygame.draw.rect(self.screen, (35, 47, 49), (x + 17, y - 29, 12, 22), border_radius=3)
+            pygame.draw.circle(self.screen, color, (x + 23, y - 32), 4)
         elif name == "NOX":  # quartermaster: hood, mask and supply harness
             pygame.draw.polygon(self.screen, (35, 36, 70), [(x-24,y-43),(x-17,y-73),(x,y-84),(x+18,y-72),(x+24,y-43),(x+18,y-6),(x-18,y-6)])
             pygame.draw.circle(self.screen, (161, 132, 116), (x, y-65), 14)
@@ -4978,13 +5009,21 @@ class Game:
         self.draw_hub_npc(self.hub_npc_positions[0], 500, (85, 231, 210), "RHEA", "ENGINEER")
         self.draw_hub_npc(self.hub_npc_positions[1], 500, (176, 132, 255), "NOX", "SUPPLY KEEPER")
         self.draw_hub_npc(self.hub_npc_positions[2], 500, (255, 170, 91), "DRIFTER", "SCOUT")
+        if len(set(self.save_data.get("completed_levels", []))) >= 3:
+            self.draw_hub_npc(self.hub_npc_positions[3], 500, (255, 220, 126),
+                              "MARA", "ELECTRICIAN")
         # Overhead power conduit and three soft-flickering utility lamps.
         pygame.draw.line(self.screen, (28, 66, 89), (72, 144), (1028, 144), 5)
         pygame.draw.line(self.screen, (65, 111, 129), (72, 149), (1028, 149), 1)
-        for lamp_index, lamp_x in enumerate((185, 735, 930)):
+        lights_restored = self.save_data.get("safehouse_lighting_upgraded", False)
+        lamp_positions = (185, 735, 930, 500, 845) if lights_restored else (185, 735, 930)
+        for lamp_index, lamp_x in enumerate(lamp_positions):
             pulse = 0.72 + 0.28 * math.sin(self.time * 1.7 + lamp_index * 1.9)
-            lamp_color = (int(66 + 38 * pulse), int(148 + 70 * pulse), int(166 + 60 * pulse))
-            draw_glow(self.screen, lamp_x, 168, lamp_color, int(18 + 9 * pulse))
+            brightness = 1.28 if lights_restored else 1.0
+            lamp_color = (min(255, int((66 + 38 * pulse) * brightness)),
+                          min(255, int((148 + 70 * pulse) * brightness)),
+                          min(255, int((166 + 60 * pulse) * brightness)))
+            draw_glow(self.screen, lamp_x, 168, lamp_color, int((18 + 9 * pulse) * brightness))
             pygame.draw.line(self.screen, (62, 93, 112), (lamp_x, 145), (lamp_x, 158), 3)
             pygame.draw.rect(self.screen, (28, 59, 75), (lamp_x - 10, 157, 20, 8), border_radius=3)
             pygame.draw.circle(self.screen, lamp_color, (lamp_x, 166), 4)
