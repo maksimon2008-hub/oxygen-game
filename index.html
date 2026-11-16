@@ -503,7 +503,9 @@ frameborder="1"
         window.oxygen_touch_jump = false;
         window.oxygen_touch_fire = false;
         window.oxygen_touch_menu = false;
-        menu.addEventListener("click", event => {
+        // Queue taps instead of relying on a short click/hold that the
+        // Python game loop could miss on a high-latency mobile frame.
+        menu.addEventListener("pointerdown", event => {
             event.preventDefault();
             window.oxygen_touch_menu = true;
         });
@@ -540,15 +542,21 @@ frameborder="1"
         stick.addEventListener("pointercancel", releaseStick);
 
         function bindHold(button, key) {
-            const set = value => { window[key] = value; };
             button.addEventListener("pointerdown", event => {
                 event.preventDefault();
-                button.setPointerCapture(event.pointerId);
-                set(true);
+                if (key === "oxygen_touch_jump") {
+                    // Jump is a queued tap consumed once by Python.
+                    window[key] = true;
+                } else {
+                    button.setPointerCapture(event.pointerId);
+                    window[key] = true;
+                }
             });
-            ["pointerup", "pointercancel", "lostpointercapture"].forEach(name =>
-                button.addEventListener(name, () => set(false))
-            );
+            if (key !== "oxygen_touch_jump") {
+                ["pointerup", "pointercancel", "lostpointercapture"].forEach(name =>
+                    button.addEventListener(name, () => { window[key] = false; })
+                );
+            }
         }
         bindHold(jump, "oxygen_touch_jump");
         bindHold(fire, "oxygen_touch_fire");
