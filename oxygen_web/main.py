@@ -296,16 +296,26 @@ class MovingPlatform:
     delta_x: float = 0.0
     delta_y: float = 0.0
 
+    prev_x: float = 0.0
+    prev_y: float = 0.0
+
     def __post_init__(self) -> None:
         self.origin_x = float(self.x)
         self.origin_y = float(self.y)
+        self.prev_x = float(self.x)
+        self.prev_y = float(self.y)
 
     @property
     def rect(self) -> pygame.Rect:
         return pygame.Rect(round(self.x), round(self.y), self.w, self.h)
 
+    @property
+    def previous_rect(self) -> pygame.Rect:
+        return pygame.Rect(round(self.prev_x), round(self.prev_y), self.w, self.h)
+
     def update(self, elapsed: float) -> None:
         old_x, old_y = self.x, self.y
+        self.prev_x, self.prev_y = old_x, old_y
         offset = math.sin(elapsed * self.speed + self.phase) * self.travel
         if self.axis == "vertical":
             self.x, self.y = self.origin_x, self.origin_y + offset
@@ -4347,12 +4357,15 @@ class Game:
             self.fire_player_shot()
         riding = None
         player_rect_before = self.player.rect
-        if self.player.on_ground:
+        # Detect support from the feet rather than trusting only on_ground:
+        # tiny rounding gaps used to make the player stop being carried for a frame.
+        if self.player.vy >= -45.0:
             for moving in self.level.moving_platforms:
                 moving_rect = moving.rect
-                if (abs(player_rect_before.bottom - moving_rect.top) <= 4
-                        and player_rect_before.right > moving_rect.left + 3
-                        and player_rect_before.left < moving_rect.right - 3):
+                foot_gap = player_rect_before.bottom - moving_rect.top
+                horizontal_overlap = (player_rect_before.right > moving_rect.left + 2
+                                      and player_rect_before.left < moving_rect.right - 2)
+                if -7 <= foot_gap <= 7 and horizontal_overlap:
                     riding = moving
                     break
         self.level.update(dt, self.player.x + self.player.w / 2, self.player.y + self.player.h / 2)
@@ -5157,65 +5170,152 @@ class Game:
                                      (sx - 4, sy), (sx + 4, sy - 2), 1)
             return
 
-        # Sector 09: exposed transmission yard beneath an electrical storm.
+        # Sector 09: a huge open relay field. Every span has a different
+        # silhouette: lattice masts, parabolic dishes, phased-array rings and
+        # low transformer yards beneath a violent electrical storm.
         if self.level_index == 8:
             first = int((self.camera_x * 0.38) // 690) - 1
             last = int((self.camera_x * 0.38 + WIDTH) // 690) + 2
             for segment in range(first, last):
                 world_x = segment * 690 + 300
                 sx = int(world_x - self.camera_x * 0.38)
-                height = 190 + (segment % 4) * 48
-                # Lattice transmission mast with crossarms and guy wires.
-                mast_top = 430 - height
-                pygame.draw.line(self.screen, (28, 48, 69), (sx, mast_top), (sx, 455), 5)
-                pygame.draw.line(self.screen, (53, 91, 119), (sx - 2, mast_top), (sx - 2, 455), 1)
-                for arm_y in (mast_top + 42, mast_top + 104, mast_top + 166):
-                    if arm_y < 440:
-                        pygame.draw.line(self.screen, (35, 67, 91),
-                                         (sx - 58, arm_y), (sx + 58, arm_y), 4)
+                height = 205 + (segment % 4) * 43
+                mast_top = 438 - height
+                variant = segment % 4
+
+                # Main transmission tower: asymmetrical lattice legs and
+                # crossarms make the skyline feel engineered, not tiled.
+                left_leg, right_leg = sx - 34, sx + 34
+                pygame.draw.line(self.screen, (18, 37, 57),
+                                 (left_leg, 440), (sx - 7, mast_top), 6)
+                pygame.draw.line(self.screen, (24, 47, 68),
+                                 (right_leg, 440), (sx + 7, mast_top), 6)
+                pygame.draw.line(self.screen, (62, 101, 127),
+                                 (sx - 2, mast_top + 5), (sx - 2, 430), 2)
+                for arm_index, arm_y in enumerate((mast_top + 45, mast_top + 112, mast_top + 178)):
+                    if arm_y < 430:
+                        arm_w = 74 + arm_index * 12
+                        pygame.draw.line(self.screen, (28, 57, 79),
+                                         (sx - arm_w, arm_y), (sx + arm_w, arm_y), 5)
+                        pygame.draw.line(self.screen, (55, 94, 119),
+                                         (sx - arm_w + 5, arm_y - 3), (sx + arm_w - 5, arm_y - 3), 1)
                         for side in (-1, 1):
-                            pygame.draw.circle(self.screen, (64, 135, 164),
-                                               (sx + side * 55, arm_y - 5), 3)
+                            pygame.draw.circle(self.screen, (76, 154, 184),
+                                               (sx + side * (arm_w - 4), arm_y - 5), 3)
                 for side in (-1, 1):
-                    pygame.draw.line(self.screen, (29, 54, 76),
-                                     (sx, mast_top + 12), (sx + side * 112, 455), 2)
-                # Broad transmitter dish, tilted toward the storm ceiling.
-                dish_x = sx + 128
-                dish_y = 265 + (segment % 3) * 42
-                pygame.draw.ellipse(self.screen, (18, 39, 60),
-                                    (dish_x - 48, dish_y - 27, 96, 54), 3)
-                pygame.draw.arc(self.screen, (65, 126, 157),
-                                (dish_x - 43, dish_y - 23, 86, 46), 0.2, 3.0, 2)
-                pygame.draw.line(self.screen, (44, 83, 111),
-                                 (dish_x, dish_y + 18), (dish_x - 12, dish_y + 92), 3)
-                # Signal beacon on a separate short tower.
-                beacon_x = sx - 145
-                pygame.draw.line(self.screen, (31, 57, 77),
-                                 (beacon_x, 210), (beacon_x, 455), 3)
-                pygame.draw.circle(self.screen, (65, 171, 202),
-                                   (beacon_x, 212 + int(math.sin(self.time * 2 + segment) * 4)), 5)
-                # Cable runs between relay structures.
-                pygame.draw.line(self.screen, (25, 48, 68),
-                                 (sx + 180, 320), (sx + 570, 350), 2)
-                pygame.draw.line(self.screen, (44, 79, 104),
-                                 (sx + 180, 324), (sx + 570, 354), 1)
-            # Heavy storm cloud bands drift independently of the camera.
-            for cloud in range(5):
-                cx = int((cloud * 310 - self.camera_x * 0.19 + self.time * (7 + cloud)) % (WIDTH + 420)) - 210
-                cy = 70 + cloud * 27
-                pygame.draw.ellipse(self.screen, (13, 25, 43),
-                                    (cx - 105, cy - 18, 230, 48))
-                pygame.draw.ellipse(self.screen, (24, 43, 64),
-                                    (cx - 72, cy - 27, 165, 39), 2)
-            # Occasional distant lightning forks, purely atmospheric.
-            flash = (math.sin(self.time * 1.7 + 1.2) > 0.992)
-            if flash:
-                for bolt in range(2):
-                    bx = int((bolt * 390 + 170 - self.camera_x * 0.22) % (WIDTH + 100)) - 50
-                    by = 88 + bolt * 34
-                    points = [(bx, by), (bx - 13, by + 28), (bx + 5, by + 47),
-                              (bx - 17, by + 78)]
-                    pygame.draw.lines(self.screen, (83, 169, 205), False, points, 2)
+                    pygame.draw.line(self.screen, (24, 48, 68),
+                                     (sx, mast_top + 16), (sx + side * 150, 438), 2)
+                    pygame.draw.line(self.screen, (35, 64, 83),
+                                     (sx + side * 34, 300), (sx - side * 58, 438), 2)
+
+                # Rotate the large silhouette by section: radar dish, phased
+                # array, hanging antenna cage, or a second needle mast.
+                if variant == 0:
+                    dish_x, dish_y = sx + 150, 250 + (segment % 3) * 34
+                    pygame.draw.ellipse(self.screen, (13, 30, 48),
+                                        (dish_x - 66, dish_y - 38, 132, 76))
+                    pygame.draw.ellipse(self.screen, (63, 117, 145),
+                                        (dish_x - 60, dish_y - 34, 120, 68), 3)
+                    pygame.draw.arc(self.screen, (95, 159, 184),
+                                    (dish_x - 52, dish_y - 29, 104, 58), 0.25, 2.95, 2)
+                    pygame.draw.line(self.screen, (42, 82, 108),
+                                     (dish_x, dish_y + 30), (dish_x - 26, 438), 5)
+                    pygame.draw.circle(self.screen, (86, 177, 203), (dish_x, dish_y), 4)
+                elif variant == 1:
+                    ring_x, ring_y = sx + 145, 245
+                    pygame.draw.ellipse(self.screen, (11, 25, 42),
+                                        (ring_x - 58, ring_y - 74, 116, 148))
+                    pygame.draw.ellipse(self.screen, (49, 94, 122),
+                                        (ring_x - 52, ring_y - 68, 104, 136), 4)
+                    pygame.draw.ellipse(self.screen, (79, 144, 171),
+                                        (ring_x - 31, ring_y - 49, 62, 98), 2)
+                    for spoke in range(7):
+                        sy = ring_y - 55 + spoke * 18
+                        pygame.draw.line(self.screen, (36, 73, 99),
+                                         (ring_x - 48, sy), (ring_x + 48, sy + 7), 2)
+                    pygame.draw.circle(self.screen, (88, 174, 199),
+                                       (ring_x, ring_y), 5)
+                elif variant == 2:
+                    cage_x = sx + 142
+                    pygame.draw.line(self.screen, (24, 52, 72),
+                                     (cage_x - 45, 130), (cage_x + 45, 130), 4)
+                    pygame.draw.line(self.screen, (24, 52, 72),
+                                     (cage_x - 45, 130), (cage_x - 24, 375), 3)
+                    pygame.draw.line(self.screen, (24, 52, 72),
+                                     (cage_x + 45, 130), (cage_x + 24, 375), 3)
+                    for band_y in (180, 245, 310, 375):
+                        pygame.draw.line(self.screen, (49, 91, 117),
+                                         (cage_x - 39, band_y), (cage_x + 39, band_y), 2)
+                    pygame.draw.circle(self.screen, (77, 154, 186),
+                                       (cage_x, 245), 10, 2)
+                else:
+                    needle_x = sx + 145
+                    pygame.draw.line(self.screen, (20, 42, 62),
+                                     (needle_x, 438), (needle_x + 12, 105), 5)
+                    pygame.draw.line(self.screen, (61, 111, 139),
+                                     (needle_x + 12, 105), (needle_x + 12, 438), 1)
+                    for n in range(5):
+                        ny = 165 + n * 48
+                        pygame.draw.line(self.screen, (36, 73, 96),
+                                         (needle_x - 32, ny), (needle_x + 44, ny + 5), 3)
+                    pygame.draw.circle(self.screen, (93, 187, 211),
+                                       (needle_x + 12, 105), 5)
+
+                # Transformer banks and cable gantries anchor the towers to
+                # the ground and add readable foreground depth.
+                yard_x = sx - 205
+                for cabinet in range(3):
+                    cx = yard_x + cabinet * 52
+                    cy = 405 + (cabinet % 2) * 8
+                    pygame.draw.rect(self.screen, (9, 22, 37), (cx, cy, 39, 54), border_radius=3)
+                    pygame.draw.rect(self.screen, (37, 72, 94), (cx, cy, 39, 54), 2, border_radius=3)
+                    for vent in range(4):
+                        pygame.draw.line(self.screen, (45, 83, 103),
+                                         (cx + 7, cy + 12 + vent * 8),
+                                         (cx + 31, cy + 12 + vent * 8), 1)
+                    lamp = (79, 174, 197) if (cabinet + segment) % 3 else (177, 89, 79)
+                    pygame.draw.circle(self.screen, lamp, (cx + 31, cy + 8), 2)
+
+                # Long sagging high-voltage cables link this tower to the next.
+                for cable in range(3):
+                    y1 = 170 + cable * 48 + (segment % 2) * 12
+                    y2 = 190 + cable * 43 - (segment % 3) * 8
+                    pygame.draw.lines(self.screen, (20, 42, 61), False,
+                                      [(sx + 75, y1), (sx + 210, y1 + 24),
+                                       (sx + 365, y2 + 18), (sx + 565, y2)], 2)
+                    pygame.draw.circle(self.screen, (48, 87, 111),
+                                       (sx + 365, y2 + 18), 3)
+
+                # Red aviation lamps blink faintly through the rain.
+                lamp_y = max(75, mast_top - 12)
+                lamp_color = (112, 44, 56) if int(self.time * 1.5 + segment) % 3 else (49, 31, 43)
+                pygame.draw.circle(self.screen, lamp_color, (sx, lamp_y), 5)
+                pygame.draw.circle(self.screen, (75, 42, 56), (sx, lamp_y), 13, 1)
+
+            # Layered storm banks drift at different speeds for depth.
+            for cloud in range(7):
+                cx = int((cloud * 255 - self.camera_x * (0.14 + cloud * 0.008)
+                          + self.time * (5 + cloud * 1.8)) % (WIDTH + 500)) - 250
+                cy = 54 + (cloud * 37) % 125
+                pygame.draw.ellipse(self.screen, (9, 19, 34),
+                                    (cx - 130, cy - 20, 270, 54))
+                pygame.draw.ellipse(self.screen, (20, 38, 57),
+                                    (cx - 92, cy - 30, 190, 46), 2)
+
+            # Distant lightning flashes illuminate only fragments of the yard.
+            storm_phase = (self.time * 0.73) % 8.0
+            if storm_phase > 7.72:
+                flash_alpha = int(55 * (1.0 - (storm_phase - 7.72) / 0.28))
+                flash_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+                flash_surface.fill((83, 139, 174, max(0, flash_alpha)))
+                self.screen.blit(flash_surface, (0, 0))
+                for bolt in range(3):
+                    bx = int((bolt * 355 + 120 - self.camera_x * 0.22) % (WIDTH + 180)) - 90
+                    by = 72 + bolt * 23
+                    points = [(bx, by), (bx - 17, by + 34), (bx + 7, by + 55),
+                              (bx - 20, by + 91), (bx + 4, by + 116)]
+                    pygame.draw.lines(self.screen, (125, 198, 225), False, points, 3)
+                    pygame.draw.lines(self.screen, (48, 95, 128), False, points, 7)
             return
 
         # Sector 10: the dead reactor complex. Massive containment rings,
