@@ -4979,8 +4979,68 @@ class Game:
     def draw_level_environment(self, theme) -> None:
         accent = theme["accent"]
         muted = (33, 51, 72)
-        # Overhead conduits and braces create a continuous industrial space
-        # behind the playable geometry.
+
+        # Sector 07 abandons the industrial ceiling entirely. It is an
+        # overgrown bio-dome: hanging roots, enormous trunks and suspended
+        # greenhouse ribs create a silhouette unlike the other sectors.
+        if self.level_index == 6:
+            first = int((self.camera_x * 0.43) // 620) - 1
+            last = int((self.camera_x * 0.43 + WIDTH) // 620) + 2
+            for segment in range(first, last):
+                world_x = segment * 620 + 300
+                sx = int(world_x - self.camera_x * 0.43)
+                crown_y = 112 + (segment % 3) * 17
+                # Curved greenhouse ribs and their hanging support cables.
+                pygame.draw.arc(self.screen, (25, 67, 65),
+                                (sx - 250, crown_y - 112, 500, 270),
+                                math.pi, math.tau, 5)
+                pygame.draw.arc(self.screen, (48, 102, 86),
+                                (sx - 224, crown_y - 94, 448, 236),
+                                math.pi, math.tau, 2)
+                for offset in (-178, -92, 92, 178):
+                    pygame.draw.line(self.screen, (28, 66, 61),
+                                     (sx + offset, crown_y - 18),
+                                     (sx + offset + (offset // 18), 360), 2)
+                # Massive root columns descend from the canopy into the haze.
+                trunk_w = 42 + (segment % 3) * 12
+                trunk_x = sx + ((segment * 37) % 110) - 55
+                pygame.draw.polygon(self.screen, (17, 48, 46),
+                                    [(trunk_x - trunk_w, 0), (trunk_x + trunk_w, 0),
+                                     (trunk_x + trunk_w // 2, 330),
+                                     (trunk_x + 12, 420), (trunk_x - 18, 420),
+                                     (trunk_x - trunk_w // 2, 300)])
+                pygame.draw.line(self.screen, (42, 100, 77),
+                                 (trunk_x - 5, 18), (trunk_x + 7, 315), 3)
+                # Bioluminescent leaf clusters break up the dark canopy.
+                for leaf_i in range(7):
+                    lx = sx + ((leaf_i * 73 + segment * 29) % 390) - 195
+                    ly = 95 + ((leaf_i * 31 + segment * 17) % 145)
+                    leaf_color = ((35, 104, 78) if leaf_i % 2
+                                  else (49, 129, 91))
+                    pygame.draw.ellipse(self.screen, leaf_color,
+                                        (lx - 13, ly - 5, 26, 10))
+                    pygame.draw.line(self.screen, (76, 163, 111),
+                                     (lx - 8, ly), (lx + 9, ly - 1), 1)
+                # Hanging seed pods, lit from within.
+                pod_x = sx + 205
+                pod_y = 235 + (segment % 2) * 42
+                pygame.draw.line(self.screen, (48, 96, 77),
+                                 (pod_x, 90), (pod_x, pod_y - 13), 2)
+                pygame.draw.ellipse(self.screen, (20, 65, 58),
+                                    (pod_x - 13, pod_y - 15, 26, 34))
+                pygame.draw.ellipse(self.screen, (84, 194, 130),
+                                    (pod_x - 4, pod_y - 7, 8, 15))
+            # Low drifting spores, deliberately sparse for browser performance.
+            for i in range(13):
+                wx = i * 430 + 95
+                sx = int(wx - self.camera_x * 0.68)
+                if -12 < sx < WIDTH + 12:
+                    sy = 180 + (i * 47) % 235 + int(math.sin(self.time * 1.1 + i) * 7)
+                    pygame.draw.circle(self.screen, (91, 183, 126), (sx, sy), 2)
+                    pygame.draw.circle(self.screen, (52, 116, 91), (sx, sy), 5, 1)
+            return
+
+        # Industrial overhead conduits and braces for the other sectors.
         first = int((self.camera_x * 0.72) // 420) - 1
         last = int((self.camera_x * 0.72 + WIDTH) // 420) + 2
         for segment in range(first, last):
@@ -5152,6 +5212,24 @@ class Game:
 
         for platform in self.level.platforms:
             draw_platform(self.screen, platform, self.camera_x, accent)
+            if self.level_index == 6 and platform.h <= 24:
+                # Living roots wrap the undersides of the garden's floating
+                # walkways; small leaf fans make the platforms read as grown,
+                # not as another set of metal slabs.
+                px = int(platform.x - self.camera_x)
+                py = int(platform.y)
+                if -platform.w < px < WIDTH:
+                    pygame.draw.line(self.screen, (42, 112, 79),
+                                     (px + 12, py + platform.h),
+                                     (px + 25, py + platform.h + 13), 3)
+                    pygame.draw.line(self.screen, (42, 112, 79),
+                                     (px + platform.w - 14, py + platform.h),
+                                     (px + platform.w - 27, py + platform.h + 12), 3)
+                    for leaf_x in (px + 18, px + platform.w - 18):
+                        pygame.draw.ellipse(self.screen, (62, 163, 104),
+                                            (leaf_x - 7, py - 8, 14, 7))
+                        pygame.draw.ellipse(self.screen, (38, 113, 82),
+                                            (leaf_x - 5, py + 4, 11, 6))
         for pad in self.level.launch_pads:
             px = int(pad.x - self.camera_x)
             if -pad.w < px < WIDTH:
