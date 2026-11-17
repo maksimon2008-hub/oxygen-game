@@ -2574,6 +2574,13 @@ class Game:
         self.menu_notice_timer = 0.0
         self._scaled_frame: pygame.Surface | None = None
         self._scaled_size: tuple[int, int] | None = None
+        # Reuse full-screen overlays so boss/radio transitions never allocate
+        # a fresh 1080x620 surface every rendered frame.
+        self.boss_intro_overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        self.boss_intro_overlay.fill((1, 3, 12, 255))
+        self.radio_overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        self.radio_overlay.fill((1, 5, 15, 255))
+        self.radio_overlay.set_alpha(176)
         self._shake_offset = 0
         self.level_elapsed = 0.0
         self.level_deaths = 0
@@ -6637,9 +6644,8 @@ class Game:
         fade = min(1.0, self.boss_intro_timer / 0.32)
         alpha = max(0, min(190, int(174 * fade)))
         if alpha:
-            veil = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-            veil.fill((1, 3, 12, alpha))
-            self.screen.blit(veil, (0, 0))
+            self.boss_intro_overlay.set_alpha(alpha)
+            self.screen.blit(self.boss_intro_overlay, (0, 0))
         accent = THEMES[self.level_index]["accent"]
         scan_y = 270 + int(math.sin(self.time * 28.0) * 4)
         pygame.draw.line(self.screen, (24, 46, 66), (110, scan_y - 34), (WIDTH - 110, scan_y - 34), 1)
@@ -7412,9 +7418,7 @@ class Game:
                          (left + int(width * 0.63), top + int(height * 0.69)), 1)
 
     def draw_radio_console(self) -> None:
-        veil = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        veil.fill((1, 5, 15, 176))
-        self.screen.blit(veil, (0, 0))
+        self.screen.blit(self.radio_overlay, (0, 0))
 
         panel = pygame.Rect(145, 170, 810, 365)
         pygame.draw.rect(self.screen, (5, 17, 31), panel, border_radius=14)
