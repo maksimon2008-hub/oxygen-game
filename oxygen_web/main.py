@@ -5085,9 +5085,15 @@ class Game:
         accent = theme["accent"]
         muted = (33, 51, 72)
 
-        # Sectors 01-05: distinct environmental backdrops only.
-        # Gameplay geometry, hazards and platform layouts remain untouched.
+        # Sectors 01-05 render a complete, self-contained backdrop.
+        # Their scene must never be drawn over the generic background.
         if self.level_index == 0:
+            self.screen.fill((4, 10, 21))
+            for band in range(14):
+                y = band * 35
+                pygame.draw.rect(self.screen,
+                                 (5 + band // 4, 13 + band, 25 + band * 2),
+                                 (0, y, WIDTH, 37))
             # DEAD STATION — a deserted metro terminal with a long train,
             # vaulted ceiling, platform signs and cold fluorescent lighting.
             first = int((self.camera_x * 0.30) // 610) - 1
@@ -5144,6 +5150,11 @@ class Game:
             return
 
         if self.level_index == 1:
+            self.screen.fill((5, 11, 20))
+            for band in range(14):
+                y = band * 35
+                pygame.draw.rect(self.screen, (7 + band, 13 + band, 22 + band),
+                                 (0, y, WIDTH, 37))
             # COLD INDUSTRY — deep factory hall with giant pipework,
             # distant furnace mouths, overhead gantries and slow fan housings.
             first = int((self.camera_x * 0.32) // 650) - 1
@@ -5201,15 +5212,47 @@ class Game:
             return
 
         if self.level_index == 2:
-            # DROWNED MEMORY — submerged research wing. The glass observation
-            # wall, suspended tanks and drifting particles suggest deep water.
-            # The waterline is scenery only; it does not affect physics.
-            waterline = 190 + int(math.sin(self.time * 0.45) * 4)
-            pygame.draw.rect(self.screen, (5, 20, 39), (0, waterline, WIDTH, HEIGHT - waterline))
-            pygame.draw.line(self.screen, (35, 105, 132),
-                             (0, waterline), (WIDTH, waterline), 2)
-            pygame.draw.line(self.screen, (20, 65, 94),
-                             (0, waterline + 8), (WIDTH, waterline + 8), 1)
+            # DROWNED MEMORY — fully submerged research station. The entire
+            # view is deep water, with a wavering surface far above the player,
+            # shafts of light, distant reef silhouettes and suspended particles.
+            self.screen.fill((2, 11, 29))
+            for band in range(18):
+                y = band * 28
+                pygame.draw.rect(self.screen,
+                                 (3 + band // 4, 17 + band, 38 + band * 2),
+                                 (0, y, WIDTH, 30))
+            waterline = 66 + int(math.sin(self.time * 0.7) * 3)
+            pygame.draw.line(self.screen, (43, 132, 165),
+                             (0, waterline), (WIDTH, waterline + 2), 3)
+            pygame.draw.line(self.screen, (18, 72, 108),
+                             (0, waterline + 7), (WIDTH, waterline + 9), 2)
+            # Volumetric light shafts descend from the distant surface.
+            for ray in range(5):
+                ray_x = int((ray * 205 - self.camera_x * 0.10) % (WIDTH + 180)) - 90
+                ray_surface = pygame.Surface((105, 390), pygame.SRCALPHA)
+                pygame.draw.polygon(ray_surface, (47, 143, 177, 16),
+                                    [(38, 0), (72, 0), (105, 390), (0, 390)])
+                self.screen.blit(ray_surface, (ray_x, 70))
+            # Distant submerged rock shelves and strange growths outside glass.
+            for reef in range(8):
+                rx = int((reef * 155 - self.camera_x * 0.17) % (WIDTH + 180)) - 90
+                base_y = 430 + (reef % 3) * 15
+                pygame.draw.polygon(self.screen, (4, 24, 42),
+                                    [(rx - 75, base_y), (rx - 42, base_y - 58),
+                                     (rx - 18, base_y - 27), (rx + 8, base_y - 86),
+                                     (rx + 43, base_y - 34), (rx + 78, base_y)],)
+                for frond in (-24, 12, 38):
+                    pygame.draw.line(self.screen, (13, 61, 75),
+                                     (rx + frond, base_y),
+                                     (rx + frond + 8, base_y - 54 - (reef % 3) * 9), 3)
+            # Tiny distant fish silhouettes move slowly behind the glass.
+            for school in range(6):
+                fx = int((school * 143 + self.time * (12 + school) - self.camera_x * 0.13)
+                         % (WIDTH + 100)) - 50
+                fy = 150 + (school * 47) % 190 + int(math.sin(self.time + school) * 8)
+                pygame.draw.ellipse(self.screen, (13, 53, 77), (fx, fy, 19, 7))
+                pygame.draw.polygon(self.screen, (13, 53, 77),
+                                    [(fx + 2, fy + 3), (fx - 5, fy - 2), (fx - 5, fy + 8)])
             first = int((self.camera_x * 0.29) // 720) - 1
             last = int((self.camera_x * 0.29 + WIDTH) // 720) + 2
             for segment in range(first, last):
@@ -5257,6 +5300,11 @@ class Game:
             return
 
         if self.level_index == 3:
+            self.screen.fill((5, 12, 24))
+            for band in range(14):
+                y = band * 35
+                pygame.draw.rect(self.screen, (7 + band, 15 + band, 26 + band),
+                                 (0, y, WIDTH, 37))
             # EMPTY DISTRICT — abandoned residential megablocks, dark windows,
             # balconies, skybridges and a few surviving apartment lights.
             first = int((self.camera_x * 0.25) // 780) - 1
@@ -5321,6 +5369,11 @@ class Game:
             return
 
         if self.level_index == 4:
+            self.screen.fill((3, 10, 22))
+            for band in range(14):
+                y = band * 35
+                pygame.draw.rect(self.screen, (5 + band // 3, 12 + band, 25 + band * 2),
+                                 (0, y, WIDTH, 37))
             # THE CORE — the first glimpse of the machine beneath the complex.
             # Server aisles, coolant lines and a contained energy column hint
             # at the threat without borrowing the ruined reactor look of world 10.
@@ -5849,11 +5902,13 @@ class Game:
     def draw_world(self) -> None:
         theme = THEMES[self.level_index]
         accent, accent2 = theme["accent"], theme["accent2"]
-        self.draw_background(theme)
+        # Worlds 1-5 draw their own complete scene inside
+        # draw_level_environment; worlds 6-10 retain the shared atmosphere.
+        if self.level_index >= 5:
+            self.draw_background(theme)
 
-        # Background signal glyphs belong to the machine sectors; the
-        # garden gets organic silhouettes instead.
-        if self.level_index not in (6, 7, 8, 9):
+        # Signal glyphs are reserved for the later machine sectors.
+        if self.level_index >= 5 and self.level_index not in (6, 7, 8, 9):
             for i in range(7):
                 wx = i * 560 + 180
                 x = int(wx - self.camera_x * 0.55)
