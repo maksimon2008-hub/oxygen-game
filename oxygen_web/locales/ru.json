@@ -265,5 +265,19 @@
   "BRING BACK THE LIGHTS": "ВЕРНУТЬ СВЕТ",
   "The backup grid is almost dead. Clear twelve machines and I can reroute power to the lamps.": "Резервная сеть почти села. Уничтожь двенадцать машин — и я перенаправлю питание на лампы.",
   "E  //  TALK TO MARA": "E  //  ПОГОВОРИТЬ С МАРОЙ",
-  "E  //  TALK TO": "E  //  ПОГОВОРИТЬ С"
+  "E  //  TALK TO": "E  //  ПОГОВОРИТЬ С",
+  "GRAPHICS SETTINGS": "НАСТРОЙКИ ГРАФИКИ",
+  "CHOOSE HOW OXYGEN SHOULD LOOK AND RUN": "ВЫБЕРИ, КАК OXYGEN БУДЕТ ВЫГЛЯДЕТЬ И РАБОТАТЬ",
+  "PERFORMANCE": "ПРОИЗВОДИТЕЛЬНОСТЬ",
+  "DETAIL": "ДЕТАЛЬНОСТЬ",
+  "LIGHT BACKGROUND": "ЛЁГКИЙ ФОН",
+  "SIMPLE PLATFORM MATERIALS": "ПРОСТЫЕ ТЕКСТУРЫ ПЛАТФОРМ",
+  "FEWER DECORATIVE EFFECTS": "МЕНЬШЕ ДЕКОРАТИВНЫХ ЭФФЕКТОВ",
+  "FULL SECTOR BACKDROPS": "ПОЛНОЦЕННЫЕ ФОНЫ СЕКТОРОВ",
+  "UNIQUE THEMATIC PLATFORMS": "УНИКАЛЬНЫЕ ТЕМАТИЧЕСКИЕ ПЛАТФОРМЫ",
+  "AMBIENT SCENE DETAILS": "ДЕТАЛИ ОКРУЖЕНИЯ",
+  "ACTIVE": "ВКЛЮЧЕНО",
+  "BACK": "НАЗАД",
+  "LEFT / RIGHT: SWITCH MODE  //  UP / DOWN: SELECT  //  ESC: BACK": "ВЛЕВО / ВПРАВО — СМЕНА РЕЖИМА  //  ВВЕРХ / ВНИЗ — ВЫБОР  //  ESC — НАЗАД",
+  "ESC // RESUME     ARROWS // SELECT / ADJUST": "ESC — ПРОДОЛЖИТЬ  //  СТРЕЛКИ — ВЫБОР / НАСТРОЙКА"
 }
