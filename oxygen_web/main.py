@@ -418,17 +418,39 @@ class Drone:
     phase: float = 0.0
     alive: bool = True
     hp: int = 3
+    alert: float = 0.0
 
     @property
     def rect(self) -> pygame.Rect:
         return pygame.Rect(int(self.x - 19), int(self.y - 15), 38, 30)
 
-    def update(self, dt: float, solids: list[pygame.Rect] | None = None) -> None:
+    def update(self, dt: float, solids: list[pygame.Rect] | None = None,
+               target_x: float | None = None, target_y: float | None = None) -> None:
         if not self.alive:
             return
         self.phase += dt * 5.0
         old_x = self.x
-        self.x += self.speed * self.direction * dt
+        can_track = False
+        if target_x is not None and target_y is not None:
+            dx, dy = target_x - self.x, target_y - self.y
+            distance = math.hypot(dx, dy)
+            line_blocked = bool(
+                solids and any(solid.clipline((round(self.x), round(self.y)),
+                                              (round(target_x), round(target_y)))
+                               for solid in solids)
+            )
+            can_track = distance < 310 and abs(dy) < 175 and not line_blocked
+
+        if can_track:
+            self.alert = min(1.0, self.alert + dt * 3.2)
+            if abs(target_x - self.x) > 10:
+                self.direction = 1 if target_x > self.x else -1
+            move_speed = self.speed * (1.0 + 0.38 * self.alert)
+        else:
+            self.alert = max(0.0, self.alert - dt * 1.8)
+            move_speed = self.speed
+
+        self.x += move_speed * self.direction * dt
         if self.x < self.left:
             self.x = self.left
             self.direction = 1
@@ -440,6 +462,7 @@ class Drone:
             if any(candidate.colliderect(solid) for solid in solids):
                 self.x = old_x
                 self.direction *= -1
+                self.alert = min(self.alert, 0.35)
 
 
 @dataclass
@@ -630,6 +653,7 @@ class Boss:
         self.state = "idle"
         self.state_timer = 0.0
         self.attack_timer = 1.5
+        self.attack_count = 0
         self.charge_vx = 0.0
         self.shots: list[Projectile] = []
 
@@ -665,9 +689,15 @@ class Boss:
             self.x += drift * dt
             self.x = max(self.left, min(self.right, self.x))
             if self.attack_timer <= 0:
-                distance = abs(target_x - self.x)
-                self.state = "windup_charge" if distance < 245 else "windup_volley"
-                self.state_timer = 0.62 if not phase_two else 0.43
+                self.attack_count += 1
+                slam_interval = 4 if self.variant == "warden" else 3
+                if phase_two and self.attack_count % slam_interval == 0:
+                    self.state = "windup_slam"
+                    self.state_timer = 0.76 if self.variant == "warden" else 0.68
+                else:
+                    distance = abs(target_x - self.x)
+                    self.state = "windup_charge" if distance < 245 else "windup_volley"
+                    self.state_timer = 0.62 if not phase_two else 0.43
         elif self.state.startswith("windup"):
             self.state_timer -= dt
             if self.state_timer <= 0:
@@ -676,6 +706,10 @@ class Boss:
                     direction = 1 if target_x >= self.x else -1
                     self.charge_vx = direction * (560 if not phase_two else 760)
                     self.state_timer = 0.43 if not phase_two else 0.52
+                elif self.state == "windup_slam":
+                    self.fire_ground_pulse()
+                    self.state = "recover"
+                    self.state_timer = 0.92
                 else:
                     self.fire_volley(target_x, target_y, phase_two)
                     self.state = "recover"
@@ -712,6 +746,19 @@ class Boss:
                 self.x, self.y - 8, math.cos(angle) * speed,
                 math.sin(angle) * speed, shot_color, damage=1,
                 life=2.4, radius=8))
+
+    def fire_ground_pulse(self) -> None:
+        """Send two readable floor-level waves outward; the player can jump them."""
+        color = ((255, 88, 88) if self.variant == "core"
+                 else (255, 190, 89) if self.variant == "arena"
+                 else (91, 225, 255))
+        ground_y = 482 if self.variant == "arena" else 457
+        speed = 355 if self.variant == "warden" else 330
+        for direction in (-1, 1):
+            self.shots.append(Projectile(
+                self.x + direction * 28, ground_y, direction * speed, 0.0,
+                color, damage=1, life=2.7, radius=10
+            ))
 
 
 class OxygenWarden(Boss):
@@ -1574,7 +1621,7 @@ class Level:
         self.solids = ([p.rect for p in self.platforms]
                        + [bridge.rect for bridge in self.breakaway_platforms if bridge.solid])
         for drone in self.drones:
-            drone.update(dt, self.solids)
+            drone.update(dt, self.solids, target_x, target_y)
         for seeker in self.seekers:
             seeker.update(dt, target_x, target_y, self.solids)
         for spider in self.spiders:
@@ -2008,15 +2055,18 @@ def draw_drone(surface: pygame.Surface, drone: Drone, camera_x: float,
         return
     x = int(drone.x - camera_x)
     y = int(drone.y + math.sin(drone.phase) * 3)
-    draw_glow(surface, x, y, accent2, 28)
+    drone_accent = (255, 105, 112) if drone.alert > 0.12 else accent2
+    draw_glow(surface, x, y, drone_accent, 34 if drone.alert > 0.12 else 28)
     shell = pygame.Rect(x - 18, y - 12, 36, 24)
     pygame.draw.rect(surface, (31, 28, 51), shell, border_radius=9)
-    pygame.draw.rect(surface, accent2, shell, 2, border_radius=9)
+    pygame.draw.rect(surface, drone_accent, shell, 2, border_radius=9)
     pygame.draw.line(surface, (165, 178, 205), (x - 12, y - 13), (x - 18, y - 20), 2)
     pygame.draw.line(surface, (165, 178, 205), (x + 12, y - 13), (x + 18, y - 20), 2)
     pygame.draw.circle(surface, (255, 237, 235), (x, y), 5)
-    pygame.draw.circle(surface, accent2, (x, y), 3)
+    pygame.draw.circle(surface, drone_accent, (x, y), 3)
     pygame.draw.line(surface, (8, 12, 28), (x - 11, y + 16), (x + 11, y + 16), 2)
+    if drone.alert > 0.12:
+        pygame.draw.circle(surface, drone_accent, (x, y), 25, 1)
 
 
 def draw_seeker(surface: pygame.Surface, seeker: Seeker, camera_x: float,
@@ -2083,6 +2133,11 @@ def draw_projectile(surface: pygame.Surface, shot: Projectile, camera_x: float) 
     x, y = int(shot.x - camera_x), int(shot.y)
     fade = max(0.18, min(1.0, shot.life / 0.22))
     radius = max(1, int(shot.radius * fade))
+    if shot.radius >= 10 and abs(shot.vy) < 1.0:
+        draw_glow(surface, x, y, shot.color, max(24, int(34 * fade)))
+        pygame.draw.ellipse(surface, shot.color, (x - 19, y - 7, 38, 14))
+        pygame.draw.line(surface, WHITE, (x - 13, y), (x + 13, y), 2)
+        return
     draw_glow(surface, x, y, shot.color, max(2, int((20 if shot.radius <= 6 else 25) * fade)))
     pygame.draw.circle(surface, shot.color, (x, y), radius)
     pygame.draw.circle(surface, WHITE, (x - 2, y - 2), max(1, radius // 2))
@@ -2150,6 +2205,14 @@ def draw_boss(surface: pygame.Surface, boss: Boss, camera_x: float) -> None:
         pygame.draw.circle(surface, core, (x, y), 73, 2)
         pygame.draw.arc(surface, WHITE, (x - 78, y - 78, 156, 156),
                         boss.phase, boss.phase + 2.2, 3)
+    if boss.state == "windup_slam":
+        warning_y = 482 if boss.variant == "arena" else 457
+        pygame.draw.line(surface, core, (x - 170, warning_y), (x + 170, warning_y), 2)
+        for side in (-1, 1):
+            marker_x = x + side * 150
+            pygame.draw.circle(surface, WHITE, (marker_x, warning_y), 5, 2)
+            pygame.draw.line(surface, core, (marker_x - 7, warning_y - 8),
+                             (marker_x + 7, warning_y + 8), 2)
     if boss.flash > 0:
         pygame.draw.circle(surface, WHITE, (x, y), 58, 3)
 
@@ -4662,14 +4725,16 @@ class Game:
         # Detect support from the feet rather than trusting only on_ground:
         # tiny rounding gaps used to make the player stop being carried for a frame.
         if self.player.vy >= -45.0:
+            riding_candidates = []
             for moving in self.level.moving_platforms:
                 moving_rect = moving.rect
                 foot_gap = player_rect_before.bottom - moving_rect.top
                 horizontal_overlap = (player_rect_before.right > moving_rect.left + 2
                                       and player_rect_before.left < moving_rect.right - 2)
-                if -7 <= foot_gap <= 7 and horizontal_overlap:
-                    riding = moving
-                    break
+                if -8 <= foot_gap <= 9 and horizontal_overlap:
+                    riding_candidates.append((abs(foot_gap), moving))
+            if riding_candidates:
+                riding = min(riding_candidates, key=lambda item: item[0])[1]
         self.level.update(dt, self.player.x + self.player.w / 2, self.player.y + self.player.h / 2)
         if riding is not None:
             # Carry riders in two collision-resolved steps. This prevents a
@@ -4718,7 +4783,7 @@ class Game:
             horizontal_overlap = (player_rect.right > platform_rect.left + 1
                                   and player_rect.left < platform_rect.right - 1)
             foot_gap = player_rect.bottom - platform_rect.top
-            if horizontal_overlap and -12 <= foot_gap <= 14:
+            if horizontal_overlap and -16 <= foot_gap <= 20:
                 snapped = self.player.rect
                 snapped.bottom = platform_rect.top
                 # Never snap through a ceiling, wall, or another platform.
