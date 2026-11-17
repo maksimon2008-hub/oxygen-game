@@ -473,7 +473,7 @@ class Drone:
     alive: bool = True
     hp: int = 3
     alert: float = 0.0
-    tracks_player: bool = False
+    tracks_player: bool = True
 
     @property
     def rect(self) -> pygame.Rect:
