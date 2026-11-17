@@ -4405,6 +4405,33 @@ class Game:
         previous_on_ground = self.player.on_ground
         self.footstep_timer = max(0.0, self.footstep_timer - dt)
         self.player.update(dt, keys, self.level, self.particles)
+
+        # A moving platform is a persistent support surface, not just a
+        # one-frame positional nudge. Re-anchor a rider after normal player
+        # physics so gravity/rounding cannot gradually make them slide through
+        # the platform or lose ground contact while it moves vertically.
+        if riding is not None and self.player.vy >= -45.0:
+            platform_rect = riding.rect
+            player_rect = self.player.rect
+            horizontal_overlap = (player_rect.right > platform_rect.left + 1
+                                  and player_rect.left < platform_rect.right - 1)
+            foot_gap = player_rect.bottom - platform_rect.top
+            if horizontal_overlap and -12 <= foot_gap <= 14:
+                snapped = self.player.rect
+                snapped.bottom = platform_rect.top
+                # Never snap through a ceiling, wall, or another platform.
+                blocked = any(
+                    solid != platform_rect and snapped.colliderect(solid)
+                    for solid in self.level.solids
+                )
+                if not blocked:
+                    self.player.y = float(snapped.y)
+                    self.player.vy = 0.0
+                    self.player.on_ground = True
+                    self.player.coyote = 0.105
+                    self.player.dash_used = False
+                    self.player.jump_count = 0
+
         if self.player.jump_count > previous_jump_count:
             self.play_sfx("jump")
         self.landing_sfx_cooldown = max(0.0, self.landing_sfx_cooldown - dt)
