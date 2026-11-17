@@ -3332,6 +3332,13 @@ class Game:
         self.boss_crystal_delay = random.uniform(25.0, 50.0)
         # Keep the 30-minute cooldown across sectors so it measures the whole campaign.
         self.level_index = index
+        self.footstep_timer = 0.0
+        try:
+            footstep_channel = getattr(self, "footstep_sfx_channel", None)
+            if footstep_channel is not None:
+                footstep_channel.stop()
+        except pygame.error:
+            pass
         self.save_data["last_level"] = int(index)
         self.save_progress()
         self.level = Level(index)
