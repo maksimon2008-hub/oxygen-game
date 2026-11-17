@@ -5421,6 +5421,192 @@ class Game:
             pygame.draw.line(self.screen, edge,
                              (sx + 4, 370 - height), (sx + width - 4, 370 - height), 1)
 
+    def draw_detailed_early_level_environment(self, theme) -> None:
+        """New premium backdrops for sectors 01-05, using cheap Pygame primitives."""
+        idx = self.level_index
+        cam = self.camera_x
+        pulse = 0.5 + 0.5 * math.sin(self.time * 1.1)
+
+        if idx == 0:
+            # THE LAST SIGNAL: exposed relay district, broken sky-bridges and antenna towers.
+            self.screen.fill((3, 8, 19))
+            for band, color in enumerate(((5, 12, 27), (7, 17, 34), (9, 22, 40), (10, 25, 42))):
+                pygame.draw.rect(self.screen, color, (0, band * 112, WIDTH, 113))
+            for i in range(7):
+                sx = int(i * 205 - cam * 0.13) % (WIDTH + 230) - 115
+                h, w = 105 + (i * 43) % 115, 82 + (i * 19) % 54
+                pygame.draw.rect(self.screen, (7, 18, 32), (sx, 390 - h, w, h))
+                pygame.draw.line(self.screen, (23, 48, 65),
+                                 (sx + 5, 390 - h), (sx + w - 5, 390 - h), 2)
+                for wx in (sx + 15, sx + w - 22):
+                    pygame.draw.line(self.screen, (30, 67, 81),
+                                     (wx, 390 - h + 20), (wx, 365), 2)
+            first = int((cam * 0.34) // 760) - 1
+            last = int((cam * 0.34 + WIDTH) // 760) + 2
+            for segment in range(first, last):
+                sx = int(segment * 760 + 350 - cam * 0.34)
+                top = 78 + (segment % 2) * 24
+                pygame.draw.line(self.screen, (28, 57, 78), (sx - 82, 430), (sx - 22, top), 5)
+                pygame.draw.line(self.screen, (28, 57, 78), (sx + 82, 430), (sx + 22, top), 5)
+                pygame.draw.line(self.screen, (46, 88, 108), (sx - 22, top), (sx + 22, top), 4)
+                for brace_y in (185, 285, 380):
+                    pygame.draw.line(self.screen, (35, 69, 89),
+                                     (sx - 57, brace_y), (sx + 57, brace_y - 25), 2)
+                pygame.draw.circle(self.screen, (24, 58, 79), (sx, 153), 42, 3)
+                pygame.draw.circle(self.screen, (48, 116, 138), (sx, 153), 24, 2)
+                pygame.draw.line(self.screen, (74, 173, 184), (sx - 13, 153), (sx + 13, 153), 2)
+                pygame.draw.line(self.screen, (20, 43, 62),
+                                 (sx - 300, 104), (sx + 300, 104), 3)
+
+        elif idx == 1:
+            # PURPLE STATIC: high-voltage substation with transformers and ceramic coil banks.
+            self.screen.fill((8, 6, 25))
+            for band, color in enumerate(((12, 8, 34), (17, 10, 43), (22, 12, 48), (25, 14, 48))):
+                pygame.draw.rect(self.screen, color, (0, band * 112, WIDTH, 113))
+            first = int((cam * 0.29) // 690) - 1
+            last = int((cam * 0.29 + WIDTH) // 690) + 2
+            for segment in range(first, last):
+                sx = int(segment * 690 + 330 - cam * 0.29)
+                for offset in (-205, 0, 205):
+                    tx = sx + offset
+                    pygame.draw.rect(self.screen, (12, 17, 39),
+                                     (tx - 52, 286, 104, 148), border_radius=5)
+                    pygame.draw.rect(self.screen, (52, 39, 83),
+                                     (tx - 52, 286, 104, 148), 2, border_radius=5)
+                    for rib in range(4):
+                        ry = 305 + rib * 27
+                        pygame.draw.line(self.screen, (53, 43, 88),
+                                         (tx - 42, ry), (tx + 42, ry), 3)
+                    pygame.draw.rect(self.screen, (27, 18, 57),
+                                     (tx - 16, 255, 32, 31), border_radius=4)
+                    pygame.draw.line(self.screen, (125, 73, 175), (tx, 230), (tx, 255), 3)
+                    pygame.draw.circle(self.screen, (111, 74, 164), (tx, 226), 5, 2)
+                for offset in (-250, 250):
+                    gx = sx + offset
+                    pygame.draw.line(self.screen, (34, 30, 66),
+                                     (gx - 58, 425), (gx, 116), 4)
+                    pygame.draw.line(self.screen, (34, 30, 66),
+                                     (gx + 58, 425), (gx, 116), 4)
+                    pygame.draw.line(self.screen, (57, 49, 94),
+                                     (gx - 58, 205), (gx + 58, 205), 3)
+                    for insulator in (-34, 0, 34):
+                        pygame.draw.circle(self.screen, (88, 63, 130),
+                                           (gx + insulator, 205), 6, 2)
+                for cable_y in (82, 119, 156):
+                    pygame.draw.line(self.screen, (32, 26, 63),
+                                     (sx - 315, cable_y), (sx + 315, cable_y), 4)
+                for node_x in (-260, -90, 90, 260):
+                    pygame.draw.circle(self.screen, (116, 70, 170), (sx + node_x, 119), 3)
+                pygame.draw.circle(self.screen, (57, 30, 89), (sx, 270), 72, 2)
+                pygame.draw.circle(self.screen, (105, 57, 151),
+                                   (sx, 270), int(30 + pulse * 3), 2)
+
+        elif idx == 2:
+            # RED AFTERGLOW: a rust-red sun above a damaged city skyline.
+            self.screen.fill((20, 7, 20))
+            for band, color in enumerate(((29, 9, 23), (48, 13, 28), (75, 22, 33), (105, 35, 39))):
+                pygame.draw.rect(self.screen, color, (0, band * 112, WIDTH, 113))
+            sun_x = int(WIDTH * 0.67 - cam * 0.10) % (WIDTH + 380) - 190
+            pygame.draw.circle(self.screen, (118, 39, 45), (sun_x, 270), 112)
+            pygame.draw.circle(self.screen, (164, 58, 55), (sun_x, 270), 96, 3)
+            pygame.draw.arc(self.screen, (207, 91, 68),
+                            (sun_x - 121, 149, 242, 242), 0.15, 2.95, 2)
+            pygame.draw.line(self.screen, (128, 43, 46),
+                             (sun_x - 92, 277), (sun_x + 92, 277), 2)
+            for i in range(8):
+                sx = int(i * 158 - cam * 0.22) % (WIDTH + 190) - 95
+                bw, top = 76 + (i * 31) % 68, 205 + (i * 47) % 112
+                pygame.draw.rect(self.screen, (17, 15, 28), (sx, top, bw, 420 - top))
+                pygame.draw.line(self.screen, (88, 37, 43),
+                                 (sx + 4, top), (sx + bw - 4, top), 2)
+                mast_x = sx + bw // 2
+                mast_h = 24 + (i * 13) % 43
+                pygame.draw.line(self.screen, (37, 28, 39),
+                                 (mast_x, top), (mast_x + (i % 3 - 1) * 8, top - mast_h), 2)
+                if i % 2 == 0:
+                    pygame.draw.circle(self.screen, (179, 68, 57), (mast_x, top - mast_h), 3)
+                for win in range(2):
+                    wx = sx + 13 + win * 31
+                    if wx + 8 < sx + bw - 4:
+                        pygame.draw.rect(self.screen, (112, 54, 47),
+                                         (wx, top + 35 + (win % 2) * 22, 8, 13))
+            for segment in range(4):
+                bx = int(segment * 340 - cam * 0.31) % (WIDTH + 400) - 200
+                by = 325 + (segment % 2) * 25
+                pygame.draw.line(self.screen, (35, 23, 35), (bx, by), (bx + 125, by), 9)
+                pygame.draw.line(self.screen, (69, 34, 39),
+                                 (bx + 12, by + 11), (bx + 105, by + 11), 2)
+
+        elif idx == 3:
+            # THE HOLLOW ENGINE: colossal flywheels, piston galleries and coolant trunks.
+            self.screen.fill((4, 14, 20))
+            for band, color in enumerate(((5, 18, 25), (7, 23, 30), (9, 28, 34), (11, 32, 37))):
+                pygame.draw.rect(self.screen, color, (0, band * 112, WIDTH, 113))
+            first = int((cam * 0.27) // 780) - 1
+            last = int((cam * 0.27 + WIDTH) // 780) + 2
+            for segment in range(first, last):
+                sx = int(segment * 780 + 370 - cam * 0.27)
+                for wheel_x, wheel_y, radius in ((sx - 160, 270, 106), (sx + 175, 230, 78)):
+                    pygame.draw.circle(self.screen, (10, 25, 31), (wheel_x, wheel_y), radius + 13)
+                    pygame.draw.circle(self.screen, (39, 81, 77), (wheel_x, wheel_y), radius, 5)
+                    pygame.draw.circle(self.screen, (23, 53, 53), (wheel_x, wheel_y), radius - 18, 2)
+                    pygame.draw.circle(self.screen, (63, 117, 95), (wheel_x, wheel_y), 13, 3)
+                    for spoke in range(6):
+                        angle = spoke * math.tau / 6 + segment * 0.13
+                        ex = wheel_x + int(math.cos(angle) * (radius - 14))
+                        ey = wheel_y + int(math.sin(angle) * (radius - 14))
+                        pygame.draw.line(self.screen, (37, 76, 73),
+                                         (wheel_x, wheel_y), (ex, ey), 5)
+                for piston_y in (105, 390):
+                    pygame.draw.rect(self.screen, (8, 23, 29),
+                                     (sx - 300, piston_y, 600, 24), border_radius=4)
+                    pygame.draw.line(self.screen, (48, 91, 82),
+                                     (sx - 300, piston_y), (sx + 300, piston_y), 3)
+                    for joint_x in (-235, -75, 85, 245):
+                        pygame.draw.circle(self.screen, (52, 112, 91),
+                                           (sx + joint_x, piston_y + 12), 5, 2)
+                for pipe_x in (-285, -20, 245):
+                    pygame.draw.line(self.screen, (18, 47, 49),
+                                     (sx + pipe_x, 70), (sx + pipe_x, 440), 10)
+                    pygame.draw.line(self.screen, (54, 103, 85),
+                                     (sx + pipe_x + 3, 70), (sx + pipe_x + 3, 440), 2)
+                pygame.draw.line(self.screen, (39, 84, 72),
+                                 (sx - 315, 450), (sx + 315, 450), 4)
+
+        elif idx == 4:
+            # BLACK SUN: an artificial eclipse inside a sealed reactor nave.
+            self.screen.fill((7, 5, 18))
+            for band, color in enumerate(((12, 6, 22), (20, 8, 27), (29, 10, 31), (37, 12, 34))):
+                pygame.draw.rect(self.screen, color, (0, band * 112, WIDTH, 113))
+            star_x = int(WIDTH * 0.52 - cam * 0.08) % (WIDTH + 460) - 230
+            star_y = 222
+            pygame.draw.circle(self.screen, (76, 22, 40), (star_x, star_y), 132, 7)
+            pygame.draw.circle(self.screen, (117, 34, 52), (star_x, star_y), 112, 3)
+            pygame.draw.circle(self.screen, (2, 3, 12), (star_x, star_y), 96)
+            pygame.draw.arc(self.screen, (215, 65, 74),
+                            (star_x - 143, star_y - 143, 286, 286), 0.28, 2.75, 3)
+            pygame.draw.arc(self.screen, (150, 43, 63),
+                            (star_x - 165, star_y - 165, 330, 330), 3.45, 5.8, 2)
+            for i in range(5):
+                px = int(i * 270 - cam * 0.24) % (WIDTH + 300) - 150
+                top = 110 + (i % 3) * 34
+                pygame.draw.polygon(self.screen, (12, 16, 31),
+                                    [(px - 31, 440), (px - 22, top),
+                                     (px + 22, top), (px + 31, 440)])
+                pygame.draw.line(self.screen, (76, 32, 57),
+                                 (px - 18, top + 8), (px - 25, 430), 3)
+                pygame.draw.line(self.screen, (76, 32, 57),
+                                 (px + 18, top + 8), (px + 25, 430), 3)
+                pygame.draw.circle(self.screen, (171, 54, 75), (px, top + 12), 5, 2)
+                pygame.draw.line(self.screen, (53, 25, 46),
+                                 (px - 70, 440), (px + 70, 440), 3)
+            for cable_y in (62, 82):
+                pygame.draw.line(self.screen, (32, 20, 40),
+                                 (0, cable_y), (WIDTH, cable_y), 5)
+            for node in range(4):
+                nx = int(node * 310 + 90 - cam * 0.18) % WIDTH
+                pygame.draw.circle(self.screen, (127, 41, 66), (nx, 84), 4)
+
     def draw_level_environment(self, theme) -> None:
         accent = theme["accent"]
         muted = (33, 51, 72)
@@ -6229,12 +6415,17 @@ class Game:
     def draw_world(self) -> None:
         theme = THEMES[self.level_index]
         accent, accent2 = theme["accent"], theme["accent2"]
-        # Detail mode renders full sector scenes; Performance bypasses them.
+        # The previous first-five backgrounds are the Performance scenes.
+        # Detail mode gets five completely new visual compositions instead.
         detailed = self.graphics_mode == "detail"
         if detailed and self.level_index >= 5:
             self.draw_background(theme)
-        if not detailed:
+        elif not detailed and self.level_index >= 5:
             self.draw_performance_background(theme)
+        elif detailed and self.level_index < 5:
+            self.draw_detailed_early_level_environment(theme)
+        else:
+            self.draw_level_environment(theme)
 
         # Signal glyphs are decorative and disabled in Performance mode.
         if detailed and self.level_index >= 5 and self.level_index not in (6, 7, 8, 9):
@@ -6248,7 +6439,6 @@ class Game:
                     pygame.draw.line(self.screen, (26, 44, 70), (x, y - 31), (x, y + 31), 1)
 
         if detailed:
-            self.draw_level_environment(theme)
             self.draw_ambient_watcher(theme)
 
         for platform in self.level.platforms:
