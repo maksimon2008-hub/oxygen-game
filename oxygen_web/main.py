@@ -1968,7 +1968,7 @@ def draw_text(surface: pygame.Surface, font: pygame.font.Font, text: str,
 
 
 _GLOW_CACHE: dict[tuple[tuple[int, int, int], int], pygame.Surface] = {}
-_PLATFORM_SURFACE_CACHE: dict[tuple[int, int, tuple[int, int, int], int], pygame.Surface] = {}
+_PLATFORM_SURFACE_CACHE: dict[tuple[int, int, tuple[int, int, int], int, str], pygame.Surface] = {}
 
 def draw_glow(surface: pygame.Surface, x: int, y: int,
               color: tuple[int, int, int], radius: int) -> None:
@@ -2155,7 +2155,8 @@ def draw_boss(surface: pygame.Surface, boss: Boss, camera_x: float) -> None:
 
 
 def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
-                  accent: tuple[int, int, int], level_index: int = 5) -> None:
+                  accent: tuple[int, int, int], level_index: int = 5,
+                  graphics_mode: str = "detail") -> None:
     x = int(p.x - camera_x)
     if x > WIDTH or x + p.w + 4 < 0:
         return
@@ -2164,7 +2165,8 @@ def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
     # Python draw calls while the player is moving.
     width, height = int(p.w), int(p.h)
     style = int(level_index) if 0 <= int(level_index) <= 4 else 5
-    key = (width, height, tuple(accent), style)
+    quality = "performance" if graphics_mode == "performance" else "detail"
+    key = (width, height, tuple(accent), style, quality)
     tile = _PLATFORM_SURFACE_CACHE.get(key)
     if tile is None:
         tile = pygame.Surface((width + 4, height + 7)).convert()
@@ -2175,7 +2177,11 @@ def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
         shadow_rect = pygame.Rect(4, 7, width, height)
         pygame.draw.rect(tile, (4, 8, 18), shadow_rect, border_radius=4)
 
-        if style == 0:
+        if quality == "performance":
+            pygame.draw.rect(tile, (13, 21, 35), rect, border_radius=3)
+            pygame.draw.rect(tile, (42, 62, 82), rect, 1, border_radius=3)
+            pygame.draw.line(tile, accent, (3, 1), (width - 3, 1), 2)
+        elif style == 0:
             # DEAD STATION: concrete metro platform, illuminated edge and
             # yellow tactile/safety markers like a deserted railway terminal.
             pygame.draw.rect(tile, (13, 27, 42), rect, border_radius=3)
@@ -2451,6 +2457,9 @@ class Game:
         else:
             self.save_path = Path(__file__).with_name("savegame.json")
         self.save_data = self.load_save_data()
+        self.graphics_mode = self.save_data.get("graphics_mode", "detail")
+        self.settings_return_mode = "menu"
+        self.settings_selection = 1 if self.graphics_mode == "detail" else 0
         self.language = self.save_data.get("language", "en")
         set_language(self.language)
         self.character_selected = bool(self.save_data.get("character_selected", False))
@@ -2587,7 +2596,8 @@ class Game:
                     "secret_167_unlocked": False, "safehouse_lighting_upgraded": False,
                     "radio_log_index": 0, "last_run_deaths": 0,
                     "music_volume": 0.75,
-                    "sfx_volume": 0.75}
+                    "sfx_volume": 0.75,
+                    "graphics_mode": "detail"}
         def is_bundled_test_save(data: dict) -> bool:
             # This exact profile was accidentally shipped to every new player
             # in an older web archive. Do not migrate it into a fresh browser.
@@ -2743,6 +2753,9 @@ class Game:
                                if str(i) not in completed),
                               max(0, defaults["unlocked_levels"] - 1))
         defaults["last_level"] = max(0, min(len(LEVELS) - 1, saved_last))
+        defaults["graphics_mode"] = (defaults.get("graphics_mode")
+                                      if defaults.get("graphics_mode") in ("performance", "detail")
+                                      else "detail")
         return defaults
 
     def save_progress(self) -> None:
@@ -3942,6 +3955,25 @@ class Game:
         set_language(self.language)
         self.save_progress()
 
+    def open_graphics_settings(self, return_mode: str = "menu") -> None:
+        self.settings_return_mode = return_mode
+        self.settings_selection = 1 if self.graphics_mode == "detail" else 0
+        self.mode = "settings"
+
+    def close_graphics_settings(self) -> None:
+        self.mode = self.settings_return_mode
+
+    def set_graphics_mode(self, mode: str) -> None:
+        selected = "performance" if mode == "performance" else "detail"
+        self.settings_selection = 0 if selected == "performance" else 1
+        if selected == self.graphics_mode:
+            return
+        self.graphics_mode = selected
+        self.save_data["graphics_mode"] = selected
+        self.save_progress()
+        self.notice = "GRAPHICS MODE // PERFORMANCE" if selected == "performance" else "GRAPHICS MODE // DETAIL"
+        self.notice_timer = 1.8
+
     def spawn_healing_crystal(self) -> None:
         """Place a rare boss-heal crystal on a safe, solid platform, never over a pit."""
         candidates = []
@@ -3968,7 +4000,7 @@ class Game:
             self.notice_timer = 3.0
 
     def open_menu_item(self, index: int) -> None:
-        self.menu_selection = max(0, min(7, int(index)))
+        self.menu_selection = max(0, min(8, int(index)))
         if index == 0:
             self.start_game()
         elif index == 1:
@@ -3991,6 +4023,8 @@ class Game:
             self.ranking_scroll = 0
         elif index == 7:
             self.running = False
+        elif index == 8:
+            self.open_graphics_settings("menu")
 
     def draw_personnel(self) -> None:
         self.draw_background(THEMES[1], 1)
@@ -4037,17 +4071,37 @@ class Game:
                 self.toggle_language()
                 return
 
-            if self.mode == "menu":
-                # Two-column, four-row main menu.
-                if event.key in (pygame.K_UP, pygame.K_w):
-                    self.menu_selection = max(0, self.menu_selection - 2)
+            if self.mode == "settings":
+                if event.key == pygame.K_ESCAPE:
+                    self.close_graphics_settings()
+                elif event.key in (pygame.K_UP, pygame.K_w):
+                    self.settings_selection = (self.settings_selection - 1) % 3
                 elif event.key in (pygame.K_DOWN, pygame.K_s):
-                    self.menu_selection = min(7, self.menu_selection + 2)
+                    self.settings_selection = (self.settings_selection + 1) % 3
                 elif event.key in (pygame.K_LEFT, pygame.K_a):
-                    if self.menu_selection % 2:
+                    self.set_graphics_mode("performance")
+                elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                    self.set_graphics_mode("detail")
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    if self.settings_selection == 0:
+                        self.set_graphics_mode("performance")
+                    elif self.settings_selection == 1:
+                        self.set_graphics_mode("detail")
+                    else:
+                        self.close_graphics_settings()
+                return
+
+            if self.mode == "menu":
+                # Two-column menu with a centered final settings row.
+                if event.key in (pygame.K_UP, pygame.K_w):
+                    self.menu_selection = 6 if self.menu_selection == 8 else max(0, self.menu_selection - 2)
+                elif event.key in (pygame.K_DOWN, pygame.K_s):
+                    self.menu_selection = min(8, self.menu_selection + 2)
+                elif event.key in (pygame.K_LEFT, pygame.K_a):
+                    if self.menu_selection < 8 and self.menu_selection % 2:
                         self.menu_selection -= 1
                 elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                    if self.menu_selection % 2 == 0 and self.menu_selection < 7:
+                    if self.menu_selection < 7 and self.menu_selection % 2 == 0:
                         self.menu_selection += 1
                 elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                     self.open_menu_item(self.menu_selection)
@@ -4244,12 +4298,12 @@ class Game:
                     # Returning to the menu is an explicit pause-menu action.
                     self.mode = "playing"
                 elif event.key in (pygame.K_UP, pygame.K_w):
-                    self.pause_selection = (self.pause_selection - 1) % 5
+                    self.pause_selection = (self.pause_selection - 1) % 6
                 elif event.key in (pygame.K_DOWN, pygame.K_s):
-                    self.pause_selection = (self.pause_selection + 1) % 5
-                elif event.key in (pygame.K_LEFT, pygame.K_a, pygame.K_RIGHT, pygame.K_d) and self.pause_selection in (3, 4):
+                    self.pause_selection = (self.pause_selection + 1) % 6
+                elif event.key in (pygame.K_LEFT, pygame.K_a, pygame.K_RIGHT, pygame.K_d) and self.pause_selection in (4, 5):
                     delta = -0.05 if event.key in (pygame.K_LEFT, pygame.K_a) else 0.05
-                    key = "music" if self.pause_selection == 3 else "sfx"
+                    key = "music" if self.pause_selection == 4 else "sfx"
                     current = self.music_volume if key == "music" else self.sfx_volume
                     self.set_audio_slider(key, current + delta, save=True)
                 elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
@@ -4260,6 +4314,8 @@ class Game:
                     elif self.pause_selection == 2:
                         self.mode = "menu"
                         self.menu_selection = 0
+                    elif self.pause_selection == 3:
+                        self.open_graphics_settings("paused")
 
             elif self.mode in ("gameover", "victory"):
                 if event.key in (pygame.K_RETURN, pygame.K_SPACE):
@@ -4299,16 +4355,28 @@ class Game:
             mouse_pos = self.logical_mouse_pos(event.pos)
             if self.mode == "safehouse" and self.safehouse_event_active:
                 return
-            if self.mode == "paused" and pygame.Rect(410, 446, 340, 34).collidepoint(mouse_pos):
+            if self.mode == "paused" and pygame.Rect(WIDTH // 2 - 145, 388, 290, 42).collidepoint(mouse_pos):
+                self.pause_selection = 3
+                self.open_graphics_settings("paused")
+                return
+            elif self.mode == "paused" and pygame.Rect(410, 447, 340, 34).collidepoint(mouse_pos):
                 self.settings_drag = "music"
                 self.set_audio_slider("music", self.audio_slider_value_from_x(mouse_pos[0]))
                 return
-            elif self.mode == "paused" and pygame.Rect(410, 504, 340, 34).collidepoint(mouse_pos):
+            elif self.mode == "paused" and pygame.Rect(410, 501, 340, 34).collidepoint(mouse_pos):
                 self.settings_drag = "sfx"
                 self.set_audio_slider("sfx", self.audio_slider_value_from_x(mouse_pos[0]))
                 return
             if self.mode == "playing":
                 self.fire_player_shot()
+
+            elif self.mode == "settings":
+                if pygame.Rect(125, 220, 410, 220).collidepoint(mouse_pos):
+                    self.set_graphics_mode("performance")
+                elif pygame.Rect(565, 220, 410, 220).collidepoint(mouse_pos):
+                    self.set_graphics_mode("detail")
+                elif pygame.Rect(WIDTH // 2 - 145, 510, 290, 48).collidepoint(mouse_pos):
+                    self.close_graphics_settings()
 
             elif self.mode == "menu":
                 if pygame.Rect(870, 23, 205, 38).collidepoint(mouse_pos):
@@ -4316,6 +4384,7 @@ class Game:
                     return
                 menu_rects = [pygame.Rect(95 + (i % 2) * 460, 270 + (i // 2) * 55, 450, 46)
                               for i in range(8)]
+                menu_rects.append(pygame.Rect(325, 490, 450, 46))
                 for menu_i, rect in enumerate(menu_rects):
                     if rect.collidepoint(mouse_pos):
                         self.open_menu_item(menu_i)
@@ -5332,6 +5401,26 @@ class Game:
         self.ambient_event_x = self.player.x + random.randint(350, 520)
         self.ambient_event_y = random.choice((235, 275, 315, 345))
 
+    def draw_performance_background(self, theme) -> None:
+        """Lightweight backdrop: one fill, one ground band and a few silhouettes."""
+        self.screen.fill(theme["sky"])
+        ground = (max(2, theme["sky"][0] - 2),
+                  max(4, theme["sky"][1] - 3),
+                  max(10, theme["sky"][2] - 5))
+        edge = (max(2, theme["sky"][0] + 2),
+                max(5, theme["sky"][1] + 5),
+                max(13, theme["sky"][2] + 10))
+        pygame.draw.rect(self.screen, ground, (0, 370, WIDTH, HEIGHT - 370))
+        pygame.draw.line(self.screen, edge, (0, 369), (WIDTH, 369), 2)
+        for index in range(5):
+            world_x = index * 295 + 95
+            sx = int(world_x - self.camera_x * 0.16) % (WIDTH + 260) - 130
+            height = 105 + ((index * 47 + self.level_index * 23) % 125)
+            width = 92 + ((index * 29 + self.level_index * 11) % 75)
+            pygame.draw.rect(self.screen, ground, (sx, 370 - height, width, height))
+            pygame.draw.line(self.screen, edge,
+                             (sx + 4, 370 - height), (sx + width - 4, 370 - height), 1)
+
     def draw_level_environment(self, theme) -> None:
         accent = theme["accent"]
         muted = (33, 51, 72)
@@ -6140,13 +6229,15 @@ class Game:
     def draw_world(self) -> None:
         theme = THEMES[self.level_index]
         accent, accent2 = theme["accent"], theme["accent2"]
-        # Worlds 1-5 draw their own complete scene inside
-        # draw_level_environment; worlds 6-10 retain the shared atmosphere.
-        if self.level_index >= 5:
+        # Detail mode renders full sector scenes; Performance bypasses them.
+        detailed = self.graphics_mode == "detail"
+        if detailed and self.level_index >= 5:
             self.draw_background(theme)
+        if not detailed:
+            self.draw_performance_background(theme)
 
-        # Signal glyphs are reserved for the later machine sectors.
-        if self.level_index >= 5 and self.level_index not in (6, 7, 8, 9):
+        # Signal glyphs are decorative and disabled in Performance mode.
+        if detailed and self.level_index >= 5 and self.level_index not in (6, 7, 8, 9):
             for i in range(7):
                 wx = i * 560 + 180
                 x = int(wx - self.camera_x * 0.55)
@@ -6156,12 +6247,14 @@ class Game:
                     pygame.draw.line(self.screen, (26, 44, 70), (x - 31, y), (x + 31, y), 1)
                     pygame.draw.line(self.screen, (26, 44, 70), (x, y - 31), (x, y + 31), 1)
 
-        self.draw_level_environment(theme)
-        self.draw_ambient_watcher(theme)
+        if detailed:
+            self.draw_level_environment(theme)
+            self.draw_ambient_watcher(theme)
 
         for platform in self.level.platforms:
-            draw_platform(self.screen, platform, self.camera_x, accent, self.level_index)
-            if self.level_index == 8 and platform.h <= 24:
+            draw_platform(self.screen, platform, self.camera_x, accent,
+                          self.level_index, self.graphics_mode)
+            if detailed and self.level_index == 8 and platform.h <= 24:
                 # Exposed relay catwalks: industrial grating with warning lights.
                 px = int(platform.x - self.camera_x)
                 py = int(platform.y)
@@ -6176,7 +6269,7 @@ class Game:
                     beacon = int((self.time * 3 + platform.x * 0.01) % 2)
                     pygame.draw.circle(self.screen, (75, 185, 204) if beacon else (115, 91, 52),
                                        (px + 9, py + 5), 2)
-            if self.level_index == 7 and platform.h <= 24:
+            if detailed and self.level_index == 7 and platform.h <= 24:
                 # Glass walkways: layered cyan edge and a restrained specular streak.
                 px = int(platform.x - self.camera_x)
                 py = int(platform.y)
@@ -6190,7 +6283,7 @@ class Game:
                     pygame.draw.line(self.screen, (151, 225, 244),
                                      (px + 12 + glint, py + 4),
                                      (min(px + platform.w - 5, px + 38 + glint), py + 4), 1)
-            if self.level_index == 6 and platform.h <= 24:
+            if detailed and self.level_index == 6 and platform.h <= 24:
                 # Living roots wrap the undersides of the garden's floating
                 # walkways; small leaf fans make the platforms read as grown,
                 # not as another set of metal slabs.
@@ -6233,7 +6326,8 @@ class Game:
             if -bridge.w < bx < WIDTH:
                 if bridge.state in ("ready", "warning"):
                     bridge_accent = (255, 170, 80) if bridge.state == "warning" else accent
-                    draw_platform(self.screen, bridge, self.camera_x, bridge_accent, self.level_index)
+                    draw_platform(self.screen, bridge, self.camera_x, bridge_accent,
+                                  self.level_index, self.graphics_mode)
                     if bridge.state == "warning":
                         pulse = 1 + int(2 * abs(math.sin(self.time * 18)))
                         pygame.draw.line(self.screen, (255, 186, 86),
@@ -6326,7 +6420,8 @@ class Game:
         if sys.platform != "emscripten":
             self.screen.blit(self.surface_grain, (0, 0))
             self.screen.blit(self.vignette, (0, 0))
-        self.draw_ambient_overlay()
+        if detailed:
+            self.draw_ambient_overlay()
 
     def draw_hud(self) -> None:
         theme = THEMES[self.level_index]
@@ -6495,15 +6590,58 @@ class Game:
         for i, label in enumerate(buttons):
             col, row = i % 2, i // 2
             rect = pygame.Rect(95 + col * 460, 270 + row * 55, 450, 46)
-            self.draw_button_at(label, rect, self.menu_selection == i)
+            self.draw_button_at(localize(label), rect, self.menu_selection == i)
+        settings_rect = pygame.Rect(325, 490, 450, 46)
+        self.draw_button_at(localize("GRAPHICS SETTINGS"), settings_rect, self.menu_selection == 8)
         selected_cfg = CHARACTERS[self.character_id]
         draw_text(self.screen, self.font_xs,
                   f"CURRENT RUNNER: {selected_cfg['name']}  //  {selected_cfg['ability']}",
-                  selected_cfg["accent"], (WIDTH // 2, 505), center=True, shadow=False)
-        draw_text(self.screen, self.font_xs, "F11 FULLSCREEN   F3 FPS   ESC QUIT",
-                  (80, 102, 130), (WIDTH // 2, 550), center=True, shadow=False)
-        draw_text(self.screen, self.font_xs, "PLAYER UPGRADES // CREW CONTRACTS // 10 SECTORS",
-                  (80, 102, 130), (WIDTH // 2, 576), center=True, shadow=False)
+                  selected_cfg["accent"], (WIDTH // 2, 548), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs, localize("F11 FULLSCREEN   F3 FPS   ESC QUIT"),
+                  (80, 102, 130), (WIDTH // 2, 580), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs, localize("PLAYER UPGRADES // CREW CONTRACTS // 10 SECTORS"),
+                  (80, 102, 130), (WIDTH // 2, 606), center=True, shadow=False)
+
+    def draw_graphics_settings(self) -> None:
+        self.draw_background(THEMES[0], 0)
+        draw_text(self.screen, self.font_l, localize("GRAPHICS SETTINGS"), WHITE,
+                  (WIDTH // 2, 105), center=True)
+        draw_text(self.screen, self.font_xs, localize("CHOOSE HOW OXYGEN SHOULD LOOK AND RUN"),
+                  CYAN, (WIDTH // 2, 145), center=True, shadow=False)
+        options = (
+            ("performance", "PERFORMANCE", "LIGHT BACKGROUND",
+             "SIMPLE PLATFORM MATERIALS", "FEWER DECORATIVE EFFECTS"),
+            ("detail", "DETAIL", "FULL SECTOR BACKDROPS",
+             "UNIQUE THEMATIC PLATFORMS", "AMBIENT SCENE DETAILS"),
+        )
+        for index, (mode, title, line1, line2, line3) in enumerate(options):
+            rect = pygame.Rect(125 + index * 440, 220, 410, 220)
+            selected = self.graphics_mode == mode
+            focused = self.settings_selection == index
+            fill = (13, 43, 57) if selected else ((13, 30, 49) if focused else (7, 17, 32))
+            border = CYAN if selected or focused else (45, 70, 91)
+            pygame.draw.rect(self.screen, fill, rect, border_radius=12)
+            pygame.draw.rect(self.screen, border, rect, 3 if selected else 1, border_radius=12)
+            if selected:
+                pygame.draw.circle(self.screen, CYAN, (rect.right - 27, rect.y + 27), 8)
+                pygame.draw.circle(self.screen, (4, 13, 25), (rect.right - 27, rect.y + 27), 3)
+            draw_text(self.screen, self.font_m, localize(title),
+                      WHITE if selected or focused else MUTED,
+                      (rect.centerx, rect.y + 48), center=True, shadow=False)
+            draw_text(self.screen, self.font_xs, localize(line1), CYAN if selected else MUTED,
+                      (rect.centerx, rect.y + 105), center=True, shadow=False)
+            draw_text(self.screen, self.font_xs, localize(line2), MUTED,
+                      (rect.centerx, rect.y + 137), center=True, shadow=False)
+            draw_text(self.screen, self.font_xs, localize(line3), MUTED,
+                      (rect.centerx, rect.y + 169), center=True, shadow=False)
+            if selected:
+                draw_text(self.screen, self.font_xs, localize("ACTIVE"),
+                          YELLOW, (rect.centerx, rect.y + 198), center=True, shadow=False)
+        back_rect = pygame.Rect(WIDTH // 2 - 145, 510, 290, 48)
+        self.draw_button_at(localize("BACK"), back_rect, self.settings_selection == 2)
+        hint = "LEFT / RIGHT: SWITCH MODE  //  UP / DOWN: SELECT  //  ESC: BACK"
+        draw_text(self.screen, self.font_xs, localize(hint), MUTED,
+                  (WIDTH // 2, 590), center=True, shadow=False)
 
     def draw_character_select(self) -> None:
         self.draw_background(THEMES[1], 1)
@@ -7129,19 +7267,22 @@ class Game:
 
     def draw_pause(self) -> None:
         self.screen.blit(self.pause_overlay, (0, 0))
-        draw_text(self.screen, self.font_l, "PAUSED", WHITE,
-                  (WIDTH // 2, 190), center=True)
-        self.draw_button_at("CONTINUE", pygame.Rect(WIDTH // 2 - 145, 300, 290, 44),
-                            self.pause_selection == 0)
-        self.draw_button_at("RESTART SECTOR", pygame.Rect(WIDTH // 2 - 145, 352, 290, 44),
-                            self.pause_selection == 1)
-        self.draw_button_at("MAIN MENU", pygame.Rect(WIDTH // 2 - 145, 404, 290, 44),
-                            self.pause_selection == 2)
+        draw_text(self.screen, self.font_l, localize("PAUSED"), WHITE,
+                  (WIDTH // 2, 145), center=True)
+        pause_buttons = (
+            ("CONTINUE", 244, 0),
+            ("RESTART SECTOR", 292, 1),
+            ("MAIN MENU", 340, 2),
+            ("GRAPHICS SETTINGS", 388, 3),
+        )
+        for label, y, index in pause_buttons:
+            self.draw_button_at(localize(label), pygame.Rect(WIDTH // 2 - 145, y, 290, 42),
+                                self.pause_selection == index)
         for label, value, y, selected in (
-            ("MUSIC", self.music_volume, 462, self.pause_selection == 3),
-            ("SFX", self.sfx_volume, 520, self.pause_selection == 4),
+            ("MUSIC", self.music_volume, 462, self.pause_selection == 4),
+            ("SFX", self.sfx_volume, 516, self.pause_selection == 5),
         ):
-            draw_text(self.screen, self.font_xs, label, CYAN if selected else MUTED,
+            draw_text(self.screen, self.font_xs, localize(label), CYAN if selected else MUTED,
                       (WIDTH // 2 - 310, y + 7), shadow=False)
             track = pygame.Rect(430, y, 290, 12)
             pygame.draw.rect(self.screen, (24, 43, 61), track, border_radius=6)
@@ -7154,7 +7295,7 @@ class Game:
                                (knob_x, track.centery), 9 if selected else 7)
             draw_text(self.screen, self.font_xs, f"{round(value * 100)}%",
                       WHITE, (track.right + 42, y + 7), center=True, shadow=False)
-        draw_text(self.screen, self.font_xs, "ESC // MAIN MENU     ARROWS // ADJUST VOLUME",
+        draw_text(self.screen, self.font_xs, localize("ESC // RESUME     ARROWS // SELECT / ADJUST"),
                   MUTED, (WIDTH // 2, 590), center=True, shadow=False)
 
     def draw_end_screen(self, victory: bool) -> None:
@@ -7180,6 +7321,8 @@ class Game:
         draw_started = perf_counter()
         if self.mode == "menu":
             self.draw_menu()
+        elif self.mode == "settings":
+            self.draw_graphics_settings()
         elif self.mode == "personnel":
             self.draw_personnel()
         elif self.mode == "level_select":
