@@ -1860,6 +1860,7 @@ def draw_exit(surface: pygame.Surface, rect: pygame.Rect, camera_x: float,
 # Main game
 # -----------------------------------------------------------------------------
 _BACKGROUND_WASH_CACHE: dict[tuple[tuple[int, int, int], tuple[int, int, int]], pygame.Surface] = {}
+_BACKGROUND_SMOKE_CACHE: dict[tuple[int, int, int], pygame.Surface] = {}
 
 class Game:
     def __init__(self):
@@ -4661,10 +4662,21 @@ class Game:
                                  (sx, building.top - sh, 13, sh))
                 pygame.draw.rect(layer, (48, 61, 76, 220),
                                  (sx - 2, building.top - sh, 17, 5))
-                for puff in range(3):
-                    py = building.top - sh - 10 - puff * 13
-                    pygame.draw.circle(layer, (39, 49, 67, 32 - puff * 7),
-                                       (sx + 8 + puff * 5, py), 8 + puff * 3)
+                # Fuller, softer exhaust plume rising above the stack.
+                for puff in range(6):
+                    py = building.top - sh - 9 - puff * 11
+                    px = sx + 7 + puff * 5
+                    radius = 9 + puff * 3
+                    pygame.draw.circle(layer, (42, 54, 72, max(7, 28 - puff * 3)),
+                                       (px, py), radius)
+                    pygame.draw.circle(layer, (58, 70, 88, max(4, 13 - puff)),
+                                       (px - 4, py - 2), max(3, radius - 4))
+
+        # Barely soften the far skyline so the foreground keeps its sharpness.
+        # This is baked once per sector, never performed during gameplay frames.
+        soft_size = (max(1, int(layer_width * 0.985)), max(1, int(HEIGHT * 0.985)))
+        softened = pygame.transform.smoothscale(layer, soft_size)
+        layer = pygame.transform.smoothscale(softened, (layer_width, HEIGHT))
 
         # A few long cables crossing the upper skyline.
         cable_color = (37, 57, 78, 135)
@@ -4704,15 +4716,46 @@ class Game:
         skyline_index = self.level_index if background_level_index is None else background_level_index
         self.screen.blit(self.skyline_layers[skyline_index], (-skyline_offset, 0))
 
-        # Subtle drifting industrial haze adds life without heavy effects.
+        # Soft drifting smoke banks: cached once per sector, then only blitted.
+        # The tiny downscale/upscale pass gives the clouds a restrained blur.
+        smoke_key = tuple(theme["accent"])
+        smoke = _BACKGROUND_SMOKE_CACHE.get(smoke_key)
+        if smoke is None:
+            smoke = pygame.Surface((260, 112), pygame.SRCALPHA)
+            smoke_rng = random.Random(167 + sum(smoke_key))
+            smoke_base = (104, 119, 139)
+            for puff in range(26):
+                px = smoke_rng.randint(12, 248)
+                py = smoke_rng.randint(25, 88)
+                radius_x = smoke_rng.randint(19, 47)
+                radius_y = smoke_rng.randint(10, 24)
+                alpha = smoke_rng.randint(7, 17)
+                pygame.draw.ellipse(smoke, (*smoke_base, alpha),
+                                    (px - radius_x, py - radius_y,
+                                     radius_x * 2, radius_y * 2))
+            # Slightly soften the silhouette edges without blurring the whole scene.
+            small = pygame.transform.smoothscale(smoke, (130, 56))
+            smoke = pygame.transform.smoothscale(small, (260, 112))
+            _BACKGROUND_SMOKE_CACHE[smoke_key] = smoke
+
+        smoke_phase = self.time * 9.0
+        for bank in range(5):
+            drift = int(self.time * (7 + bank * 2) + bank * 213) % (WIDTH + 420) - 210
+            smoke_y = 300 + bank * 35 + int(math.sin(smoke_phase * 0.12 + bank * 1.7) * 8)
+            self.screen.blit(smoke, (drift, smoke_y))
+            # A second, dimmer cloud gives the plume a little more depth.
+            if bank in (1, 3):
+                self.screen.blit(smoke, (drift - 115, smoke_y + 12))
+
+        # Keep a faint horizontal haze line beneath the drifting smoke.
         haze_phase = self.time * 8.0
         haze_color = theme["accent"]
         mist = (haze_color[0] // 5, haze_color[1] // 5, haze_color[2] // 5)
-        for band in range(3):
-            haze_y = 382 + band * 31 + int(math.sin(haze_phase * 0.22 + band) * 5)
+        for band in range(2):
+            haze_y = 420 + band * 25 + int(math.sin(haze_phase * 0.22 + band) * 4)
             haze_x = int((self.time * (10 + band * 5) + band * 270) % (WIDTH + 360)) - 180
             pygame.draw.line(self.screen, mist, (haze_x, haze_y),
-                             (haze_x + 220, haze_y - 3), 2)
+                             (haze_x + 220, haze_y - 3), 1)
 
         # Horizon scan lines.
         for y in range(465, HEIGHT, 18):
