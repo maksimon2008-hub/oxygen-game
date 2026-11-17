@@ -6633,8 +6633,8 @@ class Game:
 
     def draw_boss_intro(self) -> None:
         total = 2.35
-        elapsed = total - self.boss_intro_timer
-        fade = min(1.0, elapsed / 0.30, self.boss_intro_timer / 0.32)
+        # Cover the arena swap immediately, then uncover it during the final beat.
+        fade = min(1.0, self.boss_intro_timer / 0.32)
         alpha = max(0, min(190, int(174 * fade)))
         if alpha:
             veil = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
