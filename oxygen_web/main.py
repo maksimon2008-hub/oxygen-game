@@ -2187,6 +2187,11 @@ class Game:
         self.particles: list[Particle] = []
         self.score = 0
         self.time = 0.0
+        self.ambient_event = None
+        self.ambient_event_remaining = 0.0
+        self.ambient_event_timer = random.uniform(7.0, 11.0)
+        self.ambient_event_x = 0.0
+        self.ambient_event_y = 300
         self.level_banner = 2.8
         self.notice = ""
         self.notice_timer = 0.0
@@ -3264,6 +3269,10 @@ class Game:
         self.projectiles.clear()
         self.level.spikes = [spike for spike in self.level.spikes
                              if spike.right < arena_left or spike.left > arena_right]
+        # The final boss deck is a clean combat space, not another traversal
+        # section with collapsing bridges or timed laser gates.
+        self.level.breakaway_platforms.clear()
+        self.level.lasers.clear()
         arena_parts = [
             Platform(arena_left, floor_y, arena_width, 130),
             Platform(arena_left, 245, 22, floor_y - 245),
@@ -3325,6 +3334,7 @@ class Game:
         self.projectiles.clear()
         self.level_banner = 2.8
         self.level_elapsed = 0.0
+        self.reset_ambient_events()
         self.level_deaths = 0
         self.level_coins = 0
         self.level_secrets = sum(1 for secret in self.level.secret_rooms if secret["found"])
@@ -3361,6 +3371,7 @@ class Game:
         self.projectiles.clear()
         self.level_banner = 1.4
         self.level_elapsed = 0.0
+        self.reset_ambient_events()
         self.level_deaths = 0
         self.level_coins = 0
         self.level_secrets = sum(1 for secret in self.level.secret_rooms if secret["found"])
@@ -4260,6 +4271,7 @@ class Game:
         if self.mode != "playing":
             return
         self.level_elapsed += dt
+        self.update_ambient_events(dt)
 
         keys = pygame.key.get_pressed()
         mouse_buttons = pygame.mouse.get_pressed()
@@ -4333,6 +4345,16 @@ class Game:
             gained = self.player.wall_jump_count - previous_wall_jumps
             self.save_data["stats"]["wall_jumps"] += gained
             self.check_achievements()
+
+        # Trigger one bridge segment at a time, immediately after the player
+        # lands on it. The warning gives enough time to keep moving forward.
+        if self.player.on_ground:
+            for bridge in self.level.breakaway_platforms:
+                if (bridge.state == "ready"
+                        and bridge.rect.collidepoint(self.player.rect.centerx,
+                                                     self.player.rect.bottom + 2)):
+                    bridge.trigger()
+                    break
         if self.level.boss is not None and not self.level.boss.active and not self.level.boss.defeated:
             activation_x = self.level.width - 760 if self.level_index == 9 else 3920
             if self.player.x > activation_x:
@@ -4599,6 +4621,16 @@ class Game:
 
         if self.mode != "playing":
             return
+
+        # Active laser gates are lethal. Their amber warning and dark safe
+        # state make each crossing readable instead of relying on guesswork.
+        if self.player.invuln <= 0:
+            for laser in self.level.lasers:
+                if laser.active and laser.rect.colliderect(self.player.rect):
+                    self.damage_player()
+                    self.make_burst(laser.x, laser.rect.centery,
+                                    THEMES[self.level_index]["accent2"], 10)
+                    break
 
         # Spikes and falling out of the world.
         if self.player.invuln <= 0:
@@ -4896,6 +4928,120 @@ class Game:
                 pygame.draw.lines(layer, cable_color, False, points, 1)
         return layer
 
+    def reset_ambient_events(self) -> None:
+        self.ambient_event = None
+        self.ambient_event_remaining = 0.0
+        self.ambient_event_timer = random.uniform(7.0, 11.0)
+        self.ambient_event_x = 0.0
+        self.ambient_event_y = 300
+
+    def update_ambient_events(self, dt: float) -> None:
+        # These are visual anomalies, not hazards. They only appear in the
+        # later sectors and never trigger while the game is paused.
+        if self.level_index < 5:
+            return
+        if self.ambient_event is not None:
+            self.ambient_event_remaining -= dt
+            if self.ambient_event_remaining <= 0:
+                self.ambient_event = None
+                self.ambient_event_timer = random.uniform(10.0, 18.0)
+            return
+        self.ambient_event_timer -= dt
+        if self.ambient_event_timer > 0 or self.level_elapsed < 3.0:
+            return
+        self.ambient_event = random.choices(
+            ("watcher", "glitch", "surge"), weights=(4, 4, 2), k=1
+        )[0]
+        self.ambient_event_remaining = {
+            "watcher": random.uniform(0.95, 1.35),
+            "glitch": random.uniform(0.22, 0.38),
+            "surge": random.uniform(0.30, 0.55),
+        }[self.ambient_event]
+        self.ambient_event_x = self.player.x + random.randint(430, 690)
+        self.ambient_event_y = random.choice((235, 275, 315, 345))
+
+    def draw_level_environment(self, theme) -> None:
+        accent = theme["accent"]
+        muted = (33, 51, 72)
+        # Overhead conduits and braces create a continuous industrial space
+        # behind the playable geometry.
+        first = int((self.camera_x * 0.72) // 420) - 1
+        last = int((self.camera_x * 0.72 + WIDTH) // 420) + 2
+        for segment in range(first, last):
+            sx = int(segment * 420 - self.camera_x * 0.72)
+            y = 92 + (segment % 3) * 13
+            pygame.draw.line(self.screen, (22, 38, 58), (sx, y), (sx + 420, y), 5)
+            pygame.draw.line(self.screen, (52, 77, 99), (sx, y + 4), (sx + 420, y + 4), 1)
+            pygame.draw.rect(self.screen, (21, 36, 56), (sx + 28, y + 4, 7, 36))
+            pygame.draw.rect(self.screen, (21, 36, 56), (sx + 385, y + 4, 7, 36))
+
+        for world_x, world_y, kind, phase in self.level.environment_props:
+            sx = int(world_x - self.camera_x * 0.74)
+            if sx < -75 or sx > WIDTH + 75:
+                continue
+            if kind == "fan":
+                center = (sx, world_y)
+                pygame.draw.rect(self.screen, (10, 18, 34), (sx - 34, world_y - 28, 68, 56), border_radius=7)
+                pygame.draw.rect(self.screen, muted, (sx - 34, world_y - 28, 68, 56), 2, border_radius=7)
+                pygame.draw.circle(self.screen, (46, 72, 94), center, 22, 2)
+                for blade in range(4):
+                    angle = self.time * 1.55 + phase + blade * math.pi / 2
+                    end = (sx + int(math.cos(angle) * 18), world_y + int(math.sin(angle) * 18))
+                    pygame.draw.line(self.screen, (73, 102, 125), center, end, 5)
+                pygame.draw.circle(self.screen, accent, center, 4)
+            elif kind == "vent":
+                pygame.draw.rect(self.screen, (13, 23, 40), (sx - 25, world_y + 10, 50, 13), border_radius=3)
+                pygame.draw.rect(self.screen, muted, (sx - 25, world_y + 10, 50, 13), 1, border_radius=3)
+                steam = (self.time * 1.25 + phase) % 2.4
+                if steam < 1.05:
+                    for puff in range(3):
+                        rise = int(steam * 28 + puff * 8)
+                        drift = int(math.sin(steam * 5 + puff + phase) * 5)
+                        tone = 58 - puff * 10
+                        pygame.draw.circle(self.screen, (tone, tone + 10, tone + 22),
+                                           (sx + drift, world_y + 5 - rise), max(2, 6 - puff))
+            else:
+                panel = pygame.Rect(sx - 25, world_y - 18, 50, 38)
+                pygame.draw.rect(self.screen, (8, 16, 32), panel, border_radius=4)
+                pygame.draw.rect(self.screen, (48, 70, 90), panel, 1, border_radius=4)
+                pygame.draw.line(self.screen, (47, 75, 92), (sx - 17, world_y - 7), (sx + 17, world_y - 7), 2)
+                pygame.draw.line(self.screen, (35, 56, 76), (sx - 17, world_y), (sx + 10, world_y), 1)
+                blink = math.sin(self.time * 3.3 + phase) > 0.15
+                pygame.draw.circle(self.screen, accent if blink else (56, 73, 91),
+                                   (sx + 15, world_y + 10), 4)
+
+    def draw_ambient_watcher(self, theme) -> None:
+        if self.ambient_event != "watcher" or self.ambient_event_remaining <= 0:
+            return
+        # A tiny, fixed-distance silhouette: no hitbox and no interaction.
+        sx = int(self.ambient_event_x - self.camera_x * 0.70)
+        sy = self.ambient_event_y
+        if -45 <= sx <= WIDTH + 45:
+            pygame.draw.ellipse(self.screen, (5, 8, 19), (sx - 15, sy - 34, 30, 19))
+            pygame.draw.polygon(self.screen, (6, 10, 23),
+                                [(sx - 10, sy - 22), (sx + 10, sy - 22),
+                                 (sx + 17, sy + 31), (sx - 17, sy + 31)])
+            pygame.draw.line(self.screen, (24, 42, 62), (sx - 7, sy + 4), (sx - 19, sy + 27), 3)
+            pygame.draw.line(self.screen, (24, 42, 62), (sx + 7, sy + 4), (sx + 19, sy + 27), 3)
+            pygame.draw.circle(self.screen, theme["accent2"], (sx - 4, sy - 16), 2)
+            pygame.draw.circle(self.screen, theme["accent2"], (sx + 4, sy - 16), 2)
+
+    def draw_ambient_overlay(self) -> None:
+        if self.ambient_event == "glitch" and self.ambient_event_remaining > 0:
+            rng = random.Random(int(self.time * 90))
+            for _ in range(13):
+                y = rng.randrange(28, HEIGHT - 34)
+                x = rng.randrange(-20, WIDTH - 50)
+                width = rng.randrange(35, 260)
+                color = rng.choice(((22, 72, 86), (72, 31, 77), (104, 130, 145), (8, 17, 34)))
+                pygame.draw.rect(self.screen, color, (x, y, width, rng.choice((1, 2, 3))))
+            if self.ambient_event_remaining < 0.13:
+                pygame.draw.line(self.screen, (110, 180, 190), (0, 112), (WIDTH, 112), 2)
+        elif self.ambient_event == "surge" and self.ambient_event_remaining > 0:
+            # Short power surge in the set dressing; it has no gameplay effect.
+            pygame.draw.line(self.screen, (80, 122, 145), (0, 72), (WIDTH, 72), 2)
+            pygame.draw.line(self.screen, (48, 88, 110), (0, 77), (WIDTH, 77), 1)
+
     def draw_background(self, theme, background_level_index: int | None = None) -> None:
         self.screen.blit(self.gradient, (0, 0))
         # Reuse static atmosphere surfaces: allocating two full-screen alpha
@@ -4985,6 +5131,9 @@ class Game:
                 pygame.draw.line(self.screen, (26, 44, 70), (x - 31, y), (x + 31, y), 1)
                 pygame.draw.line(self.screen, (26, 44, 70), (x, y - 31), (x, y + 31), 1)
 
+        self.draw_level_environment(theme)
+        self.draw_ambient_watcher(theme)
+
         for platform in self.level.platforms:
             draw_platform(self.screen, platform, self.camera_x, accent)
         for pad in self.level.launch_pads:
@@ -5005,6 +5154,52 @@ class Game:
                                     [(mx + moving.w // 2 - 5, my - 4),
                                      (mx + moving.w // 2 + 5, my - 4),
                                      (mx + moving.w // 2, my + 2)])
+        # Collapse bridges one segment at a time, then show a brief rebuilding
+        # outline before the surface becomes solid again.
+        for bridge in self.level.breakaway_platforms:
+            bx = int(bridge.x - self.camera_x)
+            if -bridge.w < bx < WIDTH:
+                if bridge.state in ("ready", "warning"):
+                    bridge_accent = (255, 170, 80) if bridge.state == "warning" else accent
+                    draw_platform(self.screen, Platform(bridge.x, bridge.y, bridge.w, bridge.h),
+                                  self.camera_x, bridge_accent)
+                    if bridge.state == "warning":
+                        pulse = 1 + int(2 * abs(math.sin(self.time * 18)))
+                        pygame.draw.line(self.screen, (255, 186, 86),
+                                         (bx + 5, bridge.y + 8), (bx + bridge.w - 5, bridge.y + 8), pulse)
+                elif bridge.state == "broken":
+                    pygame.draw.line(self.screen, (55, 67, 87), (bx + 8, bridge.y + 9),
+                                     (bx + bridge.w - 8, bridge.y + 9), 1)
+                    if int(self.time * 12) % 2 == 0:
+                        pygame.draw.line(self.screen, (96, 124, 145),
+                                         (bx + 12, bridge.y + 5), (bx + bridge.w - 12, bridge.y + 5), 1)
+                else:
+                    pygame.draw.rect(self.screen, (60, 122, 132),
+                                     (bx, bridge.y, bridge.w, bridge.h), 1, border_radius=3)
+
+        for laser in self.level.lasers:
+            lx = int(laser.x - self.camera_x)
+            if -35 < lx < WIDTH + 35:
+                top_y, bottom_y = laser.y, laser.y + laser.h
+                pygame.draw.rect(self.screen, (14, 22, 39), (lx - 7, top_y - 8, laser.w + 14, 16), border_radius=4)
+                pygame.draw.rect(self.screen, (14, 22, 39), (lx - 7, bottom_y - 8, laser.w + 14, 16), border_radius=4)
+                pygame.draw.circle(self.screen, (67, 88, 111), (lx + laser.w // 2, top_y), 5)
+                pygame.draw.circle(self.screen, (67, 88, 111), (lx + laser.w // 2, bottom_y), 5)
+                if laser.active:
+                    pygame.draw.line(self.screen, (74, 22, 54), (lx + laser.w // 2, top_y),
+                                     (lx + laser.w // 2, bottom_y), 9)
+                    pygame.draw.line(self.screen, (255, 63, 135), (lx + laser.w // 2, top_y),
+                                     (lx + laser.w // 2, bottom_y), 3)
+                    pygame.draw.line(self.screen, (255, 194, 220), (lx + laser.w // 2, top_y + 5),
+                                     (lx + laser.w // 2, bottom_y - 5), 1)
+                elif laser.state == "warning":
+                    warning_color = (255, 187, 85) if int(self.time * 12) % 2 else (150, 91, 67)
+                    pygame.draw.line(self.screen, warning_color, (lx + laser.w // 2, top_y),
+                                     (lx + laser.w // 2, bottom_y), 2)
+                else:
+                    pygame.draw.line(self.screen, (42, 83, 91), (lx + laser.w // 2, top_y),
+                                     (lx + laser.w // 2, bottom_y), 1)
+
         for spike in self.level.spikes:
             draw_spikes(self.screen, spike, self.camera_x, accent2)
         for cp in self.level.checkpoints:
@@ -5052,6 +5247,7 @@ class Game:
         if sys.platform != "emscripten":
             self.screen.blit(self.surface_grain, (0, 0))
             self.screen.blit(self.vignette, (0, 0))
+        self.draw_ambient_overlay()
 
     def draw_hud(self) -> None:
         theme = THEMES[self.level_index]
