@@ -2762,6 +2762,10 @@ class Game:
         self.level_coins = 0
         self.level_secrets = 0
         self.pending_next_level: int | None = None
+        # One handoff prototype: sector 03 slides into sector 04.
+        self.seamless_transition_duration = 1.35
+        self.seamless_transition_timer = 0.0
+        self.seamless_transition_old_frame: pygame.Surface | None = None
         self.last_rating: dict = {}
         self.safehouse_selection = 0
         self.safehouse_player_speed = 250.0
@@ -4119,7 +4123,16 @@ class Game:
         self.notice_timer = 3.2
         self.save_progress()
         self.check_achievements()
-        self.mode = "level_result"
+
+        # Prototype the continuous 03 -> 04 handoff.
+        if self.level_index == 2 and self.pending_next_level == 3:
+            self.seamless_transition_old_frame = self.screen.copy()
+            self.load_level(3)
+            self.camera_x = -float(WIDTH)
+            self.seamless_transition_timer = self.seamless_transition_duration
+            self.mode = "transition"
+        else:
+            self.mode = "level_result"
 
     def choose_character(self, index: int) -> None:
         index = max(0, min(len(CHARACTER_IDS) - 1, index))
@@ -4887,6 +4900,19 @@ class Game:
 
     def update(self, dt: float) -> None:
         self.time += dt
+        if self.mode == "transition":
+            self.seamless_transition_timer = max(
+                0.0, self.seamless_transition_timer - dt)
+            progress = 1.0 - (
+                self.seamless_transition_timer /
+                max(0.001, self.seamless_transition_duration))
+            self.camera_x = -float(WIDTH) * (1.0 - progress)
+            if self.seamless_transition_timer <= 0.0:
+                self.camera_x = 0.0
+                self.seamless_transition_old_frame = None
+                self.mode = "playing"
+                self.level_banner = 0.0
+            return
         self.shake = max(0.0, self.shake - dt)
         self.notice_timer = max(0.0, self.notice_timer - dt)
         self.menu_notice_timer = max(0.0, self.menu_notice_timer - dt)
@@ -8037,6 +8063,23 @@ class Game:
         draw_text(self.screen, self.font_xs, "PRESS ENTER", MUTED,
                   (WIDTH // 2, 490), center=True, shadow=False)
 
+    def draw_seamless_transition(self) -> None:
+        """Slide sector 04 in from the right without a portal or fade."""
+        old_frame = self.seamless_transition_old_frame
+        if old_frame is None:
+            self.draw_world()
+            return
+        progress = 1.0 - (
+            self.seamless_transition_timer /
+            max(0.001, self.seamless_transition_duration))
+        shift = int(WIDTH * max(0.0, min(1.0, progress)))
+        self.screen.fill((0, 0, 0))
+        self.screen.blit(old_frame, (-shift, 0))
+        # Draw only the revealed slice of the incoming world.
+        self.screen.set_clip(pygame.Rect(WIDTH - shift, 0, shift, HEIGHT))
+        self.draw_world()
+        self.screen.set_clip(None)
+
     def draw(self) -> None:
         draw_started = perf_counter()
         if self.mode == "menu":
@@ -8075,6 +8118,8 @@ class Game:
             self.draw_skills()
         elif self.mode == "achievements":
             self.draw_achievements()
+        elif self.mode == "transition":
+            self.draw_seamless_transition()
         elif self.mode in ("playing", "paused"):
             self.draw_world()
             self.draw_hud()
