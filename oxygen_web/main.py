@@ -2546,6 +2546,8 @@ class Game:
             return
         try:
             pygame.mixer.set_num_channels(max(10, pygame.mixer.get_num_channels()))
+            # Keep channels 4 and 5 exclusively for landing and footsteps.
+            pygame.mixer.set_reserved(6)
             self.flight_sfx_channel = pygame.mixer.Channel(7)
             self.boss_music_channel = pygame.mixer.Channel(8)
         except pygame.error:
