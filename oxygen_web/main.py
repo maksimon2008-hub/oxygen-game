@@ -1167,9 +1167,9 @@ LEVELS.extend([
             (4640,390,155,18),(4860,300,145,18),(5050,215,135,18),
             (5350,380,155,18)
         ],
-        "pit_floors": [(650,560,180,70),(1270,560,180,70),(1900,560,180,70),
-                       (2530,560,180,70),(3160,560,180,70),(3790,560,180,70),
-                       (4420,560,180,70)],
+        # No safety floors beneath this sector: missed collapsing bridges are
+        # real drops, so the temporary blocks become the central traversal mechanic.
+        "pit_floors": [],
         "moving_platforms": [(690,275,135,16,"vertical",118,0.88,0.1),
                              (1265,280,135,16,"horizontal",112,0.86,0.1),
                              (2010,250,135,16,"vertical",125,0.90,1.0),
@@ -1177,8 +1177,17 @@ LEVELS.extend([
                              (3500,255,135,16,"horizontal",125,0.88,2.1),
                              (3900,265,135,16,"vertical",118,0.88,0.45),
                              (4490,280,135,16,"horizontal",112,0.86,1.8)],
-        "breakaway_platforms": [(1900,475,90,18,0.86,2.65),(1994,475,90,18,0.86,2.65),
-                                (3790,475,90,18,0.86,2.65),(3884,475,90,18,0.86,2.65)],
+        # Seven exposed bridge runs: each segment gives a short warning, then
+        # drops away. The player must keep moving instead of camping on a slab.
+        "breakaway_platforms": [
+            (650,475,88,18,0.78,2.45),(742,475,88,18,0.78,2.45),
+            (1270,475,88,18,0.78,2.45),(1362,475,88,18,0.78,2.45),
+            (1900,475,88,18,0.78,2.45),(1992,475,88,18,0.78,2.45),
+            (2530,475,88,18,0.78,2.45),(2622,475,88,18,0.78,2.45),
+            (3160,475,88,18,0.78,2.45),(3252,475,88,18,0.78,2.45),
+            (3790,475,88,18,0.78,2.45),(3882,475,88,18,0.78,2.45),
+            (4420,475,88,18,0.78,2.45),(4512,475,88,18,0.78,2.45)
+        ],
         "launch_pads": [(575,475,78),(3260,475,78)],
         "lasers": [(1115,245,12,230,2.6,0.9),(1740,300,12,175,2.85,0.2),
                    (2390,225,12,250,2.65,1.25),(3035,282,12,193,2.9,0.4),
@@ -2616,14 +2625,15 @@ class Game:
         if sound is None:
             return
         try:
-            # Footsteps use one dedicated channel. Sound.play() allocates a
-            # fresh mixer channel on every call, which can stack copies of a
-            # long step sample when the browser audio clock jitters.
-            if name == "footstep":
-                channel = getattr(self, "footstep_sfx_channel", None)
+            # Movement cues get dedicated channels: browser timing jitter must
+            # never allocate a new channel and stack repeated landing/step sounds.
+            if name in ("footstep", "landing"):
+                attr = "footstep_sfx_channel" if name == "footstep" else "landing_sfx_channel"
+                channel_index = 5 if name == "footstep" else 4
+                channel = getattr(self, attr, None)
                 if channel is None:
-                    channel = pygame.mixer.Channel(5)
-                    self.footstep_sfx_channel = channel
+                    channel = pygame.mixer.Channel(channel_index)
+                    setattr(self, attr, channel)
                 if not channel.get_busy():
                     channel.play(sound)
                 return
@@ -2935,8 +2945,11 @@ class Game:
         self.player.update(dt, keys, self.safehouse_world, self.particles)
         if self.player.jump_count > previous_jump_count:
             self.play_sfx("jump")
-        if not previous_on_ground and self.player.on_ground:
+        self.landing_sfx_cooldown = max(0.0, self.landing_sfx_cooldown - dt)
+        if (not previous_on_ground and self.player.on_ground
+                and self.landing_sfx_cooldown <= 0.0):
             self.play_sfx("landing")
+            self.landing_sfx_cooldown = 0.24
         if (self.player.on_ground and abs(self.player.vx) > 115
                 and self.player.dash_time <= 0 and self.footstep_timer <= 0):
             self.play_sfx("footstep")
@@ -3333,10 +3346,12 @@ class Game:
         # Keep the 30-minute cooldown across sectors so it measures the whole campaign.
         self.level_index = index
         self.footstep_timer = 0.0
+        self.landing_sfx_cooldown = 0.0
         try:
-            footstep_channel = getattr(self, "footstep_sfx_channel", None)
-            if footstep_channel is not None:
-                footstep_channel.stop()
+            for channel_name in ("footstep_sfx_channel", "landing_sfx_channel"):
+                channel = getattr(self, channel_name, None)
+                if channel is not None:
+                    channel.stop()
         except pygame.error:
             pass
         self.save_data["last_level"] = int(index)
@@ -4360,8 +4375,11 @@ class Game:
         self.player.update(dt, keys, self.level, self.particles)
         if self.player.jump_count > previous_jump_count:
             self.play_sfx("jump")
-        if not previous_on_ground and self.player.on_ground:
+        self.landing_sfx_cooldown = max(0.0, self.landing_sfx_cooldown - dt)
+        if (not previous_on_ground and self.player.on_ground
+                and self.landing_sfx_cooldown <= 0.0):
             self.play_sfx("landing")
+            self.landing_sfx_cooldown = 0.24
         if (self.player.on_ground and abs(self.player.vx) > 115
                 and self.player.dash_time <= 0 and self.footstep_timer <= 0):
             self.play_sfx("footstep")
