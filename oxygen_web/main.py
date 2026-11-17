@@ -5113,6 +5113,67 @@ class Game:
                                      (sx - 4, sy), (sx + 4, sy - 2), 1)
             return
 
+        # Sector 09: exposed transmission yard beneath an electrical storm.
+        if self.level_index == 8:
+            first = int((self.camera_x * 0.38) // 690) - 1
+            last = int((self.camera_x * 0.38 + WIDTH) // 690) + 2
+            for segment in range(first, last):
+                world_x = segment * 690 + 300
+                sx = int(world_x - self.camera_x * 0.38)
+                height = 190 + (segment % 4) * 48
+                # Lattice transmission mast with crossarms and guy wires.
+                mast_top = 430 - height
+                pygame.draw.line(self.screen, (28, 48, 69), (sx, mast_top), (sx, 455), 5)
+                pygame.draw.line(self.screen, (53, 91, 119), (sx - 2, mast_top), (sx - 2, 455), 1)
+                for arm_y in (mast_top + 42, mast_top + 104, mast_top + 166):
+                    if arm_y < 440:
+                        pygame.draw.line(self.screen, (35, 67, 91),
+                                         (sx - 58, arm_y), (sx + 58, arm_y), 4)
+                        for side in (-1, 1):
+                            pygame.draw.circle(self.screen, (64, 135, 164),
+                                               (sx + side * 55, arm_y - 5), 3)
+                for side in (-1, 1):
+                    pygame.draw.line(self.screen, (29, 54, 76),
+                                     (sx, mast_top + 12), (sx + side * 112, 455), 2)
+                # Broad transmitter dish, tilted toward the storm ceiling.
+                dish_x = sx + 128
+                dish_y = 265 + (segment % 3) * 42
+                pygame.draw.ellipse(self.screen, (18, 39, 60),
+                                    (dish_x - 48, dish_y - 27, 96, 54), 3)
+                pygame.draw.arc(self.screen, (65, 126, 157),
+                                (dish_x - 43, dish_y - 23, 86, 46), 0.2, 3.0, 2)
+                pygame.draw.line(self.screen, (44, 83, 111),
+                                 (dish_x, dish_y + 18), (dish_x - 12, dish_y + 92), 3)
+                # Signal beacon on a separate short tower.
+                beacon_x = sx - 145
+                pygame.draw.line(self.screen, (31, 57, 77),
+                                 (beacon_x, 210), (beacon_x, 455), 3)
+                pygame.draw.circle(self.screen, (65, 171, 202),
+                                   (beacon_x, 212 + int(math.sin(self.time * 2 + segment) * 4)), 5)
+                # Cable runs between relay structures.
+                pygame.draw.line(self.screen, (25, 48, 68),
+                                 (sx + 180, 320), (sx + 570, 350), 2)
+                pygame.draw.line(self.screen, (44, 79, 104),
+                                 (sx + 180, 324), (sx + 570, 354), 1)
+            # Heavy storm cloud bands drift independently of the camera.
+            for cloud in range(5):
+                cx = int((cloud * 310 - self.camera_x * 0.19 + self.time * (7 + cloud)) % (WIDTH + 420)) - 210
+                cy = 70 + cloud * 27
+                pygame.draw.ellipse(self.screen, (13, 25, 43),
+                                    (cx - 105, cy - 18, 230, 48))
+                pygame.draw.ellipse(self.screen, (24, 43, 64),
+                                    (cx - 72, cy - 27, 165, 39), 2)
+            # Occasional distant lightning forks, purely atmospheric.
+            flash = (math.sin(self.time * 1.7 + 1.2) > 0.992)
+            if flash:
+                for bolt in range(2):
+                    bx = int((bolt * 390 + 170 - self.camera_x * 0.22) % (WIDTH + 100)) - 50
+                    by = 88 + bolt * 34
+                    points = [(bx, by), (bx - 13, by + 28), (bx + 5, by + 47),
+                              (bx - 17, by + 78)]
+                    pygame.draw.lines(self.screen, (83, 169, 205), False, points, 2)
+            return
+
         # Industrial overhead conduits and braces for the other sectors.
         first = int((self.camera_x * 0.72) // 420) - 1
         last = int((self.camera_x * 0.72 + WIDTH) // 420) + 2
@@ -5217,7 +5278,7 @@ class Game:
         skyline_offset = int(self.camera_x * 0.10)
         skyline_index = self.level_index if background_level_index is None else background_level_index
         # Sector 07 is enclosed by a living canopy, not the usual city skyline.
-        if skyline_index not in (6, 7):
+        if skyline_index not in (6, 7, 8):
             self.screen.blit(self.skyline_layers[skyline_index], (-skyline_offset, 0))
 
         # Soft drifting smoke banks: cached once per sector, then only blitted.
@@ -5274,7 +5335,7 @@ class Game:
 
         # Background signal glyphs belong to the machine sectors; the
         # garden gets organic silhouettes instead.
-        if self.level_index not in (6, 7):
+        if self.level_index not in (6, 7, 8):
             for i in range(7):
                 wx = i * 560 + 180
                 x = int(wx - self.camera_x * 0.55)
@@ -5289,6 +5350,21 @@ class Game:
 
         for platform in self.level.platforms:
             draw_platform(self.screen, platform, self.camera_x, accent)
+            if self.level_index == 8 and platform.h <= 24:
+                # Exposed relay catwalks: industrial grating with warning lights.
+                px = int(platform.x - self.camera_x)
+                py = int(platform.y)
+                if -platform.w < px < WIDTH:
+                    pygame.draw.line(self.screen, (67, 126, 151),
+                                     (px + 3, py + 1), (px + platform.w - 3, py + 1), 2)
+                    for mark in range(max(1, platform.w // 34)):
+                        mx = px + 12 + mark * 34
+                        if mx < px + platform.w - 5:
+                            pygame.draw.line(self.screen, (37, 76, 96),
+                                             (mx, py + 5), (mx + 8, py + 5), 1)
+                    beacon = int((self.time * 3 + platform.x * 0.01) % 2)
+                    pygame.draw.circle(self.screen, (75, 185, 204) if beacon else (115, 91, 52),
+                                       (px + 9, py + 5), 2)
             if self.level_index == 7 and platform.h <= 24:
                 # Glass walkways: layered cyan edge and a restrained specular streak.
                 px = int(platform.x - self.camera_x)
