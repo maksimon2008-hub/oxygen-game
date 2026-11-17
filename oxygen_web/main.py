@@ -1022,6 +1022,131 @@ LEVELS = [
     },
 ]
 
+# Sectors 01-05 were deliberately extended as a second chapter of each
+# environment. Existing routes remain intact; these are new hand-authored
+# stretches with their own jumps, enemy patrols, salvage and checkpoints.
+LEVELS[0]["width"] = 5000
+LEVELS[0]["platforms"].extend([
+    (3400, 475, 380, 100), (3840, 475, 380, 100),
+    (4280, 475, 350, 100), (4690, 475, 310, 100),
+    (3480, 385, 155, 18), (3705, 315, 155, 18),
+    (3945, 380, 155, 18), (4180, 305, 165, 18),
+    (4460, 375, 165, 18), (4680, 310, 155, 18),
+])
+LEVELS[0]["coins"].extend([
+    (3515, 347), (3740, 277), (3980, 342), (4220, 267),
+    (4500, 337), (4720, 272), (3590, 425), (4040, 425),
+    (4380, 425), (4800, 425), (4900, 425),
+])
+LEVELS[0]["drones"].extend([
+    (3640, 350, 3560, 3720), (4350, 345, 4280, 4490),
+    (4770, 280, 4690, 4860),
+])
+LEVELS[0]["spikes"].extend([(3890, 452, 70), (4400, 452, 72), (4800, 452, 70)])
+LEVELS[0]["checkpoints"].extend([(4160, 475), (4740, 475)])
+LEVELS[0]["exit"] = (4860, 393)
+
+LEVELS[1]["width"] = 5600
+LEVELS[1]["platforms"].extend([
+    (3900, 475, 370, 100), (4335, 475, 390, 100),
+    (4790, 475, 390, 100), (5245, 475, 355, 100),
+    (3980, 380, 165, 18), (4205, 310, 160, 18),
+    (4445, 375, 160, 18), (4680, 300, 160, 18),
+    (4920, 365, 165, 18), (5155, 305, 165, 18),
+    (5400, 375, 155, 18),
+])
+LEVELS[1]["coins"].extend([
+    (4020, 342), (4245, 272), (4485, 337), (4720, 262),
+    (4960, 327), (5195, 267), (5440, 337),
+    (4050, 425), (4570, 425), (5080, 425), (5480, 425),
+])
+LEVELS[1]["drones"].extend([
+    (4100, 345, 4020, 4180), (4880, 335, 4790, 4980),
+    (5400, 285, 5320, 5490),
+])
+LEVELS[1].setdefault("seekers", []).extend([
+    (4620, 190, 4530, 4710), (5230, 195, 5140, 5320),
+])
+LEVELS[1]["spikes"].extend([(4190, 452, 70), (4880, 452, 72), (5460, 452, 70)])
+LEVELS[1]["checkpoints"].extend([(4550, 475), (5310, 475)])
+LEVELS[1]["exit"] = (5460, 393)
+
+LEVELS[2]["width"] = 6200
+LEVELS[2]["platforms"].extend([
+    (4350, 475, 380, 100), (4790, 475, 390, 100),
+    (5240, 475, 400, 100), (5700, 475, 500, 100),
+    (4420, 385, 160, 18), (4650, 310, 155, 18),
+    (4880, 370, 160, 18), (5110, 295, 160, 18),
+    (5350, 365, 160, 18), (5580, 300, 160, 18),
+    (5840, 375, 165, 18), (6015, 310, 145, 18),
+])
+LEVELS[2]["coins"].extend([
+    (4460, 347), (4690, 272), (4920, 332), (5150, 257),
+    (5390, 327), (5620, 262), (5880, 337), (6050, 272),
+    (4530, 425), (5010, 425), (5460, 425), (5910, 425),
+])
+LEVELS[2]["drones"].extend([
+    (4580, 340, 4500, 4660), (5280, 340, 5200, 5360),
+    (5900, 335, 5810, 6000),
+])
+LEVELS[2].setdefault("seekers", []).extend([
+    (4860, 185, 4770, 4950), (5570, 190, 5480, 5660),
+])
+LEVELS[2]["spikes"].extend([(4650, 452, 70), (5350, 452, 72), (5900, 452, 70)])
+LEVELS[2]["checkpoints"].extend([(5050, 475), (5780, 475)])
+LEVELS[2]["exit"] = (6070, 393)
+
+LEVELS[3]["width"] = 5800
+LEVELS[3]["platforms"].extend([
+    (4050, 475, 380, 100), (4490, 475, 390, 100),
+    (4940, 475, 400, 100), (5400, 475, 400, 100),
+    (4120, 385, 155, 18), (4350, 315, 155, 18),
+    (4580, 370, 160, 18), (4820, 300, 160, 18),
+    (5060, 365, 160, 18), (5300, 305, 160, 18),
+    (5520, 380, 160, 18), (5700, 315, 90, 18),
+])
+LEVELS[3]["coins"].extend([
+    (4160, 347), (4390, 277), (4620, 332), (4860, 262),
+    (5100, 327), (5340, 267), (5560, 342), (5740, 277),
+    (4230, 425), (4700, 425), (5180, 425), (5620, 425),
+])
+LEVELS[3]["drones"].extend([
+    (4230, 340, 4150, 4310), (4750, 335, 4670, 4830),
+    (5280, 340, 5200, 5360), (5650, 280, 5570, 5730),
+])
+LEVELS[3]["seekers"].extend([
+    (4530, 185, 4440, 4620), (5400, 190, 5310, 5490),
+])
+LEVELS[3]["spikes"].extend([(4330, 452, 70), (4960, 452, 72), (5500, 452, 70)])
+LEVELS[3]["checkpoints"].extend([(4700, 475), (5680, 475)])
+LEVELS[3]["exit"] = (5730, 393)
+
+LEVELS[4]["width"] = 6500
+LEVELS[4]["platforms"].extend([
+    (4550, 475, 390, 100), (5000, 475, 400, 100),
+    (5460, 475, 420, 100), (5940, 475, 560, 100),
+    (4620, 385, 160, 18), (4850, 315, 160, 18),
+    (5100, 375, 160, 18), (5335, 300, 160, 18),
+    (5580, 365, 160, 18), (5820, 295, 160, 18),
+    (6060, 380, 160, 18), (6260, 315, 155, 18),
+])
+LEVELS[4]["coins"].extend([
+    (4660, 347), (4890, 277), (5140, 337), (5375, 262),
+    (5620, 327), (5860, 257), (6100, 342), (6300, 272),
+    (4720, 425), (5210, 425), (5680, 425), (6150, 425),
+])
+LEVELS[4]["drones"].extend([
+    (4770, 335, 4690, 4850), (5260, 335, 5180, 5340),
+    (5620, 335, 5540, 5700),
+])
+LEVELS[4]["seekers"].extend([
+    (4890, 190, 4800, 4980), (5420, 185, 5330, 5510),
+])
+LEVELS[4]["spikes"].extend([(4780, 452, 70), (5250, 452, 72), (5550, 452, 70)])
+LEVELS[4]["checkpoints"].extend([(4860, 475), (5400, 475)])
+LEVELS[4]["exit"] = (6420, 393)
+
+
 
 # Sectors 06–10: five longer, hand-authored routes. Each jump pad is a
 # deliberate launch into a high route above a spiked pit; breakaway spans and
@@ -1334,7 +1459,7 @@ class Level:
             for enemy in self.spiders + self.turrets:
                 enemy.hp = 6
         # THE CORE guards sector 05; the OXYGEN WARDEN guards sector 10.
-        self.boss = Boss() if index == 4 else OxygenWarden(self.width) if index == 9 else None
+        self.boss = Boss(x=self.width - 430.0, left=self.width - 570.0, right=self.width - 310.0) if index == 4 else OxygenWarden(self.width) if index == 9 else None
         self.enemy_shots: list[Projectile] = []
         # Snap spike strips to real floor platforms first. Several authored
         # coordinates were on gaps or floating ledges in the original sectors.
@@ -1843,7 +1968,7 @@ def draw_text(surface: pygame.Surface, font: pygame.font.Font, text: str,
 
 
 _GLOW_CACHE: dict[tuple[tuple[int, int, int], int], pygame.Surface] = {}
-_PLATFORM_SURFACE_CACHE: dict[tuple[int, int, tuple[int, int, int]], pygame.Surface] = {}
+_PLATFORM_SURFACE_CACHE: dict[tuple[int, int, tuple[int, int, int], int], pygame.Surface] = {}
 
 def draw_glow(surface: pygame.Surface, x: int, y: int,
               color: tuple[int, int, int], radius: int) -> None:
@@ -2030,14 +2155,16 @@ def draw_boss(surface: pygame.Surface, boss: Boss, camera_x: float) -> None:
 
 
 def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
-                  accent: tuple[int, int, int]) -> None:
+                  accent: tuple[int, int, int], level_index: int = 5) -> None:
     x = int(p.x - camera_x)
     if x > WIDTH or x + p.w + 4 < 0:
         return
-    # Platform geometry never changes. Bake each size/theme once, then use one
-    # fast blit per frame instead of a dozen Python-level draw calls.
+    # Each sector has its own baked platform material. Rendering remains one
+    # cached blit per platform per frame, so richer art does not add a trail of
+    # Python draw calls while the player is moving.
     width, height = int(p.w), int(p.h)
-    key = (width, height, tuple(accent))
+    style = int(level_index) if 0 <= int(level_index) <= 4 else 5
+    key = (width, height, tuple(accent), style)
     tile = _PLATFORM_SURFACE_CACHE.get(key)
     if tile is None:
         tile = pygame.Surface((width + 4, height + 7)).convert()
@@ -2046,22 +2173,128 @@ def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
         tile.set_colorkey(transparent)
         rect = pygame.Rect(0, 0, width, height)
         shadow_rect = pygame.Rect(4, 7, width, height)
-        pygame.draw.rect(tile, (5, 9, 20), shadow_rect, border_radius=4)
-        pygame.draw.rect(tile, (17, 26, 45), rect, border_radius=4)
-        pygame.draw.rect(tile, (37, 55, 75), rect, 1, border_radius=4)
-        pygame.draw.line(tile, accent, (3, 0), (width - 3, 0), 3)
-        pygame.draw.line(tile, (76, 103, 126), (5, 4), (width - 5, 4), 1)
-        pygame.draw.line(tile, (7, 12, 25), (4, height - 3),
-                         (width - 4, height - 3), 2)
-        for px in range(18, width - 8, 42):
-            pygame.draw.rect(tile, (22, 37, 57),
-                             (px, 8, 25, max(8, height - 15)), 1, border_radius=2)
-            pygame.draw.line(tile, (40, 58, 79), (px + 4, 12), (px + 15, 12), 1)
-            pygame.draw.circle(tile, (91, 119, 139), (px + 3, 5), 1)
-            pygame.draw.circle(tile, (8, 14, 27), (px + 20, 5), 1)
+        pygame.draw.rect(tile, (4, 8, 18), shadow_rect, border_radius=4)
+
+        if style == 0:
+            # DEAD STATION: concrete metro platform, illuminated edge and
+            # yellow tactile/safety markers like a deserted railway terminal.
+            pygame.draw.rect(tile, (13, 27, 42), rect, border_radius=3)
+            pygame.draw.rect(tile, (43, 75, 92), rect, 2, border_radius=3)
+            pygame.draw.line(tile, (92, 191, 199), (3, 1), (width - 3, 1), 3)
+            pygame.draw.line(tile, (255, 190, 94), (5, 5), (width - 5, 5), 2)
+            for px in range(14, width - 8, 38):
+                panel_h = max(4, height - 15)
+                pygame.draw.rect(tile, (19, 39, 55),
+                                 (px, 9, min(27, width - px - 5), panel_h), 1, border_radius=2)
+                pygame.draw.circle(tile, (103, 139, 151), (px + 3, 7), 1)
+                if height > 32:
+                    pygame.draw.line(tile, (34, 59, 75),
+                                     (px + 5, 17), (px + 5, height - 7), 1)
+            for px in range(9, width - 10, 46):
+                pygame.draw.line(tile, (245, 180, 91),
+                                 (px, 3), (min(width - 7, px + 8), 3), 2)
+
+        elif style == 1:
+            # COLD INDUSTRY: bolted grating, reinforced ribs and warning paint.
+            pygame.draw.rect(tile, (17, 29, 43), rect, border_radius=3)
+            pygame.draw.rect(tile, (62, 77, 91), rect, 2, border_radius=3)
+            pygame.draw.line(tile, accent, (3, 1), (width - 3, 1), 3)
+            for px in range(12, width - 5, 19):
+                pygame.draw.line(tile, (41, 61, 76),
+                                 (px, 8), (px, max(8, height - 5)), 1)
+            for px in range(10, width - 12, 42):
+                pygame.draw.rect(tile, (29, 48, 63),
+                                 (px, 8, min(30, width - px - 5), max(4, height - 15)), 1)
+                pygame.draw.circle(tile, (125, 139, 145), (px + 3, 6), 1)
+                pygame.draw.circle(tile, (125, 139, 145), (min(width - 4, px + 25), 6), 1)
+            for px in range(8, width - 8, 34):
+                pygame.draw.line(tile, (211, 151, 79),
+                                 (px, max(8, height - 5)),
+                                 (min(width - 5, px + 10), max(8, height - 5)), 2)
+
+        elif style == 2:
+            # DROWNED MEMORY: framed observation glass with water-dark panels,
+            # cyan seals and a few trapped bubbles inside thick support beams.
+            pygame.draw.rect(tile, (5, 30, 47), rect, border_radius=4)
+            pygame.draw.rect(tile, (37, 91, 111), rect, 2, border_radius=4)
+            pygame.draw.line(tile, (83, 202, 211), (4, 1), (width - 4, 1), 3)
+            if height > 30:
+                for px in range(8, width - 8, 48):
+                    pane_w = min(38, width - px - 5)
+                    pygame.draw.rect(tile, (8, 45, 61),
+                                     (px, 11, pane_w, height - 22), border_radius=3)
+                    pygame.draw.rect(tile, (42, 112, 131),
+                                     (px, 11, pane_w, height - 22), 1, border_radius=3)
+                    pygame.draw.line(tile, (75, 157, 173),
+                                     (px + 5, 15), (px + pane_w - 5, 15), 1)
+                    pygame.draw.circle(tile, (71, 174, 190),
+                                       (px + pane_w // 2, height - 12), 2, 1)
+            else:
+                for px in range(12, width - 8, 36):
+                    pygame.draw.line(tile, (23, 78, 96),
+                                     (px, 6), (px + 12, height - 5), 1)
+                    pygame.draw.circle(tile, (88, 187, 199), (px + 4, 7), 1)
+
+        elif style == 3:
+            # EMPTY DISTRICT: fractured rooftop concrete, exposed seams,
+            # chipped edges and occasional moss caught in the cracks.
+            pygame.draw.rect(tile, (26, 34, 43), rect, border_radius=2)
+            pygame.draw.rect(tile, (73, 83, 91), rect, 1, border_radius=2)
+            pygame.draw.line(tile, (117, 151, 128), (4, 1), (width - 4, 1), 2)
+            pygame.draw.line(tile, (46, 58, 68), (5, 6), (width - 5, 6), 1)
+            for px in range(20, width - 10, 52):
+                seam_y = 12 + (px // 52 % 2) * 5
+                if seam_y < height - 4:
+                    pygame.draw.line(tile, (13, 23, 32),
+                                     (px, seam_y), (px + 8, min(height - 4, seam_y + 8)), 2)
+                pygame.draw.line(tile, (52, 67, 73),
+                                 (px + 12, 9), (px + 27, 9), 1)
+                if height > 35:
+                    pygame.draw.rect(tile, (17, 28, 36),
+                                     (px + 4, 24, 18, 13), 1)
+            for px in range(13, width - 8, 61):
+                pygame.draw.circle(tile, (112, 128, 118), (px, 5), 1)
+
+        elif style == 4:
+            # BLACK SUN / CORE APPROACH: containment deck plating, recessed
+            # service panels, cyan power rails and restrained red warning cuts.
+            pygame.draw.rect(tile, (8, 17, 32), rect, border_radius=3)
+            pygame.draw.rect(tile, (49, 65, 83), rect, 2, border_radius=3)
+            pygame.draw.line(tile, (85, 192, 207), (3, 1), (width - 3, 1), 3)
+            pygame.draw.line(tile, (113, 48, 68), (5, 5), (width - 5, 5), 1)
+            for px in range(10, width - 8, 44):
+                panel_w = min(31, width - px - 5)
+                pygame.draw.rect(tile, (13, 29, 45),
+                                 (px, 10, panel_w, max(4, height - 16)), 1, border_radius=2)
+                pygame.draw.line(tile, (34, 69, 87),
+                                 (px + 4, 12), (px + panel_w - 4, 12), 1)
+                pygame.draw.circle(tile, (75, 176, 190), (px + 4, 7), 1)
+                if height > 35:
+                    pygame.draw.line(tile, (32, 93, 113),
+                                     (px + panel_w // 2, 18),
+                                     (px + panel_w // 2, height - 6), 2)
+            for px in range(18, width - 8, 58):
+                pygame.draw.line(tile, (142, 61, 78),
+                                 (px, max(8, height - 5)),
+                                 (min(width - 5, px + 7), max(8, height - 5)), 2)
+
+        else:
+            # Later sectors keep their established industrial base material.
+            pygame.draw.rect(tile, (17, 26, 45), rect, border_radius=4)
+            pygame.draw.rect(tile, (37, 55, 75), rect, 1, border_radius=4)
+            pygame.draw.line(tile, accent, (3, 0), (width - 3, 0), 3)
+            pygame.draw.line(tile, (76, 103, 126), (5, 4), (width - 5, 4), 1)
+            pygame.draw.line(tile, (7, 12, 25), (4, height - 3),
+                             (width - 4, height - 3), 2)
+            for px in range(18, width - 8, 42):
+                pygame.draw.rect(tile, (22, 37, 57),
+                                 (px, 8, 25, max(8, height - 15)), 1, border_radius=2)
+                pygame.draw.line(tile, (40, 58, 79), (px + 4, 12), (px + 15, 12), 1)
+                pygame.draw.circle(tile, (91, 119, 139), (px + 3, 5), 1)
+                pygame.draw.circle(tile, (8, 14, 27), (px + 20, 5), 1)
+
         _PLATFORM_SURFACE_CACHE[key] = tile
     surface.blit(tile, (x, p.y))
-
 
 def draw_spikes(surface: pygame.Surface, spike: pygame.Rect, camera_x: float,
                 accent2: tuple[int, int, int]) -> None:
@@ -4465,7 +4698,7 @@ class Game:
                     bridge.trigger()
                     break
         if self.level.boss is not None and not self.level.boss.active and not self.level.boss.defeated:
-            activation_x = self.level.width - 760 if self.level_index == 9 else 3920
+            activation_x = self.level.width - 760 if self.level_index in (4, 9) else 3920
             if self.player.x > activation_x:
                 self.level.boss.active = True
                 self.start_boss_arena()
@@ -5927,7 +6160,7 @@ class Game:
         self.draw_ambient_watcher(theme)
 
         for platform in self.level.platforms:
-            draw_platform(self.screen, platform, self.camera_x, accent)
+            draw_platform(self.screen, platform, self.camera_x, accent, self.level_index)
             if self.level_index == 8 and platform.h <= 24:
                 # Exposed relay catwalks: industrial grating with warning lights.
                 px = int(platform.x - self.camera_x)
@@ -6000,7 +6233,7 @@ class Game:
             if -bridge.w < bx < WIDTH:
                 if bridge.state in ("ready", "warning"):
                     bridge_accent = (255, 170, 80) if bridge.state == "warning" else accent
-                    draw_platform(self.screen, bridge, self.camera_x, bridge_accent)
+                    draw_platform(self.screen, bridge, self.camera_x, bridge_accent, self.level_index)
                     if bridge.state == "warning":
                         pulse = 1 + int(2 * abs(math.sin(self.time * 18)))
                         pygame.draw.line(self.screen, (255, 186, 86),
