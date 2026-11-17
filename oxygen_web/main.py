@@ -5058,6 +5058,297 @@ class Game:
         accent = theme["accent"]
         muted = (33, 51, 72)
 
+        # Sectors 01-05: distinct environmental backdrops only.
+        # Gameplay geometry, hazards and platform layouts remain untouched.
+        if self.level_index == 0:
+            # DEAD STATION — a deserted metro terminal with a long train,
+            # vaulted ceiling, platform signs and cold fluorescent lighting.
+            first = int((self.camera_x * 0.30) // 610) - 1
+            last = int((self.camera_x * 0.30 + WIDTH) // 610) + 2
+            for segment in range(first, last):
+                sx = int(segment * 610 + 270 - self.camera_x * 0.30)
+                pygame.draw.arc(self.screen, (18, 37, 58),
+                                (sx - 285, 35, 570, 320), math.pi, math.tau, 13)
+                pygame.draw.arc(self.screen, (42, 70, 91),
+                                (sx - 260, 48, 520, 285), math.pi, math.tau, 2)
+                for col in (-205, -70, 70, 205):
+                    cx = sx + col
+                    pygame.draw.rect(self.screen, (12, 27, 43),
+                                     (cx - 16, 170, 32, 275))
+                    pygame.draw.line(self.screen, (47, 77, 98),
+                                     (cx - 10, 180), (cx - 10, 435), 2)
+                    pygame.draw.rect(self.screen, (64, 119, 143),
+                                     (cx - 20, 170, 40, 5))
+                # Station name boards hang high above the platform.
+                board = pygame.Rect(sx - 94, 112 + (segment % 2) * 18, 188, 34)
+                pygame.draw.rect(self.screen, (8, 20, 34), board, border_radius=4)
+                pygame.draw.rect(self.screen, (48, 104, 128), board, 2, border_radius=4)
+                pygame.draw.line(self.screen, (65, 179, 194),
+                                 (board.x + 14, board.centery),
+                                 (board.right - 14, board.centery), 2)
+                # A stationary train silhouette in the far background.
+                train_y = 350 + (segment % 2) * 13
+                pygame.draw.rect(self.screen, (9, 22, 37),
+                                 (sx - 245, train_y, 490, 94), border_radius=12)
+                pygame.draw.rect(self.screen, (36, 67, 86),
+                                 (sx - 245, train_y, 490, 94), 2, border_radius=12)
+                for window in range(5):
+                    wx = sx - 207 + window * 91
+                    pygame.draw.rect(self.screen, (24, 62, 79),
+                                     (wx, train_y + 15, 64, 35), border_radius=4)
+                    pygame.draw.line(self.screen, (75, 139, 153),
+                                     (wx + 8, train_y + 19), (wx + 54, train_y + 19), 1)
+                pygame.draw.line(self.screen, (57, 94, 111),
+                                 (sx - 225, train_y + 76), (sx + 225, train_y + 76), 3)
+                for lamp in (-150, 0, 150):
+                    lx = sx + lamp
+                    pygame.draw.line(self.screen, (30, 58, 76),
+                                     (lx - 34, 65), (lx + 34, 65), 5)
+                    pygame.draw.line(self.screen, (91, 160, 174),
+                                     (lx - 22, 68), (lx + 22, 68), 2)
+            # Thin rails and a distant signal haze.
+            for i in range(8):
+                x = int(i * 190 - self.camera_x * 0.55) % (WIDTH + 190) - 95
+                pygame.draw.line(self.screen, (24, 51, 70),
+                                 (x, 438), (x + 115, 438), 3)
+            for i in range(9):
+                x = int(i * 155 - self.camera_x * 0.18) % (WIDTH + 155) - 70
+                pygame.draw.circle(self.screen, (47, 108, 126), (x, 286 + (i % 3) * 17), 2)
+            return
+
+        if self.level_index == 1:
+            # COLD INDUSTRY — deep factory hall with giant pipework,
+            # distant furnace mouths, overhead gantries and slow fan housings.
+            first = int((self.camera_x * 0.32) // 650) - 1
+            last = int((self.camera_x * 0.32 + WIDTH) // 650) + 2
+            for segment in range(first, last):
+                sx = int(segment * 650 + 310 - self.camera_x * 0.32)
+                # Tall factory bays and steel roof trusses.
+                pygame.draw.rect(self.screen, (9, 23, 39), (sx - 275, 85, 550, 355))
+                pygame.draw.line(self.screen, (37, 66, 86),
+                                 (sx - 275, 105), (sx + 275, 105), 7)
+                for brace in range(7):
+                    bx = sx - 255 + brace * 85
+                    pygame.draw.line(self.screen, (25, 52, 73),
+                                     (bx, 108), (bx + 70, 205), 3)
+                    pygame.draw.line(self.screen, (25, 52, 73),
+                                     (bx + 70, 108), (bx, 205), 3)
+                # Huge vertical pressure tanks and their collars.
+                for tank in (-190, 0, 190):
+                    tx = sx + tank
+                    pygame.draw.rect(self.screen, (13, 34, 49),
+                                     (tx - 35, 185, 70, 250), border_radius=24)
+                    pygame.draw.rect(self.screen, (46, 83, 101),
+                                     (tx - 35, 185, 70, 250), 3, border_radius=24)
+                    for band_y in (225, 300, 375):
+                        pygame.draw.line(self.screen, (58, 93, 108),
+                                         (tx - 32, band_y), (tx + 32, band_y), 4)
+                    pygame.draw.circle(self.screen, (62, 140, 151),
+                                       (tx, 205), 5)
+                # Pipe bundles run across the entire factory bay.
+                for pipe in range(4):
+                    py = 125 + pipe * 37
+                    pygame.draw.line(self.screen, (20, 47, 65),
+                                     (sx - 320, py), (sx + 320, py), 12)
+                    pygame.draw.line(self.screen, (61, 96, 111),
+                                     (sx - 320, py - 3), (sx + 320, py - 3), 2)
+                    for joint in (-230, -75, 95, 250):
+                        pygame.draw.rect(self.screen, (43, 75, 91),
+                                         (sx + joint, py - 10, 9, 20))
+                # Furnace glow sits far behind the playable route.
+                furnace_x = sx + 115
+                pygame.draw.rect(self.screen, (7, 17, 30),
+                                 (furnace_x - 66, 310, 132, 132), border_radius=9)
+                pygame.draw.rect(self.screen, (48, 68, 77),
+                                 (furnace_x - 66, 310, 132, 132), 4, border_radius=9)
+                pygame.draw.ellipse(self.screen, (72, 48, 43),
+                                    (furnace_x - 43, 337, 86, 74))
+                pygame.draw.ellipse(self.screen, (119, 73, 53),
+                                    (furnace_x - 25, 354, 50, 40), 2)
+                # A few tiny status lights, never bright enough to compete.
+                for light in range(4):
+                    lx = sx - 235 + light * 155
+                    pygame.draw.circle(self.screen, (83, 147, 151)
+                                       if (light + segment) % 2 else (117, 75, 57),
+                                       (lx, 245 + (light % 2) * 22), 3)
+            return
+
+        if self.level_index == 2:
+            # DROWNED MEMORY — submerged research wing. The glass observation
+            # wall, suspended tanks and drifting particles suggest deep water.
+            # The waterline is scenery only; it does not affect physics.
+            waterline = 190 + int(math.sin(self.time * 0.45) * 4)
+            pygame.draw.rect(self.screen, (5, 20, 39), (0, waterline, WIDTH, HEIGHT - waterline))
+            pygame.draw.line(self.screen, (35, 105, 132),
+                             (0, waterline), (WIDTH, waterline), 2)
+            pygame.draw.line(self.screen, (20, 65, 94),
+                             (0, waterline + 8), (WIDTH, waterline + 8), 1)
+            first = int((self.camera_x * 0.29) // 720) - 1
+            last = int((self.camera_x * 0.29 + WIDTH) // 720) + 2
+            for segment in range(first, last):
+                sx = int(segment * 720 + 350 - self.camera_x * 0.29)
+                # Reinforced observation windows, with distant water beyond.
+                pygame.draw.rect(self.screen, (8, 29, 49), (sx - 285, 92, 570, 315))
+                pygame.draw.rect(self.screen, (43, 94, 119), (sx - 285, 92, 570, 315), 5)
+                for mullion in (-190, -95, 0, 95, 190):
+                    pygame.draw.line(self.screen, (33, 78, 103),
+                                     (sx + mullion, 96), (sx + mullion, 403), 4)
+                pygame.draw.line(self.screen, (67, 132, 153),
+                                 (sx - 270, waterline + 24),
+                                 (sx + 270, waterline + 24), 2)
+                # Suspended specimen tanks with dim cyan interiors.
+                for tank_i, offset in enumerate((-190, 0, 190)):
+                    tx = sx + offset
+                    ty = 240 + (tank_i % 2) * 28
+                    pygame.draw.rect(self.screen, (9, 35, 55),
+                                     (tx - 35, ty - 76, 70, 145), border_radius=12)
+                    pygame.draw.rect(self.screen, (48, 119, 143),
+                                     (tx - 35, ty - 76, 70, 145), 2, border_radius=12)
+                    pygame.draw.line(self.screen, (39, 104, 128),
+                                     (tx - 22, ty - 55), (tx - 22, ty + 47), 2)
+                    pygame.draw.ellipse(self.screen, (34, 101, 121),
+                                        (tx - 12, ty - 17, 24, 43), 2)
+                    pygame.draw.circle(self.screen, (67, 166, 180),
+                                       (tx, ty + 3), 3)
+                # Ceiling pipes and a thick cable tray.
+                for pipe in range(3):
+                    py = 112 + pipe * 19
+                    pygame.draw.line(self.screen, (21, 54, 75),
+                                     (sx - 310, py), (sx + 310, py), 7)
+                    pygame.draw.line(self.screen, (61, 112, 135),
+                                     (sx - 310, py - 2), (sx + 310, py - 2), 1)
+                pygame.draw.rect(self.screen, (11, 29, 47),
+                                 (sx - 260, 410, 520, 26))
+                pygame.draw.line(self.screen, (43, 94, 119),
+                                 (sx - 260, 410), (sx + 260, 410), 2)
+            # Bubbles and tiny suspended debris drift slowly through the water.
+            for bubble in range(18):
+                bx = int((bubble * 117 + self.time * (7 + bubble % 4)
+                          - self.camera_x * 0.12) % (WIDTH + 40)) - 20
+                by = 225 + (bubble * 53) % 215 + int(math.sin(self.time + bubble) * 8)
+                pygame.draw.circle(self.screen, (38, 105, 133), (bx, by), 2 + bubble % 3, 1)
+            return
+
+        if self.level_index == 3:
+            # EMPTY DISTRICT — abandoned residential megablocks, dark windows,
+            # balconies, skybridges and a few surviving apartment lights.
+            first = int((self.camera_x * 0.25) // 780) - 1
+            last = int((self.camera_x * 0.25 + WIDTH) // 780) + 2
+            for segment in range(first, last):
+                sx = int(segment * 780 + 350 - self.camera_x * 0.25)
+                for building, offset in enumerate((-205, 55, 300)):
+                    bx = sx + offset
+                    height = 205 + ((segment + building) % 4) * 43
+                    top = 440 - height
+                    bw = 150 + ((segment + building) % 2) * 35
+                    pygame.draw.rect(self.screen, (10, 23, 39),
+                                     (bx - bw // 2, top, bw, 440 - top))
+                    pygame.draw.rect(self.screen, (34, 59, 77),
+                                     (bx - bw // 2, top, bw, 440 - top), 2)
+                    # Floor slabs and balcony rails create a lived-in silhouette.
+                    for floor in range(max(2, height // 52)):
+                        fy = top + 30 + floor * 49
+                        if fy < 432:
+                            pygame.draw.line(self.screen, (37, 65, 82),
+                                             (bx - bw // 2 + 5, fy),
+                                             (bx + bw // 2 - 5, fy), 2)
+                            for window in range(3):
+                                wx = bx - bw // 2 + 17 + window * (bw - 34) // 3
+                                color = ((39, 84, 99) if (window + floor + segment) % 5
+                                         else (101, 105, 79))
+                                pygame.draw.rect(self.screen, color,
+                                                 (wx, fy - 23, 23, 17))
+                    for balcony in (-1, 1):
+                        by = top + 78 + ((segment + building) % 2) * 48
+                        pygame.draw.line(self.screen, (48, 76, 91),
+                                         (bx + balcony * (bw // 2 - 4), by),
+                                         (bx + balcony * (bw // 2 + 22), by), 3)
+                        pygame.draw.line(self.screen, (36, 61, 78),
+                                         (bx + balcony * (bw // 2 - 4), by - 15),
+                                         (bx + balcony * (bw // 2 + 22), by - 15), 2)
+                # Suspended skybridge between apartment towers.
+                bridge_y = 225 + (segment % 3) * 35
+                pygame.draw.rect(self.screen, (12, 30, 47),
+                                 (sx - 95, bridge_y, 270, 28))
+                pygame.draw.line(self.screen, (54, 89, 105),
+                                 (sx - 95, bridge_y), (sx + 175, bridge_y), 3)
+                for support in (-65, 10, 85, 160):
+                    pygame.draw.line(self.screen, (32, 57, 74),
+                                     (sx + support, bridge_y + 28),
+                                     (sx + support + 8, bridge_y + 78), 2)
+                # Sparse street lamps and a distant rooftop water tank.
+                pygame.draw.line(self.screen, (28, 52, 69),
+                                 (sx - 320, 435), (sx - 320, 315), 4)
+                pygame.draw.line(self.screen, (54, 91, 108),
+                                 (sx - 320, 315), (sx - 282, 315), 3)
+                pygame.draw.circle(self.screen, (104, 147, 143),
+                                   (sx - 282, 317), 4)
+                pygame.draw.rect(self.screen, (12, 27, 43),
+                                 (sx + 205, 300, 65, 72), border_radius=5)
+                pygame.draw.ellipse(self.screen, (42, 73, 89),
+                                    (sx + 205, 291, 65, 20), 2)
+            # A faint urban haze separates the far skyline from the foreground.
+            haze = pygame.Surface((WIDTH, 105), pygame.SRCALPHA)
+            haze.fill((23, 44, 59, 28))
+            self.screen.blit(haze, (0, 335))
+            return
+
+        if self.level_index == 4:
+            # THE CORE — the first glimpse of the machine beneath the complex.
+            # Server aisles, coolant lines and a contained energy column hint
+            # at the threat without borrowing the ruined reactor look of world 10.
+            first = int((self.camera_x * 0.31) // 700) - 1
+            last = int((self.camera_x * 0.31 + WIDTH) // 700) + 2
+            for segment in range(first, last):
+                sx = int(segment * 700 + 330 - self.camera_x * 0.31)
+                # Repeating server aisles with narrow status lights.
+                for rack in (-235, -115, 5, 125, 245):
+                    rx = sx + rack
+                    pygame.draw.rect(self.screen, (7, 19, 35),
+                                     (rx - 34, 175, 68, 265), border_radius=4)
+                    pygame.draw.rect(self.screen, (39, 67, 89),
+                                     (rx - 34, 175, 68, 265), 2, border_radius=4)
+                    for shelf in range(6):
+                        sy = 194 + shelf * 38
+                        pygame.draw.line(self.screen, (27, 49, 70),
+                                         (rx - 25, sy), (rx + 25, sy), 2)
+                        for led in range(3):
+                            led_color = ((56, 155, 166) if (rack + shelf + led) % 4
+                                         else (131, 70, 81))
+                            pygame.draw.circle(self.screen, led_color,
+                                               (rx - 17 + led * 17, sy + 12), 2)
+                # Central containment column, clean and still operational.
+                core_x = sx + 60
+                pygame.draw.rect(self.screen, (8, 25, 43),
+                                 (core_x - 58, 105, 116, 335), border_radius=26)
+                pygame.draw.rect(self.screen, (46, 91, 117),
+                                 (core_x - 58, 105, 116, 335), 3, border_radius=26)
+                pygame.draw.rect(self.screen, (16, 57, 78),
+                                 (core_x - 30, 135, 60, 275), border_radius=22)
+                pygame.draw.line(self.screen, (69, 179, 193),
+                                 (core_x, 150), (core_x, 392), 3)
+                pygame.draw.circle(self.screen, (85, 211, 205),
+                                   (core_x, 270), 13, 2)
+                pygame.draw.circle(self.screen, (44, 118, 143),
+                                   (core_x, 270), 31, 2)
+                # Overhead cable looms converge toward the central machine.
+                for cable in range(5):
+                    y = 70 + cable * 17
+                    pygame.draw.line(self.screen, (20, 43, 65),
+                                     (sx - 320, y), (core_x - 25, 115), 3)
+                    pygame.draw.line(self.screen, (20, 43, 65),
+                                     (core_x + 25, 115), (sx + 320, y), 3)
+                # Warning panels and access gantries in the deep background.
+                pygame.draw.rect(self.screen, (12, 28, 45),
+                                 (sx - 300, 115, 86, 39), border_radius=3)
+                pygame.draw.rect(self.screen, (59, 91, 108),
+                                 (sx - 300, 115, 86, 39), 2, border_radius=3)
+                pygame.draw.line(self.screen, (141, 75, 83),
+                                 (sx - 285, 134), (sx - 229, 134), 3)
+                pygame.draw.line(self.screen, (31, 57, 76),
+                                 (sx - 300, 158), (sx + 300, 158), 4)
+            return
+
         # Sector 07 abandons the industrial ceiling entirely. It is an
         # overgrown bio-dome: hanging roots, enormous trunks and suspended
         # greenhouse ribs create a silhouette unlike the other sectors.
