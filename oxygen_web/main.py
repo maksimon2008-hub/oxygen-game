@@ -4702,17 +4702,35 @@ class Game:
         boss = self.level.boss
         if boss is not None and boss.active and not boss.defeated:
             if self.player.rect.colliderect(boss.rect):
-                if boss.invuln <= 0 and self.player.dash_time > 0:
-                    dash_damage = 4 if "phase_burn" in self.save_data.get("character_mods", {}).get("runner", []) else 2
-                    defeated_now = boss.take_hit(dash_damage)
-                    self.player.vx = -self.player.facing * 260
-                    self.make_burst(boss.x, boss.y, (255, 86, 130), 17)
+                if self.player.dash_time > 0:
+                    # A dash is a deliberate close-range boss attack: bounce the
+                    # runner clear of the hitbox and grant a short damage window
+                    # so the same contact cannot immediately cost a life.
+                    player_center = self.player.rect.centerx
+                    away_dir = -1 if player_center <= boss.rect.centerx else 1
+                    defeated_now = False
+                    if boss.invuln <= 0:
+                        dash_damage = 4 if "phase_burn" in self.save_data.get("character_mods", {}).get("runner", []) else 2
+                        defeated_now = boss.take_hit(dash_damage)
+                        self.make_burst(boss.x, boss.y, (255, 86, 130), 17)
+                    else:
+                        self.make_burst(self.player.rect.centerx, self.player.rect.centery,
+                                        (80, 245, 230), 8)
+                    self.player.dash_time = 0.0
+                    self.player.vx = away_dir * 650.0
+                    self.player.vy = -245.0
+                    self.player.x += away_dir * 9.0
+                    self.player.on_ground = False
+                    self.player.coyote = 0.0
+                    self.player.invuln = max(self.player.invuln, 0.95)
+                    self.player.stomp_grace = max(self.player.stomp_grace, 0.20)
                     if defeated_now:
                         self.handle_boss_defeated(boss)
                 elif boss.invuln <= 0 and self.player.vy > 75 and self.player.rect.bottom < boss.rect.top + 42:
                     defeated_now = boss.take_hit(1)
                     self.player.vy = -475
                     self.player.jump_count = 0
+                    self.player.invuln = max(self.player.invuln, 0.55)
                     self.make_burst(boss.x, boss.y, (255, 86, 130), 14)
                     if defeated_now:
                         self.handle_boss_defeated(boss)
