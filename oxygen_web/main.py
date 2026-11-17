@@ -1216,29 +1216,46 @@ LEVELS.extend([
         "name": "THE LAST BREATH", "subtitle": "ONE SIGNAL LEFT",
         "width": 5900, "spawn": (80,410),
         "platforms": [
-            (0,475,660,100),(860,475,420,100),(1480,475,420,100),
-            (2100,475,420,100),(2720,475,420,100),(3340,475,420,100),
-            (3960,475,420,100),(4580,475,1320,100),
-            (205,390,155,18),(300,315,155,18),(845,205,165,18),
-            (1070,315,155,18),(1510,385,155,18),(1730,315,155,18),
-            (2130,385,155,18),(2140,315,155,18),(2700,205,180,18),
-            (2970,315,155,18),(3370,385,155,18),(3590,315,155,18),
-            (3990,385,155,18),(4210,315,155,18),(4640,385,155,18),
-            (4860,315,155,18),(5120,245,170,18),(5420,385,155,18)
+            (0,475,610,100),(820,475,390,100),(1450,475,390,100),
+            (2070,475,390,100),(2690,475,390,100),(3310,475,390,100),
+            (3930,475,390,100),(4550,475,1350,100),
+            # Reactor maintenance route: alternating low catwalks and high
+            # broken wall ledges create distinct sightlines through each laser bank.
+            (180,390,145,18),(390,300,120,18),(650,390,115,18),
+            (850,215,145,18),(1035,345,120,18),(1230,250,120,18),
+            (1480,390,145,18),(1690,285,125,18),(1880,205,130,18),
+            (2110,385,145,18),(2310,295,120,18),(2500,215,130,18),
+            (2730,390,145,18),(2930,285,125,18),(3120,205,135,18),
+            (3350,385,145,18),(3550,295,120,18),(3740,215,130,18),
+            (3970,390,145,18),(4170,285,125,18),(4360,205,135,18),
+            (4590,390,145,18),(4790,300,125,18),(4980,215,135,18),
+            (5200,330,130,18),(5420,390,145,18)
         ],
         "pit_floors": [(660,560,200,70),(1280,560,200,70),(1900,560,200,70),
                        (2520,560,200,70),(3140,560,200,70),(3760,560,200,70),
                        (4380,560,200,70)],
-        "moving_platforms": [(1290,275,135,16,"vertical",82,0.78,0.0),
-                             (1995,260,135,16,"horizontal",82,0.76,1.0),
-                             (3230,255,135,16,"vertical",88,0.8,2.0),
-                             (3850,250,135,16,"horizontal",88,0.76,0.5)],
+        "moving_platforms": [(680,275,125,16,"vertical",92,0.82,0.4),
+                             (1280,270,125,16,"horizontal",96,0.82,1.0),
+                             (1990,255,125,16,"vertical",105,0.84,2.0),
+                             (2610,260,125,16,"horizontal",98,0.82,0.5),
+                             (3230,245,125,16,"vertical",108,0.86,1.5),
+                             (3850,255,125,16,"horizontal",102,0.84,0.2),
+                             (4470,260,125,16,"vertical",96,0.82,1.7)],
         "breakaway_platforms": [(1900,475,92,18,0.92,2.8),(1996,475,92,18,0.92,2.8),
                                 (3760,475,92,18,0.92,2.8),(3856,475,92,18,0.92,2.8)],
         "launch_pads": [(585,475,78),(2440,475,78)],
-        "lasers": [(1100,282,12,193,2.8,0.4),(1740,282,12,193,2.65,1.2),
-                   (2365,282,12,193,2.9,0.1),(2980,282,12,193,2.7,1.5),
-                   (3600,282,12,193,2.8,0.8),(4220,282,12,193,2.65,1.7)],
+        # Reactor security grid: short, tall and staggered laser curtains.
+        # Each gate has its own cycle so the player must read and time the gaps.
+        "lasers": [
+            (560,250,12,225,2.35,0.15),(930,185,12,290,2.75,1.05),
+            (1160,295,12,180,2.25,0.72),(1510,205,12,270,2.9,1.65),
+            (1810,250,12,225,2.4,1.2),(2160,175,12,300,2.8,0.35),
+            (2450,295,12,180,2.3,1.55),(2750,205,12,270,2.7,0.9),
+            (3060,250,12,225,2.45,1.85),(3370,180,12,295,2.85,0.55),
+            (3670,295,12,180,2.25,1.35),(3980,205,12,270,2.75,1.9),
+            (4290,250,12,225,2.4,0.25),(4600,185,12,290,2.9,1.15),
+            (4910,295,12,180,2.3,0.8),(5220,205,12,270,2.8,1.6)
+        ],
         "coins": [(245,350),(520,275),(890,345),(1090,275),(1540,345),
                   (1750,275),(2160,345),(2370,275),(2780,345),(2990,275),
                   (3400,345),(3610,275),(4020,345),(4230,275),(4670,345),
@@ -5201,6 +5218,62 @@ class Game:
                     pygame.draw.lines(self.screen, (83, 169, 205), False, points, 2)
             return
 
+        # Sector 10: the dead reactor complex. Massive containment rings,
+        # fractured concrete ribs and a few failing red status lights replace
+        # the skyline; the geometry stays in the same dark OXYGEN visual language.
+        if self.level_index == 9:
+            first = int((self.camera_x * 0.30) // 820) - 1
+            last = int((self.camera_x * 0.30 + WIDTH) // 820) + 2
+            for segment in range(first, last):
+                world_x = segment * 820 + 330
+                sx = int(world_x - self.camera_x * 0.30)
+                reactor_y = 275 + (segment % 2) * 28
+                radius = 112 + (segment % 3) * 15
+                # Huge broken containment ring with a dark reactor core.
+                pygame.draw.circle(self.screen, (13, 20, 34), (sx, reactor_y), radius + 18, 13)
+                pygame.draw.circle(self.screen, (39, 48, 65), (sx, reactor_y), radius + 8, 3)
+                pygame.draw.circle(self.screen, (7, 11, 23), (sx, reactor_y), radius - 12)
+                pygame.draw.arc(self.screen, (89, 39, 58),
+                                (sx - radius, reactor_y - radius, radius * 2, radius * 2),
+                                0.35 + segment * 0.2, 2.45 + segment * 0.2, 4)
+                pygame.draw.arc(self.screen, (66, 31, 48),
+                                (sx - radius - 17, reactor_y - radius - 17,
+                                 (radius + 17) * 2, (radius + 17) * 2),
+                                3.0, 5.35, 5)
+                # Reactor spokes and damaged support struts.
+                for spoke in range(8):
+                    angle = spoke * math.tau / 8 + self.time * 0.025
+                    ex = sx + int(math.cos(angle) * (radius + 12))
+                    ey = reactor_y + int(math.sin(angle) * (radius + 12))
+                    ix = sx + int(math.cos(angle) * (radius - 35))
+                    iy = reactor_y + int(math.sin(angle) * (radius - 35))
+                    pygame.draw.line(self.screen, (28, 39, 55), (ix, iy), (ex, ey), 5)
+                # Broken wall pylons and hanging cables.
+                for side in (-1, 1):
+                    wx = sx + side * (radius + 78)
+                    pygame.draw.polygon(self.screen, (12, 20, 34),
+                                        [(wx - 25, 0), (wx + 23, 0),
+                                         (wx + 17, 205), (wx + 31, 445),
+                                         (wx - 18, 445), (wx - 29, 170)])
+                    pygame.draw.line(self.screen, (42, 48, 65),
+                                     (wx - 4, 12), (wx + 2, 410), 2)
+                    pygame.draw.line(self.screen, (25, 34, 49),
+                                     (wx + side * 25, 95), (wx - side * 38, 245), 3)
+                # Sparse emergency lamps: not a bright neon skyline.
+                lamp_y = 110 + (segment % 3) * 38
+                lamp_color = (116, 38, 55) if int(self.time * 1.4 + segment) % 3 else (58, 30, 43)
+                pygame.draw.circle(self.screen, lamp_color, (sx, lamp_y), 5)
+                pygame.draw.circle(self.screen, (91, 35, 52), (sx, lamp_y), 13, 1)
+            # Low smoke and drifting ash, with very little ambient light.
+            for i in range(11):
+                wx = i * 510 + 130
+                sx = int(wx - self.camera_x * 0.48)
+                if -24 < sx < WIDTH + 24:
+                    sy = 325 + (i * 29) % 95 + int(math.sin(self.time * 0.55 + i) * 5)
+                    pygame.draw.circle(self.screen, (35, 39, 51), (sx, sy), 10 + (i % 3) * 3)
+                    pygame.draw.circle(self.screen, (61, 42, 54), (sx + 5, sy - 3), 3)
+            return
+
         # Industrial overhead conduits and braces for the other sectors.
         first = int((self.camera_x * 0.72) // 420) - 1
         last = int((self.camera_x * 0.72 + WIDTH) // 420) + 2
@@ -5305,7 +5378,7 @@ class Game:
         skyline_offset = int(self.camera_x * 0.10)
         skyline_index = self.level_index if background_level_index is None else background_level_index
         # Sector 07 is enclosed by a living canopy, not the usual city skyline.
-        if skyline_index not in (6, 7, 8):
+        if skyline_index not in (6, 7, 8, 9):
             self.screen.blit(self.skyline_layers[skyline_index], (-skyline_offset, 0))
 
         # Soft drifting smoke banks: cached once per sector, then only blitted.
@@ -5362,7 +5435,7 @@ class Game:
 
         # Background signal glyphs belong to the machine sectors; the
         # garden gets organic silhouettes instead.
-        if self.level_index not in (6, 7, 8):
+        if self.level_index not in (6, 7, 8, 9):
             for i in range(7):
                 wx = i * 560 + 180
                 x = int(wx - self.camera_x * 0.55)
@@ -5473,14 +5546,22 @@ class Game:
                 pygame.draw.circle(self.screen, (67, 88, 111), (lx + laser.w // 2, top_y), 5)
                 pygame.draw.circle(self.screen, (67, 88, 111), (lx + laser.w // 2, bottom_y), 5)
                 if laser.active:
-                    pygame.draw.line(self.screen, (74, 22, 54), (lx + laser.w // 2, top_y),
-                                     (lx + laser.w // 2, bottom_y), 9)
-                    pygame.draw.line(self.screen, (255, 63, 135), (lx + laser.w // 2, top_y),
-                                     (lx + laser.w // 2, bottom_y), 3)
-                    pygame.draw.line(self.screen, (255, 194, 220), (lx + laser.w // 2, top_y + 5),
-                                     (lx + laser.w // 2, bottom_y - 5), 1)
+                    if self.level_index == 9:
+                        pygame.draw.line(self.screen, (66, 19, 27), (lx + laser.w // 2, top_y),
+                                         (lx + laser.w // 2, bottom_y), 11)
+                        pygame.draw.line(self.screen, (238, 53, 75), (lx + laser.w // 2, top_y),
+                                         (lx + laser.w // 2, bottom_y), 4)
+                        pygame.draw.line(self.screen, (255, 176, 151), (lx + laser.w // 2, top_y + 5),
+                                         (lx + laser.w // 2, bottom_y - 5), 1)
+                    else:
+                        pygame.draw.line(self.screen, (74, 22, 54), (lx + laser.w // 2, top_y),
+                                         (lx + laser.w // 2, bottom_y), 9)
+                        pygame.draw.line(self.screen, (255, 63, 135), (lx + laser.w // 2, top_y),
+                                         (lx + laser.w // 2, bottom_y), 3)
+                        pygame.draw.line(self.screen, (255, 194, 220), (lx + laser.w // 2, top_y + 5),
+                                         (lx + laser.w // 2, bottom_y - 5), 1)
                 elif laser.state == "warning":
-                    warning_color = (255, 187, 85) if int(self.time * 12) % 2 else (150, 91, 67)
+                    warning_color = ((255, 105, 83) if int(self.time * 14) % 2 else (112, 47, 55)) if self.level_index == 9 else ((255, 187, 85) if int(self.time * 12) % 2 else (150, 91, 67))
                     pygame.draw.line(self.screen, warning_color, (lx + laser.w // 2, top_y),
                                      (lx + laser.w // 2, bottom_y), 2)
                 else:
