@@ -3495,6 +3495,10 @@ class Game:
 
     def start_arena_mode(self) -> None:
         self.coin_multiplier_timer = 0.0
+        self.boss_arena_active = False
+        self.boss_arena_bounds = None
+        self.boss_intro_timer = 0.0
+        self.boss_intro_name = ""
         self.is_arena_mode = True
         self.pending_next_level = None
         self.level_index = 0
