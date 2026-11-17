@@ -260,10 +260,11 @@ function show_infobox() {
             z-index: 5 !important;
         }
 
-        /* Desktop: fill the entire available screen without distorting the game.
-           Non-16:9 monitors crop a little from the sides or top/bottom instead
-           of stretching characters, platforms, and UI out of proportion. */
-        @media (hover: hover) and (pointer: fine) and (orientation: landscape) {
+        /* Desktop and phones in landscape: use a cover fit so the game
+           fills the whole display instead of sitting inside 16:9 letterboxing.
+           The image is cropped slightly on unusually wide/tall screens, never
+           stretched, keeping the game art and controls proportional. */
+        @media (orientation: landscape) {
             #canvas {
                 width: max(100vw, 177.4194vh) !important;
                 height: max(100vh, 56.3636vw) !important;
