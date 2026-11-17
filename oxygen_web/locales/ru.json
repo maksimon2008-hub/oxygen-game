@@ -279,5 +279,20 @@
   "ACTIVE": "ВКЛЮЧЕНО",
   "BACK": "НАЗАД",
   "LEFT / RIGHT: SWITCH MODE  //  UP / DOWN: SELECT  //  ESC: BACK": "ВЛЕВО / ВПРАВО — СМЕНА РЕЖИМА  //  ВВЕРХ / ВНИЗ — ВЫБОР  //  ESC — НАЗАД",
-  "ESC // RESUME     ARROWS // SELECT / ADJUST": "ESC — ПРОДОЛЖИТЬ  //  СТРЕЛКИ — ВЫБОР / НАСТРОЙКА"
+  "ESC // RESUME     ARROWS // SELECT / ADJUST": "ESC — ПРОДОЛЖИТЬ  //  СТРЕЛКИ — ВЫБОР / НАСТРОЙКА",
+  "CHANNEL": "КАНАЛ",
+  "RADIO // MANUAL TUNER": "РАДИО // РУЧНАЯ НАСТРОЙКА",
+  "CHANNEL STORED": "КАНАЛ СОХРАНЁН",
+  "ENTER // STORE FREQUENCY": "ENTER // СОХРАНИТЬ ЧАСТОТУ",
+  "ESC // RETURN TO SAFEHOUSE": "ESC // ВЕРНУТЬСЯ В УБЕЖИЩЕ",
+  "A / LEFT": "A / ВЛЕВО",
+  "D / RIGHT": "D / ВПРАВО",
+  "E  //  OPEN RADIO TUNER": "E  //  ОТКРЫТЬ НАСТРОЙКУ РАДИО",
+  "CONTAINMENT LOCKDOWN": "БЛОКИРОВКА АРЕНЫ",
+  "BOSS SIGNATURE DETECTED // PREPARE FOR ENGAGEMENT": "СИГНАТУРА БОССА ОБНАРУЖЕНА // ПРИГОТОВЬСЯ К БОЮ",
+  "...IF ANYONE HEARS THIS, DO NOT ANSWER THE SECOND SIGNAL.": "...ЕСЛИ КТО-НИБУДЬ СЛЫШИТ ЭТО, НЕ ОТВЕЧАЙТЕ НА ВТОРОЙ СИГНАЛ.",
+  "THE SHELTER IS NOT THE ONLY PLACE STILL LIT.": "УБЕЖИЩЕ — НЕ ЕДИНСТВЕННОЕ МЕСТО, ГДЕ ЕЩЁ ЕСТЬ СВЕТ.",
+  "167 IS NOT A FREQUENCY. REPEAT: NOT A FREQUENCY.": "167 — НЕ ЧАСТОТА. ПОВТОРЯЮ: НЕ ЧАСТОТА.",
+  "WE COUNTED SIX. THERE WERE SEVEN.": "МЫ НАСЧИТАЛИ ШЕСТЬ. ИХ БЫЛО СЕМЬ.",
+  "CARRIER LOST. SOMETHING IS LISTENING.": "НЕСУЩАЯ ПОТЕРЯНА. КТО-ТО СЛУШАЕТ."
 }
