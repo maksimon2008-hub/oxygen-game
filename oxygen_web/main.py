@@ -5161,8 +5161,7 @@ class Game:
             if -bridge.w < bx < WIDTH:
                 if bridge.state in ("ready", "warning"):
                     bridge_accent = (255, 170, 80) if bridge.state == "warning" else accent
-                    draw_platform(self.screen, Platform(bridge.x, bridge.y, bridge.w, bridge.h),
-                                  self.camera_x, bridge_accent)
+                    draw_platform(self.screen, bridge, self.camera_x, bridge_accent)
                     if bridge.state == "warning":
                         pulse = 1 + int(2 * abs(math.sin(self.time * 18)))
                         pygame.draw.line(self.screen, (255, 186, 86),
