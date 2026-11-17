@@ -20,6 +20,7 @@ from array import array
 import random
 import shutil
 import sys
+from time import perf_counter
 from functools import lru_cache
 from dataclasses import dataclass
 from pathlib import Path
@@ -2877,6 +2878,7 @@ class Game:
         return int((px - ox) / scale), int((py - oy) / scale)
 
     def present_display(self) -> None:
+        present_started = perf_counter()
         dw, dh = self.display.get_size()
         dw, dh = max(1, dw), max(1, dh)
         scale = min(dw / WIDTH, dh / HEIGHT)
@@ -5717,6 +5719,7 @@ class Game:
                   (WIDTH // 2, 490), center=True, shadow=False)
 
     def draw(self) -> None:
+        draw_started = perf_counter()
         if self.mode == "menu":
             self.draw_menu()
         elif self.mode == "personnel":
@@ -5790,6 +5793,12 @@ class Game:
             fps_bg.fill((4, 9, 22, 190))
             self.screen.blit(fps_bg, (WIDTH // 2 - fps_bg.get_width() // 2, 12))
             self.screen.blit(fps_label, fps_label.get_rect(midtop=(WIDTH // 2, 17)))
+            timing = (f"UPD {getattr(self, '_last_update_ms', 0.0):.1f} ms  //  "
+                      f"DRAW {getattr(self, '_last_draw_ms', 0.0):.1f} ms  //  "
+                      f"PRESENT {getattr(self, '_last_present_ms', 0.0):.1f} ms")
+            timing_surface = self.font_xs.render(timing, True, MUTED)
+            self.screen.blit(timing_surface, timing_surface.get_rect(midtop=(WIDTH // 2, 39)))
+        self._last_draw_ms = (perf_counter() - draw_started) * 1000.0
         self.present_display()
 
     def run(self) -> None:
@@ -5817,7 +5826,9 @@ async def main() -> None:
             dt = min(game.clock.tick(TARGET_FPS) / 1000.0, 0.033)
             for event in pygame.event.get():
                 game.handle_event(event)
+            update_started = perf_counter()
             game.update(dt)
+            game._last_update_ms = (perf_counter() - update_started) * 1000.0
             game.draw()
             # Yield to the browser event loop so rendering/input stay responsive.
             await asyncio.sleep(0)
