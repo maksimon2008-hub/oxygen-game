@@ -2762,10 +2762,6 @@ class Game:
         self.level_coins = 0
         self.level_secrets = 0
         self.pending_next_level: int | None = None
-        # One handoff prototype: sector 03 slides into sector 04.
-        self.seamless_transition_duration = 1.35
-        self.seamless_transition_timer = 0.0
-        self.seamless_transition_old_frame: pygame.Surface | None = None
         self.last_rating: dict = {}
         self.safehouse_selection = 0
         self.safehouse_player_speed = 250.0
@@ -4124,16 +4120,7 @@ class Game:
         self.save_progress()
         self.check_achievements()
 
-        # Prototype the continuous 03 -> 04 handoff.
-        if self.level_index == 2 and self.pending_next_level == 3:
-            self.seamless_transition_old_frame = self.screen.copy()
-            self.load_level(3)
-            self.camera_x = -float(WIDTH)
-            self.seamless_transition_timer = self.seamless_transition_duration
-            self.mode = "transition"
-        else:
-            self.mode = "level_result"
-
+        self.mode = "level_result"
     def choose_character(self, index: int) -> None:
         index = max(0, min(len(CHARACTER_IDS) - 1, index))
         if not self.character_is_unlocked(CHARACTER_IDS[index]):
@@ -4900,19 +4887,6 @@ class Game:
 
     def update(self, dt: float) -> None:
         self.time += dt
-        if self.mode == "transition":
-            self.seamless_transition_timer = max(
-                0.0, self.seamless_transition_timer - dt)
-            progress = 1.0 - (
-                self.seamless_transition_timer /
-                max(0.001, self.seamless_transition_duration))
-            self.camera_x = -float(WIDTH) * (1.0 - progress)
-            if self.seamless_transition_timer <= 0.0:
-                self.camera_x = 0.0
-                self.seamless_transition_old_frame = None
-                self.mode = "playing"
-                self.level_banner = 0.0
-            return
         self.shake = max(0.0, self.shake - dt)
         self.notice_timer = max(0.0, self.notice_timer - dt)
         self.menu_notice_timer = max(0.0, self.menu_notice_timer - dt)
@@ -6885,6 +6859,70 @@ class Game:
             draw_text(self.screen, self.font_xs, "BOSS SIGNATURE DETECTED // PREPARE FOR ENGAGEMENT",
                       MUTED, (WIDTH // 2, 334), center=True, shadow=False)
 
+    def draw_sector_03_04_environment_blend(self) -> None:
+        """Let the red city physically give way to the green industrial engine."""
+        # A cached, world-anchored teal wash makes the right side change first.
+        wash = getattr(self, "sector_03_04_wash", None)
+        if wash is None:
+            wash = pygame.Surface((2500, HEIGHT), pygame.SRCALPHA)
+            for x in range(0, 2500, 10):
+                p = x / 2499.0
+                smooth = p * p * (3.0 - 2.0 * p)
+                alpha = int(158 * smooth)
+                pygame.draw.rect(wash, (3, 19, 25, alpha), (x, 0, 10, HEIGHT))
+            self.sector_03_04_wash = wash
+        self.screen.blit(wash, (3700 - int(self.camera_x), 0))
+
+        def mix(a, b, amount):
+            return tuple(int(a[i] + (b[i] - a[i]) * amount) for i in range(3))
+
+        # New steelwork is anchored in world space and gradually changes from
+        # the city's rust-red palette into the engine's muted green metal.
+        for index, world_x in enumerate((4020, 4420, 4820, 5220, 5620, 6020)):
+            sx = int(world_x - self.camera_x)
+            if sx < -260 or sx > WIDTH + 260:
+                continue
+            p = max(0.0, min(1.0, (world_x - 3900) / 2050.0))
+            p = p * p * (3.0 - 2.0 * p)
+            beam = mix((65, 35, 43), (38, 91, 78), p)
+            edge = mix((119, 56, 54), (79, 151, 116), p)
+            top = 104 + (index % 3) * 25
+            pygame.draw.rect(self.screen, (7, 15, 23), (sx - 22, top, 44, 355))
+            pygame.draw.rect(self.screen, beam, (sx - 22, top, 44, 355), 3)
+            pygame.draw.line(self.screen, edge, (sx - 17, top + 8), (sx - 17, 445), 2)
+            pygame.draw.line(self.screen, beam, (sx - 180, top + 8), (sx + 180, top + 8), 9)
+            pygame.draw.line(self.screen, edge, (sx - 180, top + 3), (sx + 180, top + 3), 2)
+            pygame.draw.line(self.screen, beam, (sx - 170, 438), (sx + 170, top + 8), 5)
+            pygame.draw.line(self.screen, beam, (sx + 170, 438), (sx - 170, top + 8), 5)
+            for bolt_x in (-14, 14):
+                pygame.draw.circle(self.screen, edge, (sx + bolt_x, top + 22), 3)
+
+        # The first engine flywheels emerge behind the ruined skyline.
+        for world_x, center_y, radius in ((5100, 250, 128), (5800, 220, 82)):
+            sx = int(world_x - self.camera_x)
+            if -radius - 20 < sx < WIDTH + radius + 20:
+                p = max(0.0, min(1.0, (world_x - 3900) / 2050.0))
+                ring = mix((95, 48, 49), (67, 133, 104), p)
+                pygame.draw.circle(self.screen, (8, 20, 26), (sx, center_y), radius + 15)
+                pygame.draw.circle(self.screen, ring, (sx, center_y), radius, 5)
+                pygame.draw.circle(self.screen, (24, 52, 52), (sx, center_y), radius - 20, 3)
+                pygame.draw.circle(self.screen, ring, (sx, center_y), 15, 4)
+                if self.graphics_mode == "detail":
+                    for spoke in range(8):
+                        angle = spoke * math.tau / 8 + self.time * 0.08
+                        ex = sx + int(math.cos(angle) * (radius - 17))
+                        ey = center_y + int(math.sin(angle) * (radius - 17))
+                        pygame.draw.line(self.screen, ring, (sx, center_y), (ex, ey), 4)
+
+        for world_x in (4300, 4750, 5200, 5650, 6100):
+            sx = int(world_x - self.camera_x)
+            if -100 < sx < WIDTH + 100:
+                p = max(0.0, min(1.0, (world_x - 3900) / 2050.0))
+                pipe = mix((77, 43, 48), (45, 112, 91), p)
+                pygame.draw.line(self.screen, (8, 19, 26), (sx, 42), (sx, 158), 13)
+                pygame.draw.line(self.screen, pipe, (sx - 2, 42), (sx - 2, 158), 4)
+                pygame.draw.circle(self.screen, pipe, (sx, 154), 9, 2)
+
     def draw_world(self) -> None:
         theme = THEMES[self.level_index]
         accent, accent2 = theme["accent"], theme["accent2"]
@@ -6899,6 +6937,8 @@ class Game:
             self.draw_detailed_early_level_environment(theme)
         else:
             self.draw_level_environment(theme)
+        if self.level_index == 2:
+            self.draw_sector_03_04_environment_blend()
         if self.level_index == 3:
             # THE HOLLOW ENGINE // an open maintenance shaft beneath the
             # temporary stepping tiles. Draw before platforms so the gap
@@ -7986,10 +8026,61 @@ class Game:
         draw_text(self.screen, self.font_xs, "S = PERFECT  //  A = CLEAN  //  B = SURVIVED  //  C = ROUGH",
                   MUTED, (WIDTH // 2, 594), center=True, shadow=False)
 
+    def draw_next_sector_preview_04(self) -> None:
+        """Illustrated preview card for the next environment."""
+        panel = pygame.Rect(165, 410, 790, 116)
+        pygame.draw.rect(self.screen, (5, 15, 25), panel, border_radius=8)
+        pygame.draw.rect(self.screen, (44, 103, 91), panel, 2, border_radius=8)
+        art = pygame.Rect(panel.x + 8, panel.y + 8, 250, 100)
+        pygame.draw.rect(self.screen, (5, 22, 28), art, border_radius=5)
+        for band, color in enumerate(((7, 25, 31), (9, 31, 36), (12, 39, 40))):
+            pygame.draw.rect(self.screen, color, (art.x, art.y + band * 34, art.w, 34))
+        cx, cy = art.x + 150, art.y + 51
+        pygame.draw.circle(self.screen, (18, 43, 43), (cx, cy), 42)
+        pygame.draw.circle(self.screen, (63, 133, 102), (cx, cy), 34, 4)
+        pygame.draw.circle(self.screen, (32, 78, 68), (cx, cy), 18, 3)
+        for angle in range(0, 360, 45):
+            rad = math.radians(angle)
+            ex = cx + int(math.cos(rad) * 29)
+            ey = cy + int(math.sin(rad) * 29)
+            pygame.draw.line(self.screen, (68, 133, 101), (cx, cy), (ex, ey), 3)
+        for px in (art.x + 18, art.right - 20):
+            pygame.draw.rect(self.screen, (18, 48, 48), (px - 6, art.y + 12, 12, 78))
+            pygame.draw.line(self.screen, (75, 143, 109), (px, art.y + 12), (px, art.y + 90), 2)
+        draw_text(self.screen, self.font_xs, "NEXT ENVIRONMENT", (89, 183, 143),
+                  (art.right + 22, panel.y + 27), shadow=False)
+        draw_text(self.screen, self.font_m, "THE HOLLOW ENGINE", WHITE,
+                  (art.right + 22, panel.y + 53), shadow=False)
+        draw_text(self.screen, self.font_xs, "SOMETHING IS STILL BREATHING",
+                  (151, 177, 171), (art.right + 22, panel.y + 82), shadow=False)
+
     def draw_level_result(self) -> None:
         self.draw_background(THEMES[self.level_index], self.level_index)
         grade = self.last_rating.get("grade", "B")
         grade_color = {"S": YELLOW, "A": CYAN, "B": (180, 190, 210), "C": PINK}.get(grade, WHITE)
+        if self.level_index == 2 and self.pending_next_level == 3:
+            draw_text(self.screen, self.font_l, "SECTOR CLEARED", WHITE,
+                      (WIDTH // 2, 62), center=True)
+            draw_glow(self.screen, WIDTH // 2, 158, grade_color, 70)
+            draw_text(self.screen, self.font_xl, grade, grade_color,
+                      (WIDTH // 2, 150), center=True)
+            draw_text(self.screen, self.font_m, self.level.name, WHITE,
+                      (WIDTH // 2, 235), center=True)
+            info = [
+                f"TIME  {self.last_rating.get('time', 0):.1f}s",
+                f"DEATHS  {self.last_rating.get('deaths', 0)}",
+                f"COINS  {self.last_rating.get('coins', 0)}",
+                f"SECRETS  {self.last_rating.get('secrets', 0)}",
+            ]
+            for i, item in enumerate(info):
+                draw_text(self.screen, self.font_xs, item, MUTED,
+                          (WIDTH // 2, 282 + i * 24), center=True, shadow=False)
+            self.draw_next_sector_preview_04()
+            self.draw_button("CONTINUE", 548, True, width=290)
+            draw_text(self.screen, self.font_xs, "ENTER TO ENTER THE NEXT SECTOR",
+                      MUTED, (WIDTH // 2, 610), center=True, shadow=False)
+            return
+
         draw_text(self.screen, self.font_l, "SECTOR CLEARED", WHITE, (WIDTH // 2, 105), center=True)
         draw_glow(self.screen, WIDTH // 2, 260, grade_color, 95)
         draw_text(self.screen, self.font_xl, grade, grade_color, (WIDTH // 2, 250), center=True)
@@ -8000,8 +8091,8 @@ class Game:
             f"COINS  {self.last_rating.get('coins', 0)}",
             f"SECRETS  {self.last_rating.get('secrets', 0)}",
         ]
-        for i, text in enumerate(info):
-            draw_text(self.screen, self.font_s, text, MUTED,
+        for i, item in enumerate(info):
+            draw_text(self.screen, self.font_s, item, MUTED,
                       (WIDTH // 2, 385 + i * 25), center=True, shadow=False)
         next_text = (f"NEXT  //  {LEVELS[self.pending_next_level]['name']}"
                      if self.pending_next_level is not None else "CAMPAIGN COMPLETE  //  RETURN TO MAIN MENU")
@@ -8063,23 +8154,6 @@ class Game:
         draw_text(self.screen, self.font_xs, "PRESS ENTER", MUTED,
                   (WIDTH // 2, 490), center=True, shadow=False)
 
-    def draw_seamless_transition(self) -> None:
-        """Slide sector 04 in from the right without a portal or fade."""
-        old_frame = self.seamless_transition_old_frame
-        if old_frame is None:
-            self.draw_world()
-            return
-        progress = 1.0 - (
-            self.seamless_transition_timer /
-            max(0.001, self.seamless_transition_duration))
-        shift = int(WIDTH * max(0.0, min(1.0, progress)))
-        self.screen.fill((0, 0, 0))
-        self.screen.blit(old_frame, (-shift, 0))
-        # Draw only the revealed slice of the incoming world.
-        self.screen.set_clip(pygame.Rect(WIDTH - shift, 0, shift, HEIGHT))
-        self.draw_world()
-        self.screen.set_clip(None)
-
     def draw(self) -> None:
         draw_started = perf_counter()
         if self.mode == "menu":
@@ -8118,8 +8192,6 @@ class Game:
             self.draw_skills()
         elif self.mode == "achievements":
             self.draw_achievements()
-        elif self.mode == "transition":
-            self.draw_seamless_transition()
         elif self.mode in ("playing", "paused"):
             self.draw_world()
             self.draw_hud()
