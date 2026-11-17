@@ -409,6 +409,51 @@ class LaserBarrier:
 
 
 @dataclass
+class SawHazard:
+    """A lethal rotating blade: fixed to the floor or hung as a pendulum."""
+    x: float
+    y: float
+    radius: int = 26
+    kind: str = "fixed"
+    length: float = 0.0
+    swing: float = 0.52
+    speed: float = 1.25
+    phase: float = 0.0
+    center_x: float = 0.0
+    center_y: float = 0.0
+    angle: float = 0.0
+    rotation: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.kind == "swing":
+            self.angle = math.sin(self.phase) * self.swing
+            self.center_x = self.x + math.sin(self.angle) * self.length
+            self.center_y = self.y + math.cos(self.angle) * self.length
+        else:
+            self.center_x, self.center_y = self.x, self.y
+
+    def update(self, elapsed: float) -> None:
+        self.rotation = elapsed * 8.5 + self.phase * 3.0
+        if self.kind == "swing":
+            self.angle = math.sin(elapsed * self.speed + self.phase) * self.swing
+            self.center_x = self.x + math.sin(self.angle) * self.length
+            self.center_y = self.y + math.cos(self.angle) * self.length
+
+    @property
+    def rect(self) -> pygame.Rect:
+        diameter = self.radius * 2
+        return pygame.Rect(round(self.center_x - self.radius),
+                           round(self.center_y - self.radius), diameter, diameter)
+
+    def collides(self, target: pygame.Rect) -> bool:
+        closest_x = max(target.left, min(self.center_x, target.right))
+        closest_y = max(target.top, min(self.center_y, target.bottom))
+        dx, dy = self.center_x - closest_x, self.center_y - closest_y
+        hit_radius = max(13, self.radius - 4)
+        return dx * dx + dy * dy <= hit_radius * hit_radius
+
+
+@dataclass
 class Coin:
     x: float
     y: float
@@ -1152,7 +1197,7 @@ LEVELS[2]["spikes"].extend([(4650, 452, 70), (5350, 452, 72), (5900, 452, 70)])
 LEVELS[2]["checkpoints"].extend([(5050, 475), (5780, 475)])
 LEVELS[2]["exit"] = (6070, 393)
 
-LEVELS[3]["width"] = 5800
+LEVELS[3]["width"] = 10000
 LEVELS[3]["platforms"].extend([
     (4050, 475, 380, 100), (4490, 475, 390, 100),
     (4940, 475, 400, 100), (5400, 475, 400, 100),
@@ -1160,22 +1205,60 @@ LEVELS[3]["platforms"].extend([
     (4580, 370, 160, 18), (4820, 300, 160, 18),
     (5060, 365, 160, 18), (5300, 305, 160, 18),
     (5520, 380, 160, 18), (5700, 315, 90, 18),
+    # The second half descends through the engine's service decks.
+    (5920, 475, 390, 100), (6430, 475, 390, 100),
+    (6940, 475, 400, 100), (7460, 475, 390, 100),
+    (7970, 475, 400, 100), (8490, 475, 390, 100),
+    (9000, 475, 400, 100), (9520, 475, 480, 100),
+    (5840, 385, 150, 18), (6070, 315, 155, 18),
+    (6350, 370, 155, 18), (6590, 300, 160, 18),
+    (6860, 375, 155, 18), (7110, 305, 160, 18),
+    (7370, 365, 160, 18), (7610, 295, 160, 18),
+    (7880, 375, 155, 18), (8120, 305, 160, 18),
+    (8390, 365, 160, 18), (8630, 295, 160, 18),
+    (8900, 375, 155, 18), (9140, 305, 160, 18),
+    (9410, 365, 160, 18), (9650, 300, 160, 18),
 ])
 LEVELS[3]["coins"].extend([
     (4160, 347), (4390, 277), (4620, 332), (4860, 262),
     (5100, 327), (5340, 267), (5560, 342), (5740, 277),
-    (4230, 425), (4700, 425), (5180, 425), (5620, 425),
+    (6000, 347), (6145, 277), (6400, 332), (6645, 262),
+    (6910, 337), (7160, 267), (7420, 327), (7660, 257),
+    (7930, 337), (8170, 267), (8450, 327), (8680, 257),
+    (8950, 337), (9190, 267), (9470, 327), (9705, 262),
+    (6100, 425), (6600, 425), (7100, 425), (7600, 425),
+    (8110, 425), (8610, 425), (9120, 425), (9650, 425),
 ])
 LEVELS[3]["drones"].extend([
     (4230, 340, 4150, 4310), (4750, 335, 4670, 4830),
     (5280, 340, 5200, 5360), (5650, 280, 5570, 5730),
+    (6060, 340, 5980, 6150), (6760, 435, 6500, 7200),
+    (7600, 335, 7520, 7690), (8320, 340, 8240, 8430),
+    (9050, 335, 8960, 9140), (9700, 270, 9620, 9850),
 ])
 LEVELS[3]["seekers"].extend([
     (4530, 185, 4440, 4620), (5400, 190, 5310, 5490),
+    (6280, 180, 6180, 6380), (7800, 190, 7700, 7900),
+    (9410, 185, 9300, 9500),
 ])
-LEVELS[3]["spikes"].extend([(4330, 452, 70), (4960, 452, 72), (5500, 452, 70)])
-LEVELS[3]["checkpoints"].extend([(4700, 475), (5680, 475)])
-LEVELS[3]["exit"] = (5730, 393)
+LEVELS[3]["spikes"].extend([
+    (4330, 452, 70), (4960, 452, 72), (5500, 452, 70),
+    (6100, 452, 70), (7060, 452, 72), (8110, 452, 70),
+    (9150, 452, 72),
+])
+LEVELS[3]["checkpoints"].extend([(4700, 475), (5680, 475), (6700, 475),
+                                  (8300, 475), (9650, 475)])
+# Suspended engine blades swing across the route; fixed grinders guard
+# selected floor sections. Their motion and collisions are handled by SawHazard.
+LEVELS[3]["saws"] = [
+    (1100, 105, 27, "swing", 300, 0.52, 1.25, 0.2),
+    (1980, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
+    (7000, 110, 28, "swing", 300, 0.52, 1.28, 1.4),
+    (7550, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
+    (8700, 105, 28, "swing", 300, 0.52, 1.25, 2.2),
+    (9270, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
+]
+LEVELS[3]["exit"] = (9850, 393)
 
 LEVELS[4]["width"] = 6500
 LEVELS[4]["platforms"].extend([
@@ -1487,6 +1570,7 @@ class Level:
             BreakawayPlatform(*item) for item in data.get("breakaway_platforms", [])
         ]
         self.lasers = [LaserBarrier(*item) for item in data.get("lasers", [])]
+        self.saws = [SawHazard(*item) for item in data.get("saws", [])]
         self.solids = ([p.rect for p in self.platforms]
                        + [bridge.rect for bridge in self.breakaway_platforms if bridge.solid])
         env_rng = random.Random(16700 + index * 997)
@@ -1627,6 +1711,8 @@ class Level:
             bridge.update(dt)
         for laser in self.lasers:
             laser.update(self.elapsed)
+        for saw in self.saws:
+            saw.update(self.elapsed)
         self.solids = ([p.rect for p in self.platforms]
                        + [bridge.rect for bridge in self.breakaway_platforms if bridge.solid])
         for drone in self.drones:
@@ -2389,6 +2475,72 @@ def draw_spikes(surface: pygame.Surface, spike: pygame.Rect, camera_x: float,
         pygame.draw.polygon(surface, (43, 24, 45), points)
         pygame.draw.lines(surface, accent2, False,
                           [(x1, spike.bottom), (xm, spike.top), (x2, spike.bottom)], 2)
+
+
+def draw_saw_hazard(surface: pygame.Surface, saw: SawHazard, camera_x: float,
+                    now: float, accent: tuple[int, int, int],
+                    detailed: bool = True) -> None:
+    """Draw a readable industrial saw with a cable/mount and rotating teeth."""
+    cx = int(saw.center_x - camera_x)
+    cy = int(saw.center_y)
+    radius = saw.radius
+    if cx < -radius - 330 or cx > WIDTH + radius + 330:
+        return
+
+    if saw.kind == "swing":
+        ax, ay = int(saw.x - camera_x), int(saw.y)
+        pygame.draw.line(surface, (13, 22, 34), (ax, ay), (cx, cy), 8)
+        pygame.draw.line(surface, (91, 113, 127), (ax, ay), (cx, cy), 3)
+        pygame.draw.line(surface, (34, 59, 70), (ax - 1, ay), (cx - 1, cy), 1)
+        mount = pygame.Rect(ax - 20, ay - 8, 40, 16)
+        pygame.draw.rect(surface, (19, 31, 45), mount, border_radius=4)
+        pygame.draw.rect(surface, (102, 128, 143), mount, 2, border_radius=4)
+        for bolt_x in (ax - 12, ax + 12):
+            pygame.draw.circle(surface, (177, 190, 190), (bolt_x, ay), 2)
+        pygame.draw.circle(surface, accent, (ax, ay), 6, 2)
+        pygame.draw.circle(surface, (8, 16, 27), (ax, ay), 3)
+    else:
+        # A recessed drive housing makes fixed blades feel bolted into the deck.
+        housing = pygame.Rect(cx - radius - 13, cy + radius - 3, radius * 2 + 26, 17)
+        pygame.draw.rect(surface, (13, 24, 36), housing, border_radius=4)
+        pygame.draw.rect(surface, (71, 99, 113), housing, 2, border_radius=4)
+        pygame.draw.line(surface, accent, (housing.x + 7, housing.y + 3),
+                         (housing.right - 7, housing.y + 3), 2)
+        for bolt_x in (housing.x + 7, housing.right - 7):
+            pygame.draw.circle(surface, (172, 183, 185), (bolt_x, housing.centery), 2)
+
+    # Layered steel rim, individual teeth and a spinning inner rotor.
+    pygame.draw.circle(surface, (7, 15, 27), (cx, cy), radius + 7)
+    pygame.draw.circle(surface, (75, 103, 119), (cx, cy), radius + 5, 2)
+    pygame.draw.circle(surface, (21, 35, 49), (cx, cy), radius + 1)
+    teeth = 12 if detailed else 8
+    for tooth in range(teeth):
+        angle = saw.rotation + math.tau * tooth / teeth
+        half = 0.105 if detailed else 0.13
+        inner = radius - 1
+        outer = radius + (8 if detailed else 6)
+        points = [
+            (int(cx + math.cos(angle - half) * inner),
+             int(cy + math.sin(angle - half) * inner)),
+            (int(cx + math.cos(angle) * outer),
+             int(cy + math.sin(angle) * outer)),
+            (int(cx + math.cos(angle + half) * inner),
+             int(cy + math.sin(angle + half) * inner)),
+        ]
+        pygame.draw.polygon(surface, (177, 190, 190), points)
+        pygame.draw.lines(surface, (63, 84, 99), True, points, 1)
+    pygame.draw.circle(surface, (125, 147, 155), (cx, cy), radius - 2, 2)
+    if detailed:
+        for spoke in range(6):
+            angle = saw.rotation * 0.72 + math.tau * spoke / 6
+            end = (int(cx + math.cos(angle) * (radius - 8)),
+                   int(cy + math.sin(angle) * (radius - 8)))
+            pygame.draw.line(surface, (87, 113, 128), (cx, cy), end, 2)
+    pygame.draw.circle(surface, (15, 29, 43), (cx, cy), 9)
+    pygame.draw.circle(surface, accent, (cx, cy), 6, 2)
+    pygame.draw.circle(surface, (222, 232, 224), (cx, cy), 2)
+    if int(now * 5 + saw.x * 0.01) % 2 == 0:
+        pygame.draw.circle(surface, (255, 174, 87), (cx, cy), radius + 10, 1)
 
 
 def draw_checkpoint(surface: pygame.Surface, cp: Checkpoint, camera_x: float,
@@ -3664,6 +3816,7 @@ class Game:
         # section with collapsing bridges or timed laser gates.
         self.level.breakaway_platforms.clear()
         self.level.lasers.clear()
+        self.level.saws.clear()
         self.level.moving_platforms.clear()
         # A dedicated boss arena must be a clean deck, not overlapping scraps
         # of the traversal route underneath the new floor.
@@ -5218,6 +5371,15 @@ class Game:
                     self.damage_player()
                     self.make_burst(laser.x, laser.rect.centery,
                                     THEMES[self.level_index]["accent2"], 10)
+                    break
+
+        # Rotating blades are lethal only while the player is vulnerable.
+        if self.player.invuln <= 0:
+            for saw in self.level.saws:
+                if saw.collides(self.player.rect):
+                    self.damage_player()
+                    self.make_burst(saw.center_x, saw.center_y,
+                                    THEMES[self.level_index]["accent2"], 12)
                     break
 
         # Spikes and falling out of the world.
@@ -6813,6 +6975,9 @@ class Game:
                     pygame.draw.line(self.screen, (42, 83, 91), (lx + laser.w // 2, top_y),
                                      (lx + laser.w // 2, bottom_y), 1)
 
+        for saw in self.level.saws:
+            draw_saw_hazard(self.screen, saw, self.camera_x, self.time, accent,
+                            detailed=detailed)
         for spike in self.level.spikes:
             draw_spikes(self.screen, spike, self.camera_x, accent2)
         for cp in self.level.checkpoints:
