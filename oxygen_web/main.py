@@ -7431,7 +7431,7 @@ class Game:
                   f"CHANNEL  {self.radio_selection + 1:02d}  /  {len(RADIO_TRANSMISSIONS):02d}",
                   CYAN, (WIDTH // 2, panel.y + 58), center=True, shadow=False)
 
-        spectrum = pygame.Rect(panel.x + 55, panel.y + 104, panel.w - 110, 82)
+        spectrum = pygame.Rect(panel.x + 55, panel.y + 96, panel.w - 110, 64)
         pygame.draw.rect(self.screen, (2, 9, 20), spectrum, border_radius=6)
         pygame.draw.rect(self.screen, (37, 79, 101), spectrum, 1, border_radius=6)
         mid_y = spectrum.centery + 10
@@ -7447,9 +7447,9 @@ class Game:
 
         source, message = RADIO_TRANSMISSIONS[self.radio_selection].split(" // ", 1)
         draw_text(self.screen, self.font_xs, source, THEMES[5]["accent"],
-                  (WIDTH // 2, 282), center=True, shadow=False)
+                  (WIDTH // 2, 345), center=True, shadow=False)
         draw_text(self.screen, self.font_s, message, WHITE,
-                  (WIDTH // 2, 317), center=True, shadow=False)
+                  (WIDTH // 2, 374), center=True, shadow=False)
         draw_text(self.screen, self.font_xs, "A / LEFT", MUTED,
                   (panel.x + 155, 405), center=True, shadow=False)
         draw_text(self.screen, self.font_m, "◀", CYAN,
