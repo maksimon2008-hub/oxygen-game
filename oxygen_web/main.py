@@ -2598,6 +2598,8 @@ class Game:
         self.achievement_popup_timer = 0.0
         self.boss_arena_active = False
         self.boss_arena_bounds: tuple[int, int, int] | None = None
+        self.boss_intro_timer = 0.0
+        self.boss_intro_name = ""
         self.is_arena_mode = False
         self.arena_wave = 1
         self.arena_spawn_remaining = 0
@@ -3649,6 +3651,13 @@ class Game:
         # section with collapsing bridges or timed laser gates.
         self.level.breakaway_platforms.clear()
         self.level.lasers.clear()
+        self.level.moving_platforms.clear()
+        # A dedicated boss arena must be a clean deck, not overlapping scraps
+        # of the traversal route underneath the new floor.
+        self.level.platforms = [
+            platform for platform in self.level.platforms
+            if platform.x + platform.w <= arena_left or platform.x >= arena_right
+        ]
         arena_parts = [
             Platform(arena_left, floor_y, arena_width, 130),
             Platform(arena_left, 245, 22, floor_y - 245),
@@ -3661,8 +3670,14 @@ class Game:
         boss.x = max(boss.left, min(boss.right, center_x))
         boss.base_y = 315 if boss.variant == "core" else 290
         boss.y = boss.base_y
+        boss.state = "idle"
+        boss.state_timer = 0.0
+        boss.attack_timer = 3.0
+        boss.shots.clear()
         self.boss_arena_bounds = (arena_left, arena_right, floor_y)
         self.boss_arena_active = True
+        self.boss_intro_name = boss.name
+        self.boss_intro_timer = 2.35
         self.player.x = float(arena_left + 78)
         self.player.y = float(floor_y - self.player.h)
         self.player.vx = self.player.vy = 0.0
@@ -3671,12 +3686,15 @@ class Game:
         self.level.exit_rect.x = arena_right - 92
         self.camera_x = max(0.0, min(arena_left - 90, self.level.width - WIDTH))
         self.player.x = max(arena_left + 34, min(self.player.x, arena_right - self.player.w - 34))
+        self.player.jump_buffer = 0.0
         self.make_burst(self.player.x + 15, self.player.y + 18, THEMES[self.level_index]["accent"], 24)
 
     def load_level(self, index: int) -> None:
         self.is_arena_mode = False
         self.boss_arena_active = False
         self.boss_arena_bounds = None
+        self.boss_intro_timer = 0.0
+        self.boss_intro_name = ""
         # Keep an active x2 pickup while flowing directly into the next sector.
         self.healing_crystal = None
         self.boss_fight_elapsed = 0.0
@@ -3732,6 +3750,8 @@ class Game:
         self.healing_crystal = None
         self.boss_arena_active = False
         self.boss_arena_bounds = None
+        self.boss_intro_timer = 0.0
+        self.boss_intro_name = ""
         self.coin_multiplier_timer = 0.0
         self.boss_fight_elapsed = 0.0
         self.boss_crystal_delay = random.uniform(25.0, 50.0)
@@ -4006,7 +4026,7 @@ class Game:
             self.notice_timer = 1.3
 
     def process_dash_event(self) -> None:
-        if self.mode == "playing":
+        if self.mode == "playing" and self.boss_intro_timer <= 0:
             old_dash = self.player.dash_time
             self.player.begin_dash(self.particles)
             if self.player.dash_time > old_dash:
@@ -4341,6 +4361,10 @@ class Game:
                     self.menu_selection = 0
 
             elif self.mode == "playing":
+                if self.boss_intro_timer > 0:
+                    if event.key == pygame.K_ESCAPE:
+                        self.mode = "paused"
+                    return
                 if event.key in (pygame.K_SPACE, pygame.K_w, pygame.K_UP):
                     if self.player.character_id == "flyer" and not self.player.on_ground:
                         self.player.flight_requested = True
@@ -4430,7 +4454,7 @@ class Game:
                 self.settings_drag = "sfx"
                 self.set_audio_slider("sfx", self.audio_slider_value_from_x(mouse_pos[0]))
                 return
-            if self.mode == "playing":
+            if self.mode == "playing" and self.boss_intro_timer <= 0:
                 self.fire_player_shot()
 
             elif self.mode == "settings":
@@ -4713,6 +4737,14 @@ class Game:
             return
         self.level_elapsed += dt
         self.update_ambient_events(dt)
+        if self.boss_intro_timer > 0:
+            self.boss_intro_timer = max(0.0, self.boss_intro_timer - dt)
+            self.player.vx = 0.0
+            self.player.vy = 0.0
+            self.player.jump_buffer = 0.0
+            self.player.mobile_jump_hold_timer = 0.0
+            self.particles = [particle for particle in self.particles if particle.update(dt)]
+            return
 
         keys = pygame.key.get_pressed()
         mouse_buttons = pygame.mouse.get_pressed()
@@ -4839,6 +4871,7 @@ class Game:
                 self.notice = f"{self.level.boss.name} AWAKENS // BOSS PLATFORM LOCKED"
                 self.notice_timer = 2.4
                 self.shake = 0.18
+                return
         boss = self.level.boss
         # The cooldown advances during active campaign play, not while paused or
         # in menus. A crystal can only materialize during an active boss fight,
@@ -6477,6 +6510,107 @@ class Game:
         for y in range(465, HEIGHT, 18):
             pygame.draw.line(self.screen, (20, 33, 55), (0, y), (WIDTH, y), 1)
 
+    def draw_boss_arena_environment(self, theme) -> None:
+        if not self.boss_arena_active or self.boss_arena_bounds is None:
+            return
+        arena_left, arena_right, floor_y = self.boss_arena_bounds
+        left = int(arena_left - self.camera_x)
+        right = int(arena_right - self.camera_x)
+        if right < -80 or left > WIDTH + 80:
+            return
+        center = (left + right) // 2
+        ring_y = 218 if self.level_index == 4 else 205
+        accent = theme["accent"]
+        hot = (255, 92, 72) if self.level_index == 4 else (93, 210, 255)
+        detailed = self.graphics_mode == "detail"
+        radius = 228 if detailed else 190
+
+        # The arena's reactor ring is background art only; the collision deck
+        # remains the same simple, fair rectangle in both graphics modes.
+        pygame.draw.circle(self.screen, (18, 29, 49), (center, ring_y), radius, 15 if detailed else 8)
+        pygame.draw.circle(self.screen, (62, 89, 117), (center, ring_y), radius, 2)
+        pygame.draw.circle(self.screen, accent, (center, ring_y), radius - 22, 2)
+        if detailed:
+            pygame.draw.circle(self.screen, (33, 59, 82), (center, ring_y), radius - 43, 1)
+            for brace in range(12):
+                angle = math.tau * brace / 12 + self.time * 0.035
+                inner, outer = radius - 48, radius + 3
+                a = (center + int(math.cos(angle) * inner),
+                     ring_y + int(math.sin(angle) * inner))
+                b = (center + int(math.cos(angle) * outer),
+                     ring_y + int(math.sin(angle) * outer))
+                pygame.draw.line(self.screen, (69, 104, 129), a, b, 3)
+            pygame.draw.arc(self.screen, hot,
+                            (center - radius + 14, ring_y - radius + 14,
+                             (radius - 14) * 2, (radius - 14) * 2),
+                            self.time * 0.18, self.time * 0.18 + 2.1, 3)
+
+        for px in (left + 42, right - 58):
+            pygame.draw.rect(self.screen, (8, 17, 32), (px, 205, 24, floor_y - 205), border_radius=4)
+            pygame.draw.rect(self.screen, (56, 85, 111), (px, 205, 24, floor_y - 205), 2, border_radius=4)
+            pygame.draw.line(self.screen, accent, (px + 5, 224), (px + 5, floor_y - 16), 2)
+            for lamp_y in (260, 330, 400):
+                pygame.draw.rect(self.screen, hot, (px + 9, lamp_y, 10, 4), border_radius=2)
+            pygame.draw.polygon(self.screen, (21, 38, 58),
+                                [(px - 10, 205), (px + 12, 178), (px + 34, 205)])
+            pygame.draw.line(self.screen, (83, 119, 144), (px - 10, 205), (px + 12, 178), 2)
+            pygame.draw.line(self.screen, (83, 119, 144), (px + 12, 178), (px + 34, 205), 2)
+
+        beam_y = 180
+        pygame.draw.line(self.screen, (23, 42, 64), (left + 68, beam_y), (right - 68, beam_y), 8)
+        pygame.draw.line(self.screen, (77, 107, 133), (left + 68, beam_y + 5),
+                         (right - 68, beam_y + 5), 1)
+        for lamp_x in range(left + 125, right - 100, 150):
+            lamp_color = hot if int(self.time * 2.0 + lamp_x * 0.01) % 3 == 0 else accent
+            pygame.draw.circle(self.screen, lamp_color, (lamp_x, beam_y + 12), 3)
+
+    def draw_boss_arena_floor(self) -> None:
+        if not self.boss_arena_active or self.boss_arena_bounds is None:
+            return
+        arena_left, arena_right, floor_y = self.boss_arena_bounds
+        left = int(arena_left - self.camera_x)
+        right = int(arena_right - self.camera_x)
+        if right < 0 or left > WIDTH:
+            return
+        hot = (255, 83, 63) if self.level_index == 4 else (82, 203, 255)
+        channel = pygame.Rect(left + 10, floor_y + 10, max(0, right - left - 20), 31)
+        pygame.draw.rect(self.screen, (15, 19, 31), channel, border_radius=5)
+        pygame.draw.rect(self.screen, (65, 55, 66), channel, 1, border_radius=5)
+        pulse = 0.62 + 0.28 * math.sin(self.time * 2.1)
+        glow_color = tuple(min(255, int(value * pulse)) for value in hot)
+        pygame.draw.line(self.screen, glow_color, (channel.left + 8, channel.centery),
+                         (channel.right - 8, channel.centery), 3)
+        if self.graphics_mode == "detail":
+            for crack in range(8):
+                cx = channel.left + 22 + crack * max(1, (channel.w - 44) // 8)
+                offset = int(math.sin(self.time * 2.6 + crack * 1.7) * 5)
+                pygame.draw.line(self.screen, hot, (cx, channel.top + 4),
+                                 (cx + 7 + offset, channel.bottom - 4), 1)
+            for bolt_x in (channel.left + 6, channel.right - 6):
+                pygame.draw.circle(self.screen, (116, 130, 151), (bolt_x, channel.top + 5), 2)
+
+    def draw_boss_intro(self) -> None:
+        total = 2.35
+        elapsed = total - self.boss_intro_timer
+        fade = min(1.0, elapsed / 0.30, self.boss_intro_timer / 0.32)
+        alpha = max(0, min(190, int(174 * fade)))
+        if alpha:
+            veil = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            veil.fill((1, 3, 12, alpha))
+            self.screen.blit(veil, (0, 0))
+        accent = THEMES[self.level_index]["accent"]
+        scan_y = 270 + int(math.sin(self.time * 28.0) * 4)
+        pygame.draw.line(self.screen, (24, 46, 66), (110, scan_y - 34), (WIDTH - 110, scan_y - 34), 1)
+        pygame.draw.line(self.screen, accent, (110, scan_y), (WIDTH - 110, scan_y), 2)
+        pygame.draw.line(self.screen, (24, 46, 66), (110, scan_y + 34), (WIDTH - 110, scan_y + 34), 1)
+        if alpha > 24:
+            draw_text(self.screen, self.font_xs, "CONTAINMENT LOCKDOWN",
+                      accent, (WIDTH // 2, 220), center=True, shadow=False)
+            draw_text(self.screen, self.font_l, localize(self.boss_intro_name),
+                      WHITE, (WIDTH // 2, 278), center=True)
+            draw_text(self.screen, self.font_xs, "BOSS SIGNATURE DETECTED // PREPARE FOR ENGAGEMENT",
+                      MUTED, (WIDTH // 2, 334), center=True, shadow=False)
+
     def draw_world(self) -> None:
         theme = THEMES[self.level_index]
         accent, accent2 = theme["accent"], theme["accent2"]
@@ -6491,6 +6625,8 @@ class Game:
             self.draw_detailed_early_level_environment(theme)
         else:
             self.draw_level_environment(theme)
+        if self.boss_arena_active:
+            self.draw_boss_arena_environment(theme)
 
         # Signal glyphs are decorative and disabled in Performance mode.
         if detailed and self.level_index >= 5 and self.level_index not in (6, 7, 8, 9):
@@ -6556,6 +6692,7 @@ class Game:
                                             (leaf_x - 7, py - 8, 14, 7))
                         pygame.draw.ellipse(self.screen, (38, 113, 82),
                                             (leaf_x - 5, py + 4, 11, 6))
+        self.draw_boss_arena_floor()
         for pad in self.level.launch_pads:
             px = int(pad.x - self.camera_x)
             if -pad.w < px < WIDTH:
@@ -7592,6 +7729,9 @@ class Game:
                 self.draw_167_signal_event()
         elif self.mode == "cassette_deck":
             self.draw_cassette_deck()
+        elif self.mode == "radio_console":
+            self.draw_safehouse()
+            self.draw_radio_console()
         elif self.mode == "secret_room_167":
             self.draw_secret_room_167()
         elif self.mode == "safehouse_dialog":
@@ -7610,6 +7750,8 @@ class Game:
         elif self.mode in ("playing", "paused"):
             self.draw_world()
             self.draw_hud()
+            if self.boss_intro_timer > 0:
+                self.draw_boss_intro()
             if self.mode == "paused":
                 self.draw_pause()
         elif self.mode == "gameover":
