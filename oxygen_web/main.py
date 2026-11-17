@@ -1280,6 +1280,10 @@ class Level:
         self.seekers = [Seeker(*enemy) for enemy in data.get("seekers", [])]
         self.spiders = [Spider(*item) for item in data.get("spiders", [])]
         self.turrets = [Turret(*item) for item in data.get("turrets", [])]
+        # Keep turret pressure readable: at most two sentries per sector.
+        # When a layout has more, retain the outermost positions to spread them out.
+        if len(self.turrets) > 2:
+            self.turrets = [self.turrets[0], self.turrets[-1]]
         if index >= 5:
             for enemy in self.spiders + self.turrets:
                 enemy.hp = 6
@@ -4390,6 +4394,18 @@ class Game:
         for shot in self.projectiles:
             shot.update(dt)
             if not shot.alive:
+                continue
+            # A player pulse can intercept a live turret bolt. Both shots
+            # disappear and the clash gives immediate visual feedback.
+            intercepted = False
+            for enemy_shot in self.level.enemy_shots:
+                if enemy_shot.alive and shot.rect.colliderect(enemy_shot.rect):
+                    enemy_shot.alive = False
+                    shot.alive = False
+                    self.make_burst(enemy_shot.x, enemy_shot.y, (255, 190, 125), 9)
+                    intercepted = True
+                    break
+            if intercepted:
                 continue
             if any(shot.rect.colliderect(solid) for solid in self.level.solids):
                 shot.alive = False
