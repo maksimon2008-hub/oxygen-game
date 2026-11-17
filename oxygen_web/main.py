@@ -1210,15 +1210,15 @@ LEVELS[3]["platforms"].extend([
     (5520, 380, 160, 18), (5700, 315, 90, 18),
     # The second half descends through the engine's service decks.
     (5920, 475, 390, 100), (6430, 475, 390, 100),
-    (6940, 475, 400, 100), (7460, 475, 390, 100),
-    (7970, 475, 400, 100), (8490, 475, 390, 100),
+    (6940, 475, 400, 100),
+    # A wide open maintenance shaft replaces the ordinary floor here.
+    # The far-side service deck begins after the disappearing-tile run.
+    (8660, 475, 300, 100),
     (9000, 475, 400, 100), (9520, 475, 480, 100),
     (5840, 385, 150, 18), (6070, 315, 155, 18),
     (6350, 370, 155, 18), (6590, 300, 160, 18),
     (6860, 375, 155, 18), (7110, 305, 160, 18),
-    (7370, 365, 160, 18), (7610, 295, 160, 18),
-    (7880, 375, 155, 18), (8120, 305, 160, 18),
-    (8390, 365, 160, 18), (8630, 295, 160, 18),
+    # The chasm has no safe upper catwalk: the temporary tiles are the route.
     (8900, 375, 155, 18), (9140, 305, 160, 18),
     (9410, 365, 160, 18), (9650, 300, 160, 18),
 ])
@@ -1250,14 +1250,27 @@ LEVELS[3]["spikes"].extend([
     (9150, 452, 72),
 ])
 LEVELS[3]["checkpoints"].extend([(4700, 475), (5680, 475), (6700, 475),
-                                  (8300, 475), (9650, 475)])
+                                  (8750, 475), (9650, 475)])
+# A short, deliberate parkour run across the engine shaft. Every tile gives
+# a brief warning on landing, then vanishes before rebuilding further back.
+LEVELS[3]["breakaway_platforms"] = [
+    (7380, 430, 116, 18, 0.88, 2.65),
+    (7525, 390, 116, 18, 0.88, 2.65),
+    (7670, 425, 116, 18, 0.88, 2.65),
+    (7815, 385, 116, 18, 0.88, 2.65),
+    (7960, 420, 116, 18, 0.88, 2.65),
+    (8105, 380, 116, 18, 0.88, 2.65),
+    (8250, 415, 116, 18, 0.88, 2.65),
+    (8395, 385, 116, 18, 0.88, 2.65),
+    (8540, 425, 116, 18, 0.88, 2.65),
+]
 # Suspended engine blades swing across the route; fixed grinders guard
 # selected floor sections. Their motion and collisions are handled by SawHazard.
 LEVELS[3]["saws"] = [
     (1100, 105, 27, "swing", 300, 0.52, 1.25, 0.2),
     (1980, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
     (7000, 110, 28, "swing", 300, 0.52, 1.28, 1.4),
-    (7550, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
+    (8870, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
     (8700, 105, 28, "swing", 300, 0.52, 1.25, 2.2),
     (9270, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
 ]
@@ -6860,6 +6873,32 @@ class Game:
             self.draw_detailed_early_level_environment(theme)
         else:
             self.draw_level_environment(theme)
+        if self.level_index == 3:
+            # THE HOLLOW ENGINE // an open maintenance shaft beneath the
+            # temporary stepping tiles. Draw before platforms so the gap
+            # remains visually deep while the tiles stay crisp in both modes.
+            pit_left = int(7340 - self.camera_x)
+            pit_right = int(8660 - self.camera_x)
+            left = max(0, pit_left)
+            right = min(WIDTH, pit_right)
+            if right > left:
+                pygame.draw.rect(self.screen, (2, 7, 14), (left, 475, right - left, HEIGHT - 475))
+                pygame.draw.rect(self.screen, (4, 17, 25), (left, 500, right - left, 120))
+                pygame.draw.line(self.screen, (24, 69, 68), (left, 476), (right, 476), 3)
+                pygame.draw.line(self.screen, (43, 105, 87), (left, 612), (right, 612), 2)
+                for world_x in range(7420, 8660, 190):
+                    screen_x = int(world_x - self.camera_x)
+                    if left - 20 <= screen_x <= right + 20:
+                        pygame.draw.line(self.screen, (12, 37, 48),
+                                         (screen_x, 486), (screen_x - 22, 612), 5)
+                        pygame.draw.line(self.screen, (32, 77, 74),
+                                         (screen_x + 5, 492), (screen_x - 17, 612), 1)
+                for world_x in range(7460, 8660, 290):
+                    screen_x = int(world_x - self.camera_x)
+                    if left <= screen_x <= right:
+                        pygame.draw.circle(self.screen, (91, 170, 106), (screen_x, 605), 3)
+                        pygame.draw.circle(self.screen, (30, 76, 63), (screen_x, 605), 8, 1)
+
         if self.boss_arena_active:
             self.draw_boss_arena_environment(theme)
 
