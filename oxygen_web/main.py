@@ -213,6 +213,15 @@ CHARACTERS = {
 }
 CHARACTER_IDS = tuple(CHARACTERS.keys())
 
+RADIO_TRANSMISSIONS = [
+    "RADIO // ...IF ANYONE HEARS THIS, DO NOT ANSWER THE SECOND SIGNAL.",
+    "UNKNOWN VOICE // THE SHELTER IS NOT THE ONLY PLACE STILL LIT.",
+    "STATIC // 167 IS NOT A FREQUENCY. REPEAT: NOT A FREQUENCY.",
+    "DISTANT TRANSMISSION // WE COUNTED SIX. THERE WERE SEVEN.",
+    "RADIO // CARRIER LOST. SOMETHING IS LISTENING."
+]
+
+
 ACHIEVEMENTS = [
     ("first_blood", "FIRST CONTACT", "Defeat your first enemy."),
     ("coin_runner", "COIN RUNNER", "Earn 50 coins from all sources."),
@@ -2580,6 +2589,8 @@ class Game:
         self.safehouse_interaction_hint = ""
         self.cassette_selection = 0
         self.cassette_playing = False
+        self.radio_selection = int(self.save_data.get("radio_log_index", 0)) % len(RADIO_TRANSMISSIONS)
+        self.radio_confirm_timer = 0.0
         self.secret_167_page = 0
         self.safehouse_event_active = False
         self.safehouse_event_elapsed = 0.0
@@ -3046,7 +3057,7 @@ class Game:
             else:
                 scene = "campaign_01_05" if self.level_index <= 4 else "campaign_06_09"
         elif self.mode in ("safehouse", "safehouse_dialog", "ability_mods",
-                           "cassette_deck", "secret_room_167"):
+                           "cassette_deck", "radio_console", "secret_room_167"):
             scene = ("signal_167" if self.save_data.get("postgame_event_seen", False)
                      else "hub")
         elif self.mode == "victory":
@@ -3198,18 +3209,9 @@ class Game:
         elif kind == "filter":
             self.service_oxygen_filter()
         elif kind == "radio":
-            transmissions = [
-                "RADIO // ...IF ANYONE HEARS THIS, DO NOT ANSWER THE SECOND SIGNAL.",
-                "UNKNOWN VOICE // THE SHELTER IS NOT THE ONLY PLACE STILL LIT.",
-                "STATIC // 167 IS NOT A FREQUENCY. REPEAT: NOT A FREQUENCY.",
-                "DISTANT TRANSMISSION // WE COUNTED SIX. THERE WERE SEVEN.",
-                "RADIO // CARRIER LOST. SOMETHING IS LISTENING."
-            ]
-            index = int(self.save_data.get("radio_log_index", 0)) % len(transmissions)
-            self.menu_notice = transmissions[index]
-            self.save_data["radio_log_index"] = index + 1
-            self.save_progress()
-            self.menu_notice_timer = 5.0
+            self.radio_selection = int(self.save_data.get("radio_log_index", 0)) % len(RADIO_TRANSMISSIONS)
+            self.radio_confirm_timer = 0.0
+            self.mode = "radio_console"
         elif kind == "armory":
             self.mods_character_index = self.character_index
             self.mods_selection = 0
@@ -3313,7 +3315,7 @@ class Game:
         elif target and target[0] == "gate":
             self.safehouse_interaction_hint = "E  //  CHOOSE RUNNER AND DEPLOY"
         elif target and target[0] == "radio":
-            self.safehouse_interaction_hint = "E  //  LISTEN TO RADIO"
+            self.safehouse_interaction_hint = "E  //  OPEN RADIO TUNER"
         elif target and target[0] == "armory":
             self.safehouse_interaction_hint = "E  //  OPEN ABILITY MODULES"
         elif target and target[0] == "cassette_deck":
@@ -4212,6 +4214,20 @@ class Game:
                     self.mode = "menu"
                     self.menu_selection = 0
 
+            elif self.mode == "radio_console":
+                if event.key in (pygame.K_LEFT, pygame.K_a):
+                    self.radio_selection = (self.radio_selection - 1) % len(RADIO_TRANSMISSIONS)
+                    self.radio_confirm_timer = 0.0
+                elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                    self.radio_selection = (self.radio_selection + 1) % len(RADIO_TRANSMISSIONS)
+                    self.radio_confirm_timer = 0.0
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    self.save_data["radio_log_index"] = self.radio_selection
+                    self.save_progress()
+                    self.radio_confirm_timer = 1.2
+                elif event.key in (pygame.K_ESCAPE, pygame.K_e):
+                    self.mode = "safehouse"
+
             elif self.mode == "cassette_deck":
                 tapes = self.collected_cassette_ids()
                 if event.key in (pygame.K_LEFT, pygame.K_a) and tapes:
@@ -4486,6 +4502,13 @@ class Game:
                     self.player.on_ground = True
                     self.interact_safehouse()
                     return
+                if pygame.Rect(790, 275, 140, 105).collidepoint(mouse_pos):
+                    self.player.x = float(861 - self.player.w / 2)
+                    self.player.y = 457.0
+                    self.player.vy = 0.0
+                    self.player.on_ground = True
+                    self.interact_safehouse()
+                    return
                 if pygame.Rect(600, 410, 112, 100).collidepoint(mouse_pos):
                     self.player.x = float(650 - self.player.w / 2)
                     self.player.y = 457.0
@@ -4510,6 +4533,20 @@ class Game:
                     self.player.vy = 0.0
                     self.player.on_ground = True
                     self.interact_safehouse()
+
+            elif self.mode == "radio_console":
+                if pygame.Rect(150, 475, 800, 55).collidepoint(mouse_pos):
+                    self.mode = "safehouse"
+                elif mouse_pos[0] < WIDTH // 2 - 110:
+                    self.radio_selection = (self.radio_selection - 1) % len(RADIO_TRANSMISSIONS)
+                    self.radio_confirm_timer = 0.0
+                elif mouse_pos[0] > WIDTH // 2 + 110:
+                    self.radio_selection = (self.radio_selection + 1) % len(RADIO_TRANSMISSIONS)
+                    self.radio_confirm_timer = 0.0
+                else:
+                    self.save_data["radio_log_index"] = self.radio_selection
+                    self.save_progress()
+                    self.radio_confirm_timer = 1.2
 
             elif self.mode == "cassette_deck":
                 tapes = self.collected_cassette_ids()
@@ -4651,6 +4688,7 @@ class Game:
         self.shake = max(0.0, self.shake - dt)
         self.notice_timer = max(0.0, self.notice_timer - dt)
         self.menu_notice_timer = max(0.0, self.menu_notice_timer - dt)
+        self.radio_confirm_timer = max(0.0, self.radio_confirm_timer - dt)
         self.achievement_popup_timer = max(0.0, self.achievement_popup_timer - dt)
         if self.mode == "playing":
             self.coin_multiplier_timer = max(0.0, self.coin_multiplier_timer - dt)
@@ -7368,6 +7406,59 @@ class Game:
         pygame.draw.line(surface, (151, 169, 177),
                          (left + int(width * 0.37), top + int(height * 0.69)),
                          (left + int(width * 0.63), top + int(height * 0.69)), 1)
+
+    def draw_radio_console(self) -> None:
+        veil = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        veil.fill((1, 5, 15, 176))
+        self.screen.blit(veil, (0, 0))
+
+        panel = pygame.Rect(145, 170, 810, 365)
+        pygame.draw.rect(self.screen, (5, 17, 31), panel, border_radius=14)
+        pygame.draw.rect(self.screen, (72, 135, 156), panel, 2, border_radius=14)
+        pygame.draw.rect(self.screen, (11, 32, 49), (panel.x + 20, panel.y + 18, panel.w - 40, 60),
+                         border_radius=8)
+        draw_text(self.screen, self.font_m, "RADIO // MANUAL TUNER", WHITE,
+                  (WIDTH // 2, panel.y + 31), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs,
+                  f"CHANNEL  {self.radio_selection + 1:02d}  /  {len(RADIO_TRANSMISSIONS):02d}",
+                  CYAN, (WIDTH // 2, panel.y + 58), center=True, shadow=False)
+
+        spectrum = pygame.Rect(panel.x + 55, panel.y + 104, panel.w - 110, 82)
+        pygame.draw.rect(self.screen, (2, 9, 20), spectrum, border_radius=6)
+        pygame.draw.rect(self.screen, (37, 79, 101), spectrum, 1, border_radius=6)
+        mid_y = spectrum.centery + 10
+        pygame.draw.line(self.screen, (34, 76, 96), (spectrum.x + 12, mid_y),
+                         (spectrum.right - 12, mid_y), 1)
+        for bar in range(54):
+            phase = self.time * (1.8 + (self.radio_selection % 3) * 0.24) + bar * 0.61
+            carrier = math.sin(bar * 0.17 + self.radio_selection * 1.7)
+            height = 5 + int((9 + 13 * abs(carrier)) * abs(math.sin(phase + carrier)))
+            bx = spectrum.x + 16 + bar * (spectrum.w - 32) // 54
+            pygame.draw.line(self.screen, CYAN if bar % 5 else (129, 208, 221),
+                             (bx, mid_y), (bx, mid_y - height), 2)
+
+        source, message = RADIO_TRANSMISSIONS[self.radio_selection].split(" // ", 1)
+        draw_text(self.screen, self.font_xs, source, THEMES[5]["accent"],
+                  (WIDTH // 2, 282), center=True, shadow=False)
+        draw_text(self.screen, self.font_s, message, WHITE,
+                  (WIDTH // 2, 317), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs, "A / LEFT", MUTED,
+                  (panel.x + 155, 405), center=True, shadow=False)
+        draw_text(self.screen, self.font_m, "◀", CYAN,
+                  (panel.x + 155, 438), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs, "D / RIGHT", MUTED,
+                  (panel.right - 155, 405), center=True, shadow=False)
+        draw_text(self.screen, self.font_m, "▶", CYAN,
+                  (panel.right - 155, 438), center=True, shadow=False)
+        status = "CHANNEL STORED" if self.radio_confirm_timer > 0 else "ENTER // STORE FREQUENCY"
+        draw_text(self.screen, self.font_xs, status,
+                  YELLOW if self.radio_confirm_timer > 0 else MUTED,
+                  (WIDTH // 2, 435), center=True, shadow=False)
+        close_rect = pygame.Rect(150, 475, 800, 55)
+        pygame.draw.rect(self.screen, (13, 35, 52), close_rect, border_radius=8)
+        pygame.draw.rect(self.screen, (53, 92, 117), close_rect, 1, border_radius=8)
+        draw_text(self.screen, self.font_xs, "ESC // RETURN TO SAFEHOUSE",
+                  MUTED, (WIDTH // 2, 493), center=True, shadow=False)
 
     def draw_cassette_deck(self) -> None:
         self.draw_background(THEMES[5], 5)
