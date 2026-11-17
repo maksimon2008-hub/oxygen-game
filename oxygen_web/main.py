@@ -5143,7 +5143,9 @@ class Game:
         # around inside a building when the camera follows the player.
         skyline_offset = int(self.camera_x * 0.10)
         skyline_index = self.level_index if background_level_index is None else background_level_index
-        self.screen.blit(self.skyline_layers[skyline_index], (-skyline_offset, 0))
+        # Sector 07 is enclosed by a living canopy, not the usual city skyline.
+        if skyline_index != 6:
+            self.screen.blit(self.skyline_layers[skyline_index], (-skyline_offset, 0))
 
         # Soft drifting smoke banks: cached once per sector, then only blitted.
         # The tiny downscale/upscale pass gives the clouds a restrained blur.
@@ -5197,15 +5199,17 @@ class Game:
         accent, accent2 = theme["accent"], theme["accent2"]
         self.draw_background(theme)
 
-        # Background signal glyphs.
-        for i in range(7):
-            wx = i * 560 + 180
-            x = int(wx - self.camera_x * 0.55)
-            if -80 < x < WIDTH + 80:
-                y = 100 + (i % 3) * 63
-                pygame.draw.circle(self.screen, (25, 43, 67), (x, y), 23, 1)
-                pygame.draw.line(self.screen, (26, 44, 70), (x - 31, y), (x + 31, y), 1)
-                pygame.draw.line(self.screen, (26, 44, 70), (x, y - 31), (x, y + 31), 1)
+        # Background signal glyphs belong to the machine sectors; the
+        # garden gets organic silhouettes instead.
+        if self.level_index != 6:
+            for i in range(7):
+                wx = i * 560 + 180
+                x = int(wx - self.camera_x * 0.55)
+                if -80 < x < WIDTH + 80:
+                    y = 100 + (i % 3) * 63
+                    pygame.draw.circle(self.screen, (25, 43, 67), (x, y), 23, 1)
+                    pygame.draw.line(self.screen, (26, 44, 70), (x - 31, y), (x + 31, y), 1)
+                    pygame.draw.line(self.screen, (26, 44, 70), (x, y - 31), (x, y + 31), 1)
 
         self.draw_level_environment(theme)
         self.draw_ambient_watcher(theme)
