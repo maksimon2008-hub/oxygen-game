@@ -5040,6 +5040,58 @@ class Game:
                     pygame.draw.circle(self.screen, (52, 116, 91), (sx, sy), 5, 1)
             return
 
+        # Sector 08: a vertical glass megastructure suspended above the abyss.
+        # Faceted towers and reflected signal strips keep the OXYGEN neon language.
+        if self.level_index == 7:
+            first = int((self.camera_x * 0.34) // 760) - 1
+            last = int((self.camera_x * 0.34 + WIDTH) // 760) + 2
+            for segment in range(first, last):
+                world_x = segment * 760 + 330
+                sx = int(world_x - self.camera_x * 0.34)
+                tower_h = 250 + (segment % 3) * 54
+                tower_w = 118 + (segment % 2) * 34
+                base_y = 445
+                points = [(sx - tower_w // 2, base_y),
+                          (sx - tower_w // 2 + 17, base_y - tower_h + 38),
+                          (sx - 9, base_y - tower_h),
+                          (sx + tower_w // 2 - 12, base_y - tower_h + 52),
+                          (sx + tower_w // 2, base_y)]
+                pygame.draw.polygon(self.screen, (12, 25, 48), points)
+                pygame.draw.lines(self.screen, (48, 89, 125), True, points, 2)
+                pygame.draw.line(self.screen, (79, 142, 178),
+                                 (sx - 8, base_y - tower_h + 8), (sx - 8, base_y - 8), 2)
+                pygame.draw.line(self.screen, (30, 69, 105),
+                                 (sx + 25, base_y - tower_h + 45), (sx + 43, base_y - 10), 2)
+                for floor in range(4):
+                    fy = base_y - 48 - floor * 47 - (segment % 2) * 12
+                    if fy > base_y - tower_h + 28:
+                        pygame.draw.line(self.screen, (34, 83, 119),
+                                         (sx - tower_w // 2 + 20, fy),
+                                         (sx + tower_w // 2 - 18, fy), 1)
+                bridge_y = 205 + (segment % 2) * 56
+                pygame.draw.line(self.screen, (28, 66, 94),
+                                 (sx + 78, bridge_y), (sx + 410, bridge_y + 24), 3)
+                pygame.draw.line(self.screen, (72, 145, 177),
+                                 (sx + 78, bridge_y - 3), (sx + 410, bridge_y + 21), 1)
+                for rib in range(5):
+                    rx = sx + 112 + rib * 68
+                    ry = bridge_y + rib * 5
+                    pygame.draw.line(self.screen, (38, 91, 123),
+                                     (rx, ry - 13), (rx + 12, ry + 22), 2)
+                for shaft in (-tower_w // 2 - 22, tower_w // 2 + 22):
+                    pygame.draw.line(self.screen, (21, 55, 83),
+                                     (sx + shaft, 85), (sx + shaft, 445), 1)
+                    pygame.draw.circle(self.screen, (69, 166, 204),
+                                       (sx + shaft, 300 + (segment % 2) * 38), 3)
+            for i in range(15):
+                wx = i * 390 + 80
+                sx = int(wx - self.camera_x * 0.52)
+                if -8 < sx < WIDTH + 8:
+                    sy = 125 + (i * 43) % 260 + int(math.sin(self.time * 1.3 + i) * 5)
+                    pygame.draw.line(self.screen, (57, 115, 151),
+                                     (sx - 4, sy), (sx + 4, sy - 2), 1)
+            return
+
         # Industrial overhead conduits and braces for the other sectors.
         first = int((self.camera_x * 0.72) // 420) - 1
         last = int((self.camera_x * 0.72 + WIDTH) // 420) + 2
@@ -5144,7 +5196,7 @@ class Game:
         skyline_offset = int(self.camera_x * 0.10)
         skyline_index = self.level_index if background_level_index is None else background_level_index
         # Sector 07 is enclosed by a living canopy, not the usual city skyline.
-        if skyline_index != 6:
+        if skyline_index not in (6, 7):
             self.screen.blit(self.skyline_layers[skyline_index], (-skyline_offset, 0))
 
         # Soft drifting smoke banks: cached once per sector, then only blitted.
@@ -5201,7 +5253,7 @@ class Game:
 
         # Background signal glyphs belong to the machine sectors; the
         # garden gets organic silhouettes instead.
-        if self.level_index != 6:
+        if self.level_index not in (6, 7):
             for i in range(7):
                 wx = i * 560 + 180
                 x = int(wx - self.camera_x * 0.55)
@@ -5216,6 +5268,20 @@ class Game:
 
         for platform in self.level.platforms:
             draw_platform(self.screen, platform, self.camera_x, accent)
+            if self.level_index == 7 and platform.h <= 24:
+                # Glass walkways: layered cyan edge and a restrained specular streak.
+                px = int(platform.x - self.camera_x)
+                py = int(platform.y)
+                if -platform.w < px < WIDTH:
+                    pygame.draw.line(self.screen, (113, 204, 235),
+                                     (px + 3, py + 1), (px + platform.w - 3, py + 1), 2)
+                    pygame.draw.line(self.screen, (35, 87, 119),
+                                     (px + 8, py + platform.h - 1),
+                                     (px + platform.w - 8, py + platform.h - 1), 2)
+                    glint = int((self.time * 95 + platform.x * 0.37) % max(1, platform.w - 28))
+                    pygame.draw.line(self.screen, (151, 225, 244),
+                                     (px + 12 + glint, py + 4),
+                                     (min(px + platform.w - 5, px + 38 + glint), py + 4), 1)
             if self.level_index == 6 and platform.h <= 24:
                 # Living roots wrap the undersides of the garden's floating
                 # walkways; small leaf fans make the platforms read as grown,
