@@ -6415,9 +6415,9 @@ class Game:
             particle.draw(self.screen, self.camera_x)
         self.player.draw(self.screen, self.camera_x)
 
-        # Full-screen texture overlays are expensive in WebAssembly/mobile browsers.
-        # Keep the richer desktop look, but skip these two full-canvas blits on web.
-        if sys.platform != "emscripten":
+        # Full-screen texture overlays are a Detail-only flourish. Performance
+        # mode skips both full-canvas blits on desktop and in the browser.
+        if sys.platform != "emscripten" and self.graphics_mode == "detail":
             self.screen.blit(self.surface_grain, (0, 0))
             self.screen.blit(self.vignette, (0, 0))
         if detailed:
