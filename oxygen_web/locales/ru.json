@@ -283,7 +283,7 @@
   "CHANNEL": "КАНАЛ",
   "RADIO // MANUAL TUNER": "РАДИО // РУЧНАЯ НАСТРОЙКА",
   "CHANNEL STORED": "КАНАЛ СОХРАНЁН",
-  "ENTER // STORE FREQUENCY": "ENTER // СОХРАНИТЬ ЧАСТОТУ",
+  "ENTER // STORE FREQUENCY": "ENTER // СОХРАНИТЬ КАНАЛ",
   "ESC // RETURN TO SAFEHOUSE": "ESC // ВЕРНУТЬСЯ В УБЕЖИЩЕ",
   "A / LEFT": "A / ВЛЕВО",
   "D / RIGHT": "D / ВПРАВО",
@@ -294,5 +294,8 @@
   "THE SHELTER IS NOT THE ONLY PLACE STILL LIT.": "УБЕЖИЩЕ — НЕ ЕДИНСТВЕННОЕ МЕСТО, ГДЕ ЕЩЁ ЕСТЬ СВЕТ.",
   "167 IS NOT A FREQUENCY. REPEAT: NOT A FREQUENCY.": "167 — НЕ ЧАСТОТА. ПОВТОРЯЮ: НЕ ЧАСТОТА.",
   "WE COUNTED SIX. THERE WERE SEVEN.": "МЫ НАСЧИТАЛИ ШЕСТЬ. ИХ БЫЛО СЕМЬ.",
-  "CARRIER LOST. SOMETHING IS LISTENING.": "НЕСУЩАЯ ПОТЕРЯНА. КТО-ТО СЛУШАЕТ."
+  "CARRIER LOST. SOMETHING IS LISTENING.": "НЕСУЩАЯ ПОТЕРЯНА. КТО-ТО СЛУШАЕТ.",
+  "UNKNOWN VOICE": "НЕИЗВЕСТНЫЙ ГОЛОС",
+  "STATIC": "ПОМЕХИ",
+  "DISTANT TRANSMISSION": "ДАЛЁКАЯ ПЕРЕДАЧА"
 }
