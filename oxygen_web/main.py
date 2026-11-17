@@ -4869,7 +4869,8 @@ class Game:
                     self.mode = "menu"
 
             elif self.mode == "level_result":
-                if pygame.Rect(WIDTH // 2 - 145, 530, 290, 52).collidepoint(mouse_pos):
+                button_y = 548 if self.level_index == 2 and self.pending_next_level == 3 else 530
+                if pygame.Rect(WIDTH // 2 - 145, button_y, 290, 52).collidepoint(mouse_pos):
                     self.continue_from_level_result()
 
             elif self.mode == "paused":
