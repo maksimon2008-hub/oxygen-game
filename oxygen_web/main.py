@@ -473,6 +473,7 @@ class Drone:
     alive: bool = True
     hp: int = 3
     alert: float = 0.0
+    tracks_player: bool = False
 
     @property
     def rect(self) -> pygame.Rect:
@@ -485,7 +486,9 @@ class Drone:
         self.phase += dt * 5.0
         old_x = self.x
         can_track = False
-        if target_x is not None and target_y is not None:
+        # Only hunter-class drones react to the runner. The rest keep their
+        # patrol route even when the player passes nearby.
+        if self.tracks_player and target_x is not None and target_y is not None:
             dx, dy = target_x - self.x, target_y - self.y
             distance = math.hypot(dx, dy)
             line_blocked = bool(
@@ -493,7 +496,7 @@ class Drone:
                                               (round(target_x), round(target_y)))
                                for solid in solids)
             )
-            can_track = distance < 310 and abs(dy) < 175 and not line_blocked
+            can_track = distance < 340 and abs(dy) < 185 and not line_blocked
 
         if can_track:
             self.alert = min(1.0, self.alert + dt * 3.2)
@@ -1587,7 +1590,13 @@ class Level:
         self.launch_pads = [pygame.Rect(x, y - 12, w, 12)
                             for x, y, w in data.get("launch_pads", [])]
         self.coins = [Coin(x, y, random.random() * math.tau) for x, y in data["coins"]]
-        self.drones = [Drone(*d, direction=random.choice([-1, 1])) for d in data["drones"]]
+        # A mixed squad: roughly half are hunters, while the others remain
+        # predictable patrol units. Offset the pattern per sector for variety.
+        self.drones = [
+            Drone(*d, direction=random.choice([-1, 1]),
+                  tracks_player=((i + index) % 2 == 0))
+            for i, d in enumerate(data["drones"])
+        ]
         self.seekers = [Seeker(*enemy) for enemy in data.get("seekers", [])]
         self.spiders = [Spider(*item) for item in data.get("spiders", [])]
         self.turrets = [Turret(*item) for item in data.get("turrets", [])]
@@ -4622,11 +4631,27 @@ class Game:
             mouse_pos = self.logical_mouse_pos(event.pos)
             if self.mode == "safehouse" and self.safehouse_event_active:
                 return
-            if self.mode == "paused" and pygame.Rect(WIDTH // 2 - 145, 388, 290, 42).collidepoint(mouse_pos):
-                self.pause_selection = 3
-                self.open_graphics_settings("paused")
-                return
-            elif self.mode == "paused" and pygame.Rect(410, 447, 340, 34).collidepoint(mouse_pos):
+            if self.mode == "paused":
+                pause_buttons = (
+                    (0, pygame.Rect(WIDTH // 2 - 145, 244, 290, 42)),
+                    (1, pygame.Rect(WIDTH // 2 - 145, 292, 290, 42)),
+                    (2, pygame.Rect(WIDTH // 2 - 145, 340, 290, 42)),
+                    (3, pygame.Rect(WIDTH // 2 - 145, 388, 290, 42)),
+                )
+                for button_index, button_rect in pause_buttons:
+                    if button_rect.collidepoint(mouse_pos):
+                        self.pause_selection = button_index
+                        if button_index == 0:
+                            self.mode = "playing"
+                        elif button_index == 1:
+                            self.restart_level()
+                        elif button_index == 2:
+                            self.mode = "menu"
+                            self.menu_selection = 0
+                        else:
+                            self.open_graphics_settings("paused")
+                        return
+            if self.mode == "paused" and pygame.Rect(410, 447, 340, 34).collidepoint(mouse_pos):
                 self.settings_drag = "music"
                 self.set_audio_slider("music", self.audio_slider_value_from_x(mouse_pos[0]))
                 return
