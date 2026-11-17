@@ -20,6 +20,7 @@ from array import array
 import random
 import shutil
 import sys
+from functools import lru_cache
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -34,10 +35,57 @@ TITLE = "OXYGEN"
 
 CURRENT_LANGUAGE = "en"
 _LOCALIZATION_CACHE: dict[str, str] = {}
+_LOCALIZATION_SORTED: tuple[tuple[str, str], ...] = ()
+
+_LOCALIZATION_FRAGMENT_REPLACEMENTS = (
+    ("NOT ENOUGH COINS", "НЕДОСТАТОЧНО МОНЕТ"),
+    ("MAX LEVEL", "МАКС. УРОВЕНЬ"),
+    ("AVAILABLE CURRENCY", "ДОСТУПНЫЕ СРЕДСТВА"),
+    ("WALLET", "КОШЕЛЁК"), ("COINS", "МОНЕТЫ"),
+    ("SECTOR", "СЕКТОР"), ("LEVEL", "УРОВЕНЬ"),
+    ("DEATHS", "СМЕРТИ"), ("SECRETS", "СЕКРЕТЫ"),
+    ("TIME", "ВРЕМЯ"), ("COST", "ЦЕНА"),
+    ("UNLOCKED", "ОТКРЫТО"), ("LOCKED", "ЗАКРЫТО"),
+    ("INSTALLED", "УСТАНОВЛЕНО"), ("PAID", "ВЫПЛАЧЕНО"),
+    ("CHECKPOINT // SAVED", "ЧЕКПОИНТ // СОХРАНЕНО"),
+    ("EXP ARCHIVE", "АРХИВ EXP"),
+    ("EXP CASSETTE", "КАССЕТА EXP"),
+    ("RECOVERED", "НАЙДЕНА"),
+    ("AUDIO NOT INSTALLED", "АУДИО ПОКА НЕ ДОБАВЛЕНО"),
+    ("SIGNAL REQUIRED", "НУЖЕН СИГНАЛ"),
+    ("AWAKENS", "ПРОБУЖДАЕТСЯ"), ("DESTROYED", "УНИЧТОЖЕН"),
+    ("RETURN TO MAIN MENU", "В ГЛАВНОЕ МЕНЮ"),
+    ("CURRENT RUNNER:", "ТЕКУЩИЙ БОЕЦ:"),
+    ("TALK TO", "ПОГОВОРИТЬ С"), ("ENTER MOD BAY", "ОТКРЫТЬ МОДУЛЬНУЮ СТАНЦИЮ"),
+    ("DEPLOY TO NEXT SECTOR", "ПЕРЕЙТИ В СЛЕДУЮЩИЙ СЕКТОР"),
+    ("EXIT SEALED", "ВЫХОД ЗАПЕЧАТАН"), ("DEFEAT", "ПОБЕДИ"),
+    ("WAVE", "ВОЛНА"), ("SCRAP YARD", "СВАЛКА"),
+    ("SIGNAL RESTORED", "СИГНАЛ ВОССТАНОВЛЕН"),
+    ("BUFFER READY", "БУФЕР ГОТОВ"),
+    ("CHARGE", "ЗАРЯД"),
+    ("NEXT RUN", "СЛЕДУЮЩИЙ ВЫХОД"),
+    ("ALREADY INSTALLED", "УЖЕ УСТАНОВЛЕНО"),
+    ("MODULES", "МОДУЛЕЙ"),
+    ("OPERATIVE", "БОЕЦ"),
+    ("SERVICE OXYGEN FILTER", "ОБСЛУЖИТЬ КИСЛОРОДНЫЙ ФИЛЬТР"),
+    ("OXYGEN FILTER", "КИСЛОРОДНЫЙ ФИЛЬТР"),
+    ("CHOOSE RUNNER AND DEPLOY", "ВЫБРАТЬ БОЙЦА И ВЫЙТИ НА ЗАДАНИЕ"),
+    ("OPEN ABILITY MODULES", "ОТКРЫТЬ МОДУЛИ СПОСОБНОСТЕЙ"),
+    ("DOUBLE COINS FOR 20 SECONDS", "УДВОЕНИЕ МОНЕТ НА 20 СЕКУНД"),
+    ("COINS x2", "МОНЕТЫ x2"),
+    ("ACHIEVEMENT UNLOCKED", "ДОСТИЖЕНИЕ ОТКРЫТО"),
+    ("FILTER SERVICED", "ФИЛЬТР ОБСЛУЖЕН"),
+    ("FILTER NEEDS 8 COINS FOR MAINTENANCE", "ДЛЯ ОБСЛУЖИВАНИЯ ФИЛЬТРА НУЖНО 8 МОНЕТ"),
+    ("OXYGEN BUFFER READY", "КИСЛОРОДНЫЙ БУФЕР ГОТОВ"),
+    ("OXYGEN BUFFER CHARGED", "КИСЛОРОДНЫЙ БУФЕР ЗАРЯЖЕН"),
+    ("NEXT DEPLOYMENT", "СЛЕДУЮЩИЙ ВЫХОД"),
+    ("COIN CACHE", "МОНЕТНЫЙ ТАЙНИК"),
+    ("COST", "ЦЕНА"),
+)
 
 def set_language(language: str) -> None:
-    """Load the selected UI language. English remains the source/fallback language."""
-    global CURRENT_LANGUAGE, _LOCALIZATION_CACHE
+    """Load translations once; never rebuild the replacement order while drawing."""
+    global CURRENT_LANGUAGE, _LOCALIZATION_CACHE, _LOCALIZATION_SORTED
     CURRENT_LANGUAGE = "ru" if str(language).lower() == "ru" else "en"
     _LOCALIZATION_CACHE = {}
     if CURRENT_LANGUAGE == "ru":
@@ -48,65 +96,25 @@ def set_language(language: str) -> None:
                 _LOCALIZATION_CACHE = {str(k): str(v) for k, v in loaded.items()}
         except (OSError, json.JSONDecodeError):
             _LOCALIZATION_CACHE = {}
+    _LOCALIZATION_SORTED = tuple(
+        sorted(_LOCALIZATION_CACHE.items(), key=lambda item: len(item[0]), reverse=True)
+    )
+    _localize_text.cache_clear()
 
 def localize(value: object) -> str:
-    text = str(value)
+    return _localize_text(str(value))
+
+@lru_cache(maxsize=2048)
+def _localize_text(text: str) -> str:
     if CURRENT_LANGUAGE != "ru":
         return text
     direct = _LOCALIZATION_CACHE.get(text)
     if direct is not None:
         return direct
-    # Translate common fragments in generated status strings without changing IDs/names.
-    replacements = (
-        ("NOT ENOUGH COINS", "НЕДОСТАТОЧНО МОНЕТ"),
-        ("MAX LEVEL", "МАКС. УРОВЕНЬ"),
-        ("AVAILABLE CURRENCY", "ДОСТУПНЫЕ СРЕДСТВА"),
-        ("WALLET", "КОШЕЛЁК"), ("COINS", "МОНЕТЫ"),
-        ("SECTOR", "СЕКТОР"), ("LEVEL", "УРОВЕНЬ"),
-        ("DEATHS", "СМЕРТИ"), ("SECRETS", "СЕКРЕТЫ"),
-        ("TIME", "ВРЕМЯ"), ("COST", "ЦЕНА"),
-        ("UNLOCKED", "ОТКРЫТО"), ("LOCKED", "ЗАКРЫТО"),
-        ("INSTALLED", "УСТАНОВЛЕНО"), ("PAID", "ВЫПЛАЧЕНО"),
-        ("CHECKPOINT // SAVED", "ЧЕКПОИНТ // СОХРАНЕНО"),
-        ("EXP ARCHIVE", "АРХИВ EXP"),
-        ("EXP CASSETTE", "КАССЕТА EXP"),
-        ("RECOVERED", "НАЙДЕНА"),
-        ("AUDIO NOT INSTALLED", "АУДИО ПОКА НЕ ДОБАВЛЕНО"),
-        ("SIGNAL REQUIRED", "НУЖЕН СИГНАЛ"),
-        ("AWAKENS", "ПРОБУЖДАЕТСЯ"), ("DESTROYED", "УНИЧТОЖЕН"),
-        ("RETURN TO MAIN MENU", "В ГЛАВНОЕ МЕНЮ"),
-        ("CURRENT RUNNER:", "ТЕКУЩИЙ БОЕЦ:"),
-        ("TALK TO", "ПОГОВОРИТЬ С"), ("ENTER MOD BAY", "ОТКРЫТЬ МОДУЛЬНУЮ СТАНЦИЮ"),
-        ("DEPLOY TO NEXT SECTOR", "ПЕРЕЙТИ В СЛЕДУЮЩИЙ СЕКТОР"),
-        ("EXIT SEALED", "ВЫХОД ЗАПЕЧАТАН"), ("DEFEAT", "ПОБЕДИ"),
-        ("WAVE", "ВОЛНА"), ("SCRAP YARD", "СВАЛКА"),
-        ("SIGNAL RESTORED", "СИГНАЛ ВОССТАНОВЛЕН"),
-        ("BUFFER READY", "БУФЕР ГОТОВ"),
-        ("CHARGE", "ЗАРЯД"),
-        ("NEXT RUN", "СЛЕДУЮЩИЙ ВЫХОД"),
-        ("ALREADY INSTALLED", "УЖЕ УСТАНОВЛЕНО"),
-        ("MODULES", "МОДУЛЕЙ"),
-        ("OPERATIVE", "БОЕЦ"),
-        ("SERVICE OXYGEN FILTER", "ОБСЛУЖИТЬ КИСЛОРОДНЫЙ ФИЛЬТР"),
-        ("OXYGEN FILTER", "КИСЛОРОДНЫЙ ФИЛЬТР"),
-        ("CHOOSE RUNNER AND DEPLOY", "ВЫБРАТЬ БОЙЦА И ВЫЙТИ НА ЗАДАНИЕ"),
-        ("OPEN ABILITY MODULES", "ОТКРЫТЬ МОДУЛИ СПОСОБНОСТЕЙ"),
-        ("DOUBLE COINS FOR 20 SECONDS", "УДВОЕНИЕ МОНЕТ НА 20 СЕКУНД"),
-        ("COINS x2", "МОНЕТЫ x2"),
-        ("ACHIEVEMENT UNLOCKED", "ДОСТИЖЕНИЕ ОТКРЫТО"),
-        ("FILTER SERVICED", "ФИЛЬТР ОБСЛУЖЕН"),
-        ("FILTER NEEDS 8 COINS FOR MAINTENANCE", "ДЛЯ ОБСЛУЖИВАНИЯ ФИЛЬТРА НУЖНО 8 МОНЕТ"),
-        ("OXYGEN BUFFER READY", "КИСЛОРОДНЫЙ БУФЕР ГОТОВ"),
-        ("OXYGEN BUFFER CHARGED", "КИСЛОРОДНЫЙ БУФЕР ЗАРЯЖЕН"),
-        ("NEXT DEPLOYMENT", "СЛЕДУЮЩИЙ ВЫХОД"),
-        ("COIN CACHE", "МОНЕТНЫЙ ТАЙНИК"),
-        ("COST", "ЦЕНА"),
-    )
-    for source, translated in replacements:
+    for source, translated in _LOCALIZATION_FRAGMENT_REPLACEMENTS:
         text = text.replace(source, translated)
-    # Long content labels (achievement names, level names, character abilities)
-    # also occur inside composed status strings, so translate those fragments too.
-    for source, translated in sorted(_LOCALIZATION_CACHE.items(), key=lambda item: len(item[0]), reverse=True):
+    # The longer dictionary entries are pre-sorted once when the language changes.
+    for source, translated in _LOCALIZATION_SORTED:
         if len(source) >= 7 and source in text:
             text = text.replace(source, translated)
     return text
@@ -1573,18 +1581,25 @@ def make_gradient() -> pygame.Surface:
     return surf
 
 
+@lru_cache(maxsize=1024)
+def _render_text(font: pygame.font.Font, text: str,
+                 color: tuple[int, int, int]) -> pygame.Surface:
+    return font.render(text, True, color)
+
+
 def draw_text(surface: pygame.Surface, font: pygame.font.Font, text: str,
               color: tuple[int, int, int], pos: tuple[int, int],
               center: bool = False, shadow: bool = False) -> pygame.Rect:
     text = localize(text)
-    image = font.render(text, True, color)
+    color = tuple(color)
+    image = _render_text(font, text, color)
     rect = image.get_rect()
     if center:
         rect.center = pos
     else:
         rect.topleft = pos
     if shadow:
-        shadow_image = font.render(text, True, (0, 0, 0))
+        shadow_image = _render_text(font, text, (0, 0, 0))
         shadow_rect = rect.copy()
         shadow_rect.x += 2
         shadow_rect.y += 3
@@ -1594,6 +1609,7 @@ def draw_text(surface: pygame.Surface, font: pygame.font.Font, text: str,
 
 
 _GLOW_CACHE: dict[tuple[tuple[int, int, int], int], pygame.Surface] = {}
+_PLATFORM_SURFACE_CACHE: dict[tuple[int, int, tuple[int, int, int]], pygame.Surface] = {}
 
 def draw_glow(surface: pygame.Surface, x: int, y: int,
               color: tuple[int, int, int], radius: int) -> None:
@@ -1782,27 +1798,35 @@ def draw_boss(surface: pygame.Surface, boss: Boss, camera_x: float) -> None:
 def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
                   accent: tuple[int, int, int]) -> None:
     x = int(p.x - camera_x)
-    if x > WIDTH or x + p.w < 0:
+    if x > WIDTH or x + p.w + 4 < 0:
         return
-    rect = pygame.Rect(x, p.y, p.w, p.h)
-    shadow_rect = pygame.Rect(x + 4, p.y + 7, p.w, p.h)
-    pygame.draw.rect(surface, (5, 9, 20), shadow_rect, border_radius=4)
-    pygame.draw.rect(surface, (17, 26, 45), rect, border_radius=4)
-    pygame.draw.rect(surface, (37, 55, 75), rect, 1, border_radius=4)
-    pygame.draw.line(surface, accent, (x + 3, p.y), (x + p.w - 3, p.y), 3)
-    # Subtle panels and bolts.
-    # Recessed panels, tiny fasteners and a lower bevel give the metal more
-    # depth without relying on external low-resolution textures.
-    pygame.draw.line(surface, (76, 103, 126), (x + 5, p.y + 4),
-                     (x + p.w - 5, p.y + 4), 1)
-    pygame.draw.line(surface, (7, 12, 25), (x + 4, p.y + p.h - 3),
-                     (x + p.w - 4, p.y + p.h - 3), 2)
-    for px in range(x + 18, x + p.w - 8, 42):
-        pygame.draw.rect(surface, (22, 37, 57), (px, p.y + 8, 25, max(8, p.h - 15)), 1, border_radius=2)
-        pygame.draw.line(surface, (40, 58, 79), (px + 4, p.y + 12),
-                         (px + 15, p.y + 12), 1)
-        pygame.draw.circle(surface, (91, 119, 139), (px + 3, p.y + 5), 1)
-        pygame.draw.circle(surface, (8, 14, 27), (px + 20, p.y + 5), 1)
+    # Platform geometry never changes. Bake each size/theme once, then use one
+    # fast blit per frame instead of a dozen Python-level draw calls.
+    width, height = int(p.w), int(p.h)
+    key = (width, height, tuple(accent))
+    tile = _PLATFORM_SURFACE_CACHE.get(key)
+    if tile is None:
+        tile = pygame.Surface((width + 4, height + 7)).convert()
+        transparent = (1, 2, 3)
+        tile.fill(transparent)
+        tile.set_colorkey(transparent)
+        rect = pygame.Rect(0, 0, width, height)
+        shadow_rect = pygame.Rect(4, 7, width, height)
+        pygame.draw.rect(tile, (5, 9, 20), shadow_rect, border_radius=4)
+        pygame.draw.rect(tile, (17, 26, 45), rect, border_radius=4)
+        pygame.draw.rect(tile, (37, 55, 75), rect, 1, border_radius=4)
+        pygame.draw.line(tile, accent, (3, 0), (width - 3, 0), 3)
+        pygame.draw.line(tile, (76, 103, 126), (5, 4), (width - 5, 4), 1)
+        pygame.draw.line(tile, (7, 12, 25), (4, height - 3),
+                         (width - 4, height - 3), 2)
+        for px in range(18, width - 8, 42):
+            pygame.draw.rect(tile, (22, 37, 57),
+                             (px, 8, 25, max(8, height - 15)), 1, border_radius=2)
+            pygame.draw.line(tile, (40, 58, 79), (px + 4, 12), (px + 15, 12), 1)
+            pygame.draw.circle(tile, (91, 119, 139), (px + 3, 5), 1)
+            pygame.draw.circle(tile, (8, 14, 27), (px + 20, 5), 1)
+        _PLATFORM_SURFACE_CACHE[key] = tile
+    surface.blit(tile, (x, p.y))
 
 
 def draw_spikes(surface: pygame.Surface, spike: pygame.Rect, camera_x: float,
@@ -1913,7 +1937,7 @@ class Game:
         self.font_title = pygame.font.SysFont("arial", 84, bold=True)
         self.stars = []
         rng = random.Random(167)
-        for _ in range(100):
+        for _ in range(64 if sys.platform == "emscripten" else 100):
             self.stars.append((rng.randrange(0, 5000), rng.randrange(20, 440),
                                rng.choice([0.08, 0.14, 0.22, 0.32]),
                                rng.randrange(1, 3), rng.random() * math.tau))
@@ -1921,6 +1945,11 @@ class Game:
         self.browser_owner_marker_key = "oxygen_owner_save_recovered_v1"
         self.browser_storage = None
         self.browser_storage_error = None
+        self.browser_window = None
+        self.mobile_controls_element = None
+        self.mobile_action_element = None
+        self._mobile_ui_state = None
+        self.mobile_fire = False
         self.migrate_legacy_seed = False
         self.keep_legacy_seed = False
         if sys.platform == "emscripten":
@@ -1929,7 +1958,11 @@ class Game:
             # are committed before the frame continues.
             try:
                 import platform as browser_platform
-                self.browser_storage = browser_platform.window.localStorage
+                self.browser_window = browser_platform.window
+                document = self.browser_window.document
+                self.mobile_controls_element = document.getElementById("mobile-controls")
+                self.mobile_action_element = document.getElementById("mobile-fire")
+                self.browser_storage = self.browser_window.localStorage
                 query = str(browser_platform.window.location.search or "")
                 self.migrate_legacy_seed = "keep_legacy_save=1" in query
                 self.keep_legacy_seed = (
@@ -2009,8 +2042,6 @@ class Game:
         self.personnel_selection = 0
         self.personnel_open = False
         self.mods_return_mode = "safehouse"
-        # Only the three actual quest-givers appear in the shelter.
-        self.hub_npc_positions = (270, 770, 900, 490)
         self.hub_armory_x = 1015
         self.hub_gate_x = 85
         self.safehouse_world = SafehouseWorld()
@@ -2569,11 +2600,6 @@ class Game:
         if abs(px - 410) < 62 and self.player.y > 390:
             return ("secret_167" if self.save_data.get("secret_167_unlocked", False)
                     else "locked_167", 0)
-        for i, npc_x in enumerate(self.hub_npc_positions):
-            if i == 3 and len(set(self.save_data.get("completed_levels", []))) < 3:
-                continue
-            if abs(px - npc_x) < 72 and self.player.y > 400:
-                return ("npc", i)
         if abs(px - self.hub_armory_x) < 76 and self.player.y > 390:
             return ("armory", 0)
         return None
@@ -2599,7 +2625,7 @@ class Game:
     def interact_safehouse(self) -> None:
         target = self.nearby_safehouse_object()
         if target is None:
-            self.menu_notice = "MOVE CLOSER TO A CREW MEMBER OR THE MOD BAY"
+            self.menu_notice = "MOVE CLOSER TO A STATION OR THE AIRLOCK"
             self.menu_notice_timer = 1.8
             return
         kind, index = target
@@ -2620,10 +2646,6 @@ class Game:
             self.save_data["radio_log_index"] = index + 1
             self.save_progress()
             self.menu_notice_timer = 5.0
-        elif kind == "npc":
-            self.safehouse_dialog_npc = index
-            self.safehouse_dialog_selection = 0
-            self.mode = "safehouse_dialog"
         elif kind == "armory":
             self.mods_character_index = self.character_index
             self.mods_selection = 0
@@ -2725,8 +2747,6 @@ class Game:
             self.safehouse_interaction_hint = "E  //  CHOOSE RUNNER AND DEPLOY"
         elif target and target[0] == "radio":
             self.safehouse_interaction_hint = "E  //  LISTEN TO RADIO"
-        elif target and target[0] == "npc":
-            self.safehouse_interaction_hint = "E  //  TALK TO " + QUESTS[target[1]]["npc"]
         elif target and target[0] == "armory":
             self.safehouse_interaction_hint = "E  //  OPEN ABILITY MODULES"
         elif target and target[0] == "cassette_deck":
@@ -3797,7 +3817,7 @@ class Game:
                         break
 
             elif self.mode == "safehouse":
-                # Click-to-walk is convenient, but interaction still occurs at the physical station.
+                # Click-to-walk targets only the remaining interactive stations.
                 if pygame.Rect(self.safehouse_filter_x - 95, 245, 190, 160).collidepoint(mouse_pos):
                     self.player.x = float(self.safehouse_filter_x - self.player.w / 2)
                     self.player.y = 182.0
@@ -3805,41 +3825,30 @@ class Game:
                     self.player.on_ground = True
                     self.interact_safehouse()
                     return
-                for i, npc_x in enumerate(self.hub_npc_positions):
-                    if i == 3 and len(set(self.save_data.get("completed_levels", []))) < 3:
-                        continue
-                    if pygame.Rect(npc_x - 58, 365, 116, 145).collidepoint(mouse_pos):
-                        self.player.x = float(npc_x - self.player.w / 2)
-                        self.player.y = 457.0
-                        self.player.vy = 0.0
-                        self.player.on_ground = True
-                        self.interact_safehouse()
-                        break
-                else:
-                    if pygame.Rect(600, 410, 112, 100).collidepoint(mouse_pos):
-                        self.player.x = float(650 - self.player.w / 2)
-                        self.player.y = 457.0
-                        self.player.vy = 0.0
-                        self.player.on_ground = True
-                        self.interact_safehouse()
-                    elif pygame.Rect(365, 355, 90, 150).collidepoint(mouse_pos):
-                        self.player.x = float(410 - self.player.w / 2)
-                        self.player.y = 457.0
-                        self.player.vy = 0.0
-                        self.player.on_ground = True
-                        self.interact_safehouse()
-                    elif pygame.Rect(self.hub_armory_x - 55, 385, 110, 125).collidepoint(mouse_pos):
-                        self.player.x = float(self.hub_armory_x - self.player.w / 2)
-                        self.player.y = 457.0
-                        self.player.vy = 0.0
-                        self.player.on_ground = True
-                        self.interact_safehouse()
-                    elif pygame.Rect(self.hub_gate_x - 42, 355, 84, 150).collidepoint(mouse_pos):
-                        self.player.x = float(self.hub_gate_x - self.player.w / 2)
-                        self.player.y = 457.0
-                        self.player.vy = 0.0
-                        self.player.on_ground = True
-                        self.interact_safehouse()
+                if pygame.Rect(600, 410, 112, 100).collidepoint(mouse_pos):
+                    self.player.x = float(650 - self.player.w / 2)
+                    self.player.y = 457.0
+                    self.player.vy = 0.0
+                    self.player.on_ground = True
+                    self.interact_safehouse()
+                elif pygame.Rect(365, 355, 90, 150).collidepoint(mouse_pos):
+                    self.player.x = float(410 - self.player.w / 2)
+                    self.player.y = 457.0
+                    self.player.vy = 0.0
+                    self.player.on_ground = True
+                    self.interact_safehouse()
+                elif pygame.Rect(self.hub_armory_x - 55, 385, 110, 125).collidepoint(mouse_pos):
+                    self.player.x = float(self.hub_armory_x - self.player.w / 2)
+                    self.player.y = 457.0
+                    self.player.vy = 0.0
+                    self.player.on_ground = True
+                    self.interact_safehouse()
+                elif pygame.Rect(self.hub_gate_x - 42, 355, 84, 150).collidepoint(mouse_pos):
+                    self.player.x = float(self.hub_gate_x - self.player.w / 2)
+                    self.player.y = 457.0
+                    self.player.vy = 0.0
+                    self.player.on_ground = True
+                    self.interact_safehouse()
 
             elif self.mode == "cassette_deck":
                 tapes = self.collected_cassette_ids()
@@ -3990,42 +3999,55 @@ class Game:
         mobile_jump = False
         mobile_jump_held = False
         mobile_menu = False
-        try:
-            import platform as browser_platform
-            mobile_axis = float(browser_platform.window.oxygen_touch_axis or 0.0)
-            # Jump/menu are queued in JavaScript until this frame consumes them,
-            # so a quick tap cannot disappear between two game frames.
-            mobile_jump = bool(browser_platform.window.oxygen_touch_jump)
-            mobile_jump_held = bool(browser_platform.window.oxygen_touch_jump_held)
-            mobile_menu = bool(browser_platform.window.oxygen_touch_menu)
-            if mobile_jump:
-                browser_platform.window.oxygen_touch_jump = False
-            if mobile_menu:
-                browser_platform.window.oxygen_touch_menu = False
-            mobile_fire = bool(browser_platform.window.oxygen_touch_fire)
-            mobile_dash = bool(browser_platform.window.oxygen_touch_dash)
-            if mobile_dash:
-                browser_platform.window.oxygen_touch_dash = False
-            controls = browser_platform.window.document.getElementById("mobile-controls")
-            controls.style.display = "flex" if self.mode in ("playing", "safehouse", "paused") else "none"
-            # Show only the character's actual special-action button.
-            action = browser_platform.window.document.getElementById("mobile-fire")
-            if self.player.character_id == "runner":
-                action.innerText = "DASH"
-                action.style.display = "block"
-                action.setAttribute("data-action", "dash")
-            elif self.player.character_id == "jumper":
-                action.style.display = "none"
-            else:
-                action.innerText = "FIRE"
-                action.style.display = "block"
-                action.setAttribute("data-action", "fire")
-        except Exception:
-            mobile_axis = 0.0
-            mobile_jump = False
-            mobile_jump_held = False
-            mobile_menu = False
-            mobile_dash = False
+        mobile_axis = 0.0
+        # Desktop builds never touch the browser bridge. On web, poll only the
+        # live touch values each frame; DOM lookups/style writes happen once
+        # when the mode or selected operative actually changes.
+        if self.browser_window is not None:
+            try:
+                browser_window = self.browser_window
+                mobile_axis = float(browser_window.oxygen_touch_axis or 0.0)
+                # Jump/menu are queued in JavaScript until this frame consumes them,
+                # so a quick tap cannot disappear between two game frames.
+                mobile_jump = bool(browser_window.oxygen_touch_jump)
+                mobile_jump_held = bool(browser_window.oxygen_touch_jump_held)
+                mobile_menu = bool(browser_window.oxygen_touch_menu)
+                if mobile_jump:
+                    browser_window.oxygen_touch_jump = False
+                if mobile_menu:
+                    browser_window.oxygen_touch_menu = False
+                mobile_fire = bool(browser_window.oxygen_touch_fire)
+                mobile_dash = bool(browser_window.oxygen_touch_dash)
+                if mobile_dash:
+                    browser_window.oxygen_touch_dash = False
+                ui_state = (self.mode, self.player.character_id)
+                if ui_state != self._mobile_ui_state:
+                    controls = self.mobile_controls_element
+                    action = self.mobile_action_element
+                    if controls is not None:
+                        controls.style.display = (
+                            "flex" if self.mode in ("playing", "safehouse", "paused") else "none"
+                        )
+                    # Show only the selected operative's actual special-action button.
+                    if action is not None:
+                        if self.player.character_id == "runner":
+                            action.innerText = "DASH"
+                            action.style.display = "block"
+                            action.setAttribute("data-action", "dash")
+                        elif self.player.character_id == "jumper":
+                            action.style.display = "none"
+                        else:
+                            action.innerText = "FIRE"
+                            action.style.display = "block"
+                            action.setAttribute("data-action", "fire")
+                    self._mobile_ui_state = ui_state
+            except Exception:
+                mobile_axis = 0.0
+                mobile_jump = False
+                mobile_jump_held = False
+                mobile_menu = False
+                mobile_dash = False
+                mobile_fire = False
         self.player.mobile_axis = max(-1.0, min(1.0, mobile_axis))
         self.player.mobile_jump = mobile_jump
         self.player.mobile_jump_held = mobile_jump_held
@@ -4739,12 +4761,14 @@ class Game:
             _BACKGROUND_SMOKE_CACHE[smoke_key] = smoke
 
         smoke_phase = self.time * 9.0
-        for bank in range(5):
+        smoke_bank_count = 3 if sys.platform == "emscripten" else 5
+        secondary_banks = (1,) if sys.platform == "emscripten" else (1, 3)
+        for bank in range(smoke_bank_count):
             drift = int(self.time * (7 + bank * 2) + bank * 213) % (WIDTH + 420) - 210
             smoke_y = 300 + bank * 35 + int(math.sin(smoke_phase * 0.12 + bank * 1.7) * 8)
             self.screen.blit(smoke, (drift, smoke_y))
-            # A second, dimmer cloud gives the plume a little more depth.
-            if bank in (1, 3):
+            # Keep the softer depth layer, with fewer translucent blits on web.
+            if bank in secondary_banks:
                 self.screen.blit(smoke, (drift - 115, smoke_y + 12))
 
         # Keep a faint horizontal haze line beneath the drifting smoke.
@@ -5191,54 +5215,6 @@ class Game:
         draw_text(self.screen, self.font_xs, "UP / DOWN + ENTER TO BUY   //   ESC TO PERSONNEL",
                   MUTED, (WIDTH // 2, 590), center=True, shadow=False)
 
-    def draw_hub_npc(self, x: int, y: int, color, name: str, role: str) -> None:
-        """Distinct silhouettes for the three crew members who issue contracts."""
-        draw_glow(self.screen, x, y - 45, color, 28)
-        pygame.draw.ellipse(self.screen, (3, 7, 18), (x - 22, y - 5, 44, 10))
-        if name == "RHEA":  # engineer: heavy work coat, goggles and tool belt
-            pygame.draw.rect(self.screen, (30, 54, 67), (x - 18, y - 52, 36, 47), border_radius=8)
-            pygame.draw.polygon(self.screen, (55, 92, 102), [(x-18,y-42),(x-29,y-8),(x-16,y-5),(x-8,y-34)])
-            pygame.draw.polygon(self.screen, (55, 92, 102), [(x+18,y-42),(x+29,y-8),(x+16,y-5),(x+8,y-34)])
-            pygame.draw.circle(self.screen, (184, 142, 104), (x, y-66), 15)
-            pygame.draw.arc(self.screen, (230, 178, 95), (x-16,y-82,32,23), 3.1, 6.2, 5)
-            pygame.draw.rect(self.screen, (11, 23, 35), (x-12,y-70,24,8), border_radius=3)
-            pygame.draw.circle(self.screen, color, (x-6,y-66), 3)
-            pygame.draw.circle(self.screen, color, (x+6,y-66), 3)
-            pygame.draw.rect(self.screen, (232, 166, 74), (x-14,y-17,28,7), border_radius=2)
-            pygame.draw.line(self.screen, (222, 233, 233), (x+12,y-26), (x+23,y-42), 3)
-        elif name == "MARA":  # electrician: insulated coat and a glowing power tool
-            pygame.draw.rect(self.screen, (42, 57, 55), (x - 18, y - 52, 36, 47), border_radius=8)
-            pygame.draw.polygon(self.screen, (70, 91, 77),
-                                [(x - 18, y - 43), (x - 27, y - 8), (x - 13, y - 5), (x - 7, y - 34)])
-            pygame.draw.polygon(self.screen, (70, 91, 77),
-                                [(x + 18, y - 43), (x + 27, y - 8), (x + 13, y - 5), (x + 7, y - 34)])
-            pygame.draw.circle(self.screen, (190, 153, 119), (x, y - 66), 15)
-            pygame.draw.rect(self.screen, (17, 27, 34), (x - 14, y - 72, 28, 8), border_radius=3)
-            pygame.draw.line(self.screen, color, (x - 10, y - 66), (x + 10, y - 66), 3)
-            pygame.draw.rect(self.screen, (35, 47, 49), (x + 17, y - 29, 12, 22), border_radius=3)
-            pygame.draw.circle(self.screen, color, (x + 23, y - 32), 4)
-        elif name == "NOX":  # quartermaster: hood, mask and supply harness
-            pygame.draw.polygon(self.screen, (35, 36, 70), [(x-24,y-43),(x-17,y-73),(x,y-84),(x+18,y-72),(x+24,y-43),(x+18,y-6),(x-18,y-6)])
-            pygame.draw.circle(self.screen, (161, 132, 116), (x, y-65), 14)
-            pygame.draw.rect(self.screen, (11, 18, 35), (x-14,y-70,28,10), border_radius=4)
-            pygame.draw.rect(self.screen, color, (x-12,y-57,24,8), border_radius=3)
-            pygame.draw.line(self.screen, (119, 105, 160), (x-18,y-42), (x+18,y-11), 4)
-            pygame.draw.line(self.screen, (119, 105, 160), (x+18,y-42), (x-18,y-11), 4)
-            pygame.draw.rect(self.screen, (20, 28, 47), (x-23,y-24,11,16), border_radius=3)
-            pygame.draw.rect(self.screen, (20, 28, 47), (x+12,y-24,11,16), border_radius=3)
-        else:  # Drifter: long scarf, asymmetrical hood and scout visor
-            pygame.draw.rect(self.screen, (28, 48, 50), (x-17,y-51,34,46), border_radius=9)
-            pygame.draw.polygon(self.screen, (38, 65, 66), [(x-18,y-53),(x-22,y-77),(x,y-87),(x+22,y-70),(x+17,y-50)])
-            pygame.draw.circle(self.screen, (177, 145, 117), (x, y-65), 14)
-            pygame.draw.rect(self.screen, (5, 16, 26), (x-14,y-70,28,9), border_radius=4)
-            pygame.draw.line(self.screen, color, (x-13,y-65), (x+13,y-65), 3)
-            pygame.draw.polygon(self.screen, color, [(x-14,y-31),(x+12,y-28),(x+31,y-14),(x+12,y-20),(x-18,y-21)])
-            pygame.draw.rect(self.screen, (18, 30, 43), (x+8,y-18,15,11), border_radius=3)
-        pygame.draw.rect(self.screen, (38, 57, 76), (x-14,y-5,10,8), border_radius=3)
-        pygame.draw.rect(self.screen, (38, 57, 76), (x+4,y-5,10,8), border_radius=3)
-        draw_text(self.screen, self.font_xs, name, WHITE, (x, y + 12), center=True, shadow=False)
-        draw_text(self.screen, self.font_xs, role, color, (x, y + 31), center=True, shadow=False)
-
     def draw_safehouse(self) -> None:
         theme = THEMES[5]
         self.draw_background(theme, 5)
@@ -5273,7 +5249,7 @@ class Game:
                   (545, 202), center=True, shadow=False)
         draw_text(self.screen, self.font_xs, filter_status, MUTED,
                   (545, 218), center=True, shadow=False)
-        # Airlock on the left; crew members are the actual quest-givers.
+        # Airlock stands alone for now; the shelter crew has been temporarily removed.
         gate_x = self.hub_gate_x
         draw_glow(self.screen, gate_x, 450, CYAN, 38)
         pygame.draw.rect(self.screen, (8, 23, 39), (gate_x - 33, 365, 66, 135), border_radius=10)
@@ -5281,12 +5257,6 @@ class Game:
         pygame.draw.rect(self.screen, (14, 50, 67), (gate_x - 22, 382, 44, 118), border_radius=7)
         pygame.draw.line(self.screen, CYAN, (gate_x - 14, 402), (gate_x + 14, 402), 2)
         draw_text(self.screen, self.font_xs, "AIRLOCK", CYAN, (gate_x, 480), center=True, shadow=False)
-        self.draw_hub_npc(self.hub_npc_positions[0], 500, (85, 231, 210), "RHEA", "ENGINEER")
-        self.draw_hub_npc(self.hub_npc_positions[1], 500, (176, 132, 255), "NOX", "SUPPLY KEEPER")
-        self.draw_hub_npc(self.hub_npc_positions[2], 500, (255, 170, 91), "DRIFTER", "SCOUT")
-        if len(set(self.save_data.get("completed_levels", []))) >= 3:
-            self.draw_hub_npc(self.hub_npc_positions[3], 500, (255, 220, 126),
-                              "MARA", "ELECTRICIAN")
         # Overhead power conduit and three soft-flickering utility lamps.
         pygame.draw.line(self.screen, (28, 66, 89), (72, 144), (1028, 144), 5)
         pygame.draw.line(self.screen, (65, 111, 129), (72, 149), (1028, 149), 1)
@@ -5339,24 +5309,6 @@ class Game:
         draw_text(self.screen, self.font_xs,
                   "167 // OPEN" if self.save_data.get("secret_167_unlocked", False) else "167 // SEALED",
                   door_color, (410, 480), center=True, shadow=False)
-        # Trophy shelf grows with major campaign milestones.
-        trophies = []
-        if self.save_data.get("boss_cleared"):
-            trophies.append(("CORE", (255, 188, 91)))
-        if len(set(self.save_data.get("completed_levels", []))) >= 3:
-            trophies.append(("SECTOR", (91, 220, 190)))
-        if self.save_data.get("postgame_event_seen"):
-            trophies.append(("167", (166, 139, 255)))
-        if trophies:
-            pygame.draw.rect(self.screen, (10, 25, 39), (718, 410, 94, 90), border_radius=6)
-            pygame.draw.rect(self.screen, (60, 100, 117), (718, 410, 94, 90), 1, border_radius=6)
-            for trophy_i, (label, tint) in enumerate(trophies[:3]):
-                tx = 735 + trophy_i * 27
-                draw_glow(self.screen, tx, 444, tint, 13)
-                pygame.draw.polygon(self.screen, tint, [(tx, 427), (tx + 9, 436), (tx + 6, 451), (tx - 6, 451), (tx - 9, 436)])
-                pygame.draw.rect(self.screen, (112, 126, 133), (tx - 5, 452, 10, 5))
-                draw_text(self.screen, self.font_xs, label, tint, (tx, 470), center=True, shadow=False)
-            draw_text(self.screen, self.font_xs, "FIELD RELICS", MUTED, (765, 493), center=True, shadow=False)
         # Physical EXP cassette deck. Its transport controls are real; sound is added later.
         pygame.draw.rect(self.screen, (10, 24, 39), (610, 422, 92, 78), border_radius=8)
         pygame.draw.rect(self.screen, (59, 105, 125), (610, 422, 92, 78), 2, border_radius=8)
