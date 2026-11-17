@@ -29,7 +29,7 @@ import pygame
 # Configuration
 # -----------------------------------------------------------------------------
 WIDTH, HEIGHT = 1100, 620
-TARGET_FPS = 60 if sys.platform == "emscripten" else 180  # browser-friendly cap
+TARGET_FPS = 180  # Match high-refresh displays; dt remains capped for stable gameplay.
 TITLE = "OXYGEN"
 
 CURRENT_LANGUAGE = "en"
