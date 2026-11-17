@@ -297,5 +297,6 @@
   "CARRIER LOST. SOMETHING IS LISTENING.": "НЕСУЩАЯ ПОТЕРЯНА. КТО-ТО СЛУШАЕТ.",
   "UNKNOWN VOICE": "НЕИЗВЕСТНЫЙ ГОЛОС",
   "STATIC": "ПОМЕХИ",
-  "DISTANT TRANSMISSION": "ДАЛЁКАЯ ПЕРЕДАЧА"
+  "DISTANT TRANSMISSION": "ДАЛЁКАЯ ПЕРЕДАЧА",
+  "RADIO": "РАДИО"
 }
