@@ -1276,7 +1276,7 @@ LEVELS[3]["saws"] = [
 ]
 LEVELS[3]["exit"] = (9850, 393)
 
-LEVELS[4]["width"] = 6500
+LEVELS[4]["width"] = 10000
 LEVELS[4]["platforms"].extend([
     (4550, 475, 390, 100), (5000, 475, 400, 100),
     (5460, 475, 420, 100), (5940, 475, 560, 100),
@@ -1299,7 +1299,76 @@ LEVELS[4]["seekers"].extend([
 ])
 LEVELS[4]["spikes"].extend([(4780, 452, 70), (5250, 452, 72), (5550, 452, 70)])
 LEVELS[4]["checkpoints"].extend([(4860, 475), (5400, 475)])
-LEVELS[4]["exit"] = (6420, 393)
+LEVELS[4]["exit"] = (9850, 393)
+
+# BLACK SUN continues to the same 10,000-unit campaign length as sector 04.
+# The added route escalates the original traversal without changing its opening.
+LEVELS[4]["platforms"].extend([
+    (6500, 475, 390, 100), (6950, 475, 400, 100),
+    (7410, 475, 410, 100), (7880, 475, 390, 100),
+    (8330, 475, 410, 100), (8800, 475, 390, 100),
+    (9250, 475, 390, 100), (9700, 475, 300, 100),
+    (6580, 385, 160, 18), (6810, 310, 155, 18),
+    (7040, 370, 160, 18), (7280, 300, 155, 18),
+    (7520, 365, 160, 18), (7750, 295, 160, 18),
+    (7990, 375, 155, 18), (8220, 305, 160, 18),
+    (8460, 365, 160, 18), (8700, 295, 155, 18),
+    (8930, 375, 160, 18), (9160, 305, 155, 18),
+    (9400, 365, 160, 18), (9630, 300, 160, 18),
+    (9850, 375, 120, 18),
+])
+LEVELS[4]["coins"].extend([
+    (6620, 347), (6850, 272), (7080, 332), (7320, 262),
+    (7560, 327), (7790, 257), (8030, 337), (8260, 267),
+    (8500, 327), (8740, 257), (8970, 337), (9200, 267),
+    (9440, 327), (9670, 262), (9900, 337),
+    (6700, 425), (7160, 425), (7630, 425), (8100, 425),
+    (8560, 425), (9030, 425), (9500, 425), (9850, 425),
+])
+LEVELS[4]["drones"].extend([
+    (6750, 335, 6670, 6830), (7210, 335, 7130, 7290),
+    (7670, 335, 7590, 7750), (8140, 335, 8060, 8220),
+    (8600, 335, 8520, 8680), (9060, 335, 8980, 9140),
+    (9530, 335, 9450, 9610), (9840, 270, 9780, 9950),
+])
+LEVELS[4]["seekers"].extend([
+    (6980, 185, 6890, 7070), (7890, 190, 7800, 7980),
+    (8810, 185, 8720, 8900), (9700, 190, 9610, 9790),
+])
+LEVELS[4]["spikes"].extend([
+    (6800, 452, 70), (7270, 452, 72), (7730, 452, 70),
+    (8200, 452, 72), (8660, 452, 70), (9130, 452, 72),
+    (9590, 452, 70),
+])
+LEVELS[4]["checkpoints"].extend([(7300, 475), (9000, 475)])
+
+# Pendulum saws hang low enough to threaten the upper route, with safe gaps
+# between their arcs. Fixed grinders guard selected landings.
+LEVELS[4]["saws"] = [
+    (820, 112, 28, "swing", 205, 0.62, 1.15, 0.2),
+    (1720, 108, 28, "swing", 210, 0.60, 1.20, 1.4),
+    (2670, 112, 29, "swing", 215, 0.62, 1.18, 2.2),
+    (3550, 105, 28, "swing", 210, 0.60, 1.22, 0.8),
+    (4480, 110, 29, "swing", 220, 0.62, 1.16, 2.8),
+    (5350, 108, 28, "swing", 215, 0.60, 1.20, 1.8),
+    (6500, 112, 29, "swing", 220, 0.62, 1.18, 0.4),
+    (7440, 108, 28, "swing", 215, 0.60, 1.22, 2.0),
+    (8380, 112, 29, "swing", 220, 0.62, 1.16, 1.0),
+    (9320, 108, 28, "swing", 215, 0.60, 1.20, 2.6),
+    (2180, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
+    (4920, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
+    (7810, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
+    (9660, 448, 25, "fixed", 0, 0.0, 0.0, 0.0),
+]
+
+# Full-height vertical laser columns. Their timed warning/safe windows let
+# the player cross deliberately, but jumping over the beam is not possible.
+LEVELS[4]["lasers"] = [
+    (1900, 0, 18, 475, 3.1, 0.0),
+    (4050, 0, 18, 475, 3.1, 0.85),
+    (6250, 0, 18, 475, 3.1, 1.7),
+    (8350, 0, 18, 475, 3.1, 2.45),
+]
 
 
 
@@ -6719,6 +6788,18 @@ class Game:
             col = (int(85 + 95 * twinkle), int(115 + 100 * twinkle),
                    int(155 + 95 * twinkle))
             pygame.draw.circle(self.screen, col, (x, sy), size)
+
+        # Sector 05's black sun drifts slowly up and down behind the skyline.
+        # It is a dark silhouette, not a bright light source, and remains screen-parallax.
+        if skyline_index == 4:
+            sun_x = int(138 - self.camera_x * 0.035)
+            sun_y = int(176 + math.sin(self.time * math.tau / 300.0) * 54)
+            pygame.draw.circle(self.screen, (39, 25, 36), (sun_x, sun_y), 72, 2)
+            pygame.draw.circle(self.screen, (23, 20, 34), (sun_x, sun_y), 64)
+            pygame.draw.circle(self.screen, (65, 39, 49), (sun_x, sun_y), 64, 2)
+            pygame.draw.arc(self.screen, (101, 56, 55),
+                            (sun_x - 80, sun_y - 80, 160, 160),
+                            math.radians(205), math.radians(335), 2)
 
         # One cached skyline layer, moved very slowly for subtle depth.
         # Since the lights are baked into this surface, they cannot slide
