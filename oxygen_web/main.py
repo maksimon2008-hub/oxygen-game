@@ -4966,10 +4966,16 @@ class Game:
             else:
                 self.player.jump_buffer = 0.16
         self.mobile_jump_was_down = False
-        if (mobile_menu and self.mode in ("playing", "safehouse", "paused")
-                and not self.safehouse_event_active):
-            self.mode = "menu"
-            self.menu_selection = 0
+        if (mobile_menu and not self.safehouse_event_active):
+            # The mobile MENU control behaves exactly like Escape on a keyboard:
+            # pause while playing, resume from pause, and back out of submenus.
+            # Queue the event so every screen uses its existing Escape handler.
+            try:
+                pygame.event.post(pygame.event.Event(
+                    pygame.KEYDOWN, key=pygame.K_ESCAPE, mod=0, unicode=""
+                ))
+            except Exception:
+                pass
         self.update_music_scene(dt)
         if self.mode == "safehouse":
             self.update_safehouse(dt)
