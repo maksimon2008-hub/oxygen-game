@@ -377,9 +377,23 @@ function show_infobox() {
             z-index: 2;
         }
         /* Keep the game surface from triggering browser gestures or double-tap zoom. */
+        /* iOS Safari: prevent long-press text selection, blue selection
+           overlays, callout bubbles and tap-highlight flashes across the game. */
+        html, body, body *, #canvas, #canvas3d {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+        }
         html, body, #canvas, #canvas3d {
             touch-action: none;
             overscroll-behavior: none;
+        }
+        #canvas, #canvas3d, button, .mobile-action, #mobile-stick {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-tap-highlight-color: transparent !important;
         }
         .mobile-action:active { background: #9cff5755; }
 
@@ -652,6 +666,15 @@ frameborder="1"
         }
         bindHold(jump, "oxygen_touch_jump");
         bindHold(fire, "oxygen_touch_fire");
+
+        // Extra protection for mobile Safari: stop selection gestures even
+        // when a browser build wraps the canvas in generated DOM elements.
+        document.addEventListener("selectstart", event => {
+            if (document.documentElement.classList.contains("touch-device") &&
+                !event.target.closest("input, textarea, [contenteditable='true']")) {
+                event.preventDefault();
+            }
+        }, { passive: false });
 
         // Extra protection for mobile Safari's gesture and double-tap zoom.
         document.addEventListener("gesturestart", event => event.preventDefault(), { passive: false });
