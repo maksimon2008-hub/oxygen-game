@@ -6789,6 +6789,8 @@ class Game:
                    int(155 + 95 * twinkle))
             pygame.draw.circle(self.screen, col, (x, sy), size)
 
+        skyline_index = self.level_index if background_level_index is None else background_level_index
+
         # Sector 05's black sun drifts slowly up and down behind the skyline.
         # It is a dark silhouette, not a bright light source, and remains screen-parallax.
         if skyline_index == 4:
@@ -6805,7 +6807,6 @@ class Game:
         # Since the lights are baked into this surface, they cannot slide
         # around inside a building when the camera follows the player.
         skyline_offset = int(self.camera_x * 0.10)
-        skyline_index = self.level_index if background_level_index is None else background_level_index
         # Sector 07 is enclosed by a living canopy, not the usual city skyline.
         if skyline_index not in (6, 7, 8, 9):
             self.screen.blit(self.skyline_layers[skyline_index], (-skyline_offset, 0))
