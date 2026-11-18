@@ -4080,6 +4080,9 @@ class Game:
 
 
     def complete_current_level(self) -> None:
+        # Ignore duplicate exit triggers after the result screen has opened.
+        if self.mode != "playing":
+            return
         completed_key = str(self.level_index)
         if completed_key not in self.save_data["completed_levels"]:
             self.save_data["completed_levels"].append(completed_key)
@@ -5412,6 +5415,17 @@ class Game:
         if self.mode != "playing":
             return
 
+        # Exit has priority over lethal hazards: touching an open portal
+        # completes the sector immediately, instead of allowing a same-frame
+        # spike/laser/projectile hit to send the player to the safehouse.
+        if self.mode == "playing" and self.player.rect.colliderect(self.level.exit_rect):
+            if self.level.boss is not None and not self.level.boss.defeated:
+                self.notice = f"DEFEAT {self.level.boss.name} // EXIT SEALED"
+                self.notice_timer = max(self.notice_timer, 0.9)
+            else:
+                self.complete_current_level()
+                return
+
         # Active laser gates are lethal. Their amber warning and dark safe
         # state make each crossing readable instead of relying on guesswork.
         if self.player.invuln <= 0:
@@ -5437,14 +5451,6 @@ class Game:
                 self.damage_player()
             elif self.player.y > HEIGHT + 130:
                 self.damage_player()
-
-        # Exit gate.
-        if self.mode == "playing" and self.player.rect.colliderect(self.level.exit_rect):
-            if self.level.boss is not None and not self.level.boss.defeated:
-                self.notice = f"DEFEAT {self.level.boss.name} // EXIT SEALED"
-                self.notice_timer = max(self.notice_timer, 0.9)
-            else:
-                self.complete_current_level()
 
         # Smooth camera.
         target = self.player.x - WIDTH * 0.39
