@@ -325,6 +325,22 @@ function show_infobox() {
             -webkit-user-select: none;
             touch-action: none;
         }
+        /* Slightly forgiving invisible touch zones around mobile controls.
+           The visible artwork stays the same size; taps just outside still count. */
+        #mobile-stick,
+        .mobile-action {
+            position: relative;
+            overflow: visible;
+        }
+        #mobile-stick::before,
+        .mobile-action::before {
+            content: "";
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            background: transparent;
+            pointer-events: auto;
+        }
         #mobile-stick {
             width: 124px;
             height: 124px;
