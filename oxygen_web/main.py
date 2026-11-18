@@ -4980,7 +4980,11 @@ class Game:
         if self.browser_window is not None:
             try:
                 browser_window = self.browser_window
-                mobile_axis = float(browser_window.oxygen_touch_axis or 0.0)
+                # Digital left/right buttons are converted to the same -1..1
+                # movement axis used by the player on keyboard and analogue input.
+                mobile_left = bool(browser_window.oxygen_touch_left)
+                mobile_right = bool(browser_window.oxygen_touch_right)
+                mobile_axis = float(int(mobile_right) - int(mobile_left))
                 # Jump/menu are queued in JavaScript until this frame consumes them,
                 # so a quick tap cannot disappear between two game frames.
                 mobile_jump = bool(browser_window.oxygen_touch_jump)
