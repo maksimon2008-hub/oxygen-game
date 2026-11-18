@@ -7496,25 +7496,30 @@ class Game:
     def draw_achievements(self) -> None:
         self.draw_background(THEMES[9], 9)
         unlocked = set(self.save_data["achievements"])
-        draw_text(self.screen, self.font_l, "ACHIEVEMENTS", WHITE, (WIDTH // 2, 90), center=True)
+
+        # Keep the complete panel inside the safe vertical area on short/mobile viewports.
+        draw_text(self.screen, self.font_l, "ACHIEVEMENTS", WHITE,
+                  (WIDTH // 2, 48), center=True)
         draw_text(self.screen, self.font_xs, f"UNLOCKED  //  {len(unlocked)} / {len(ACHIEVEMENTS)}",
-                  THEMES[9]["accent"], (WIDTH // 2, 132), center=True, shadow=False)
+                  THEMES[9]["accent"], (WIDTH // 2, 82), center=True, shadow=False)
+
         visible = ACHIEVEMENTS[self.achievement_scroll:self.achievement_scroll + 7]
         for i, (achievement_id, title, desc) in enumerate(visible):
-            y = 166 + i * 48
+            y = 108 + i * 42
             is_unlocked = achievement_id in unlocked
-            rect = pygame.Rect(170, y, 760, 42)
+            rect = pygame.Rect(170, y, 760, 37)
             pygame.draw.rect(self.screen, (16, 38, 50) if is_unlocked else (8, 17, 32), rect, border_radius=7)
             pygame.draw.rect(self.screen, CYAN if is_unlocked else (43, 57, 78), rect, 1, border_radius=7)
             draw_text(self.screen, self.font_s, ("◆  " if is_unlocked else "◇  ") + title,
-                      CYAN if is_unlocked else MUTED, (rect.x + 16, rect.y + 5), shadow=False)
-            draw_text(self.screen, self.font_xs, desc, MUTED, (rect.x + 360, rect.y + 13), shadow=False)
+                      CYAN if is_unlocked else MUTED, (rect.x + 16, rect.y + 3), shadow=False)
+            draw_text(self.screen, self.font_xs, desc, MUTED, (rect.x + 360, rect.y + 10), shadow=False)
             reward_state = "PAID" if achievement_id in self.save_data.get("achievement_rewards", []) else "+5 COINS"
             draw_text(self.screen, self.font_xs, reward_state, YELLOW if is_unlocked else MUTED,
-                      (rect.right - 72, rect.y + 13), shadow=False)
-        self.draw_button("BACK TO MENU", 545, False, width=290)
+                      (rect.right - 72, rect.y + 10), shadow=False)
+
+        self.draw_button("BACK TO MENU", 420, False, width=290)
         draw_text(self.screen, self.font_xs, "MOUSE WHEEL / UP / DOWN TO SCROLL  //  ESC TO RETURN",
-                  MUTED, (WIDTH // 2, 594), center=True, shadow=False)
+                  MUTED, (WIDTH // 2, 500), center=True, shadow=False)
 
     def draw_store(self) -> None:
         self.draw_background(THEMES[3], 3)
