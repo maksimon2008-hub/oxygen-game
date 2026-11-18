@@ -325,44 +325,43 @@ function show_infobox() {
             -webkit-user-select: none;
             touch-action: none;
         }
-        /* Slightly forgiving invisible touch zones around mobile controls.
-           The visible artwork stays the same size; taps just outside still count. */
-        #mobile-stick,
-        .mobile-action {
-            position: relative;
-            overflow: visible;
+        /* Large, direct left/right controls replace the analogue stick. */
+        #mobile-directions {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            pointer-events: none;
+            padding-bottom: 8px;
         }
-        #mobile-stick::before,
-        .mobile-action::before {
+        .mobile-direction {
+            position: relative;
+            width: 88px;
+            height: 92px;
+            border: 2px solid #9cff5790;
+            border-radius: 15px;
+            background: linear-gradient(155deg, #102238ed, #050d19ed);
+            color: #caffaa;
+            font: 900 42px Arial, sans-serif;
+            line-height: 1;
+            text-shadow: 0 0 12px #9cff57a0;
+            box-shadow: 0 0 22px #9cff5725, inset 0 0 18px #9cff5715;
+            pointer-events: auto;
+            touch-action: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .mobile-direction::before {
             content: "";
             position: absolute;
             inset: -10px;
-            border-radius: 50%;
+            border-radius: 19px;
             background: transparent;
             pointer-events: auto;
         }
-        #mobile-stick {
-            width: 124px;
-            height: 124px;
-            border: 2px solid #9cff5770;
-            border-radius: 50%;
-            background: #071323aa;
-            box-shadow: 0 0 22px #9cff571c, inset 0 0 18px #9cff5710;
-            position: relative;
-            pointer-events: auto;
-            touch-action: none;
-        }
-        #mobile-stick-knob {
-            position: absolute;
-            width: 54px;
-            height: 54px;
-            left: 33px;
-            top: 33px;
-            border: 2px solid #baff82;
-            border-radius: 50%;
-            background: #9cff5740;
-            box-shadow: 0 0 16px #9cff5750;
-            pointer-events: none;
+        .mobile-direction:active {
+            background: #9cff5755;
+            border-color: #caffaa;
+            transform: scale(.97);
         }
         .mobile-action {
             width: 76px;
@@ -484,8 +483,9 @@ function show_infobox() {
     <div id="rotate-hint">ПОВЕРНИТЕ ТЕЛЕФОН ГОРИЗОНТАЛЬНО<br><br>OXYGEN // LANDSCAPE MODE</div>
     <div id="mobile-controls" aria-label="Мобильное управление">
         <button class="mobile-action" id="mobile-menu" type="button">MENU</button>
-        <div id="mobile-stick" aria-label="Джойстик движения">
-            <div id="mobile-stick-knob"></div>
+        <div id="mobile-directions" aria-label="Передвижение">
+            <button class="mobile-direction" id="mobile-left" type="button" aria-label="Влево">◀</button>
+            <button class="mobile-direction" id="mobile-right" type="button" aria-label="Вправо">▶</button>
         </div>
         <div id="mobile-buttons">
             <button class="mobile-action" id="mobile-fire" type="button">FIRE</button>
@@ -602,13 +602,15 @@ frameborder="1"
         if (("ontouchstart" in window) || navigator.maxTouchPoints > 0) {
             document.documentElement.classList.add("touch-device");
         }
-        const stick = document.getElementById("mobile-stick");
-        const knob = document.getElementById("mobile-stick-knob");
+        const left = document.getElementById("mobile-left");
+        const right = document.getElementById("mobile-right");
         const jump = document.getElementById("mobile-jump");
         const fire = document.getElementById("mobile-fire");
         const menu = document.getElementById("mobile-menu");
-        if (!stick || !knob || !jump || !fire || !menu) return;
+        if (!left || !right || !jump || !fire || !menu) return;
 
+        window.oxygen_touch_left = false;
+        window.oxygen_touch_right = false;
         window.oxygen_touch_axis = 0;
         window.oxygen_touch_jump = false;
         window.oxygen_touch_jump_held = false;
@@ -622,36 +624,24 @@ frameborder="1"
             window.oxygen_touch_menu = true;
         });
 
-        let activePointer = null;
-        function moveStick(event) {
-            if (activePointer !== event.pointerId) return;
-            const rect = stick.getBoundingClientRect();
-            const dx = event.clientX - (rect.left + rect.width / 2);
-            const dy = event.clientY - (rect.top + rect.height / 2);
-            const limit = rect.width * 0.34;
-            const x = Math.max(-1, Math.min(1, dx / limit));
-            const y = Math.max(-1, Math.min(1, dy / limit));
-            window.oxygen_touch_axis = Math.abs(x) < 0.13 ? 0 : x;
-            knob.style.transform = "translate(" + (x * limit) + "px," + (y * limit) + "px)";
+        function bindDirection(button, key) {
+            const setPressed = pressed => {
+                window[key] = pressed;
+                window.oxygen_touch_axis =
+                    (window.oxygen_touch_right ? 1 : 0) -
+                    (window.oxygen_touch_left ? 1 : 0);
+            };
+            button.addEventListener("pointerdown", event => {
+                event.preventDefault();
+                button.setPointerCapture(event.pointerId);
+                setPressed(true);
+            });
+            ["pointerup", "pointercancel", "lostpointercapture"].forEach(name =>
+                button.addEventListener(name, () => setPressed(false))
+            );
         }
-        function releaseStick(event) {
-            if (activePointer !== event.pointerId) return;
-            activePointer = null;
-            window.oxygen_touch_axis = 0;
-            knob.style.transform = "translate(0,0)";
-        }
-        stick.addEventListener("pointerdown", event => {
-            event.preventDefault();
-            activePointer = event.pointerId;
-            stick.setPointerCapture(event.pointerId);
-            moveStick(event);
-        });
-        stick.addEventListener("pointermove", event => {
-            event.preventDefault();
-            moveStick(event);
-        });
-        stick.addEventListener("pointerup", releaseStick);
-        stick.addEventListener("pointercancel", releaseStick);
+        bindDirection(left, "oxygen_touch_left");
+        bindDirection(right, "oxygen_touch_right");
 
         function bindHold(button, key) {
             button.addEventListener("pointerdown", event => {
