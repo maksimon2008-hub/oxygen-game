@@ -2555,7 +2555,8 @@ def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
     # Each sector has its own baked platform material. Rendering remains one
     # cached blit per platform per frame, so richer art does not add a trail of
     # Python draw calls while the player is moving.
-    y = int(p.y - camera_y)\n    width, height = int(p.w), int(p.h)
+    y = int(p.y - camera_y)
+    width, height = int(p.w), int(p.h)
     style = int(level_index) if 0 <= int(level_index) <= 4 else 5
     quality = "performance" if graphics_mode == "performance" else "detail"
     key = (width, height, tuple(accent), style, quality)
@@ -2699,7 +2700,8 @@ def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
 
 def draw_spikes(surface: pygame.Surface, spike: pygame.Rect, camera_x: float,
                 accent2: tuple[int, int, int], camera_y: float = 0.0) -> None:
-    spike = spike.move(0, -int(camera_y))\n    x = int(spike.x - camera_x)
+    spike = spike.move(0, -int(camera_y))
+    x = int(spike.x - camera_x)
     if x > WIDTH or x + spike.w < 0:
         return
     count = max(2, spike.w // 22)
@@ -2785,20 +2787,22 @@ def draw_checkpoint(surface: pygame.Surface, cp: Checkpoint, camera_x: float,
     x = cp.x - camera_x
     if x < -40 or x > WIDTH + 40:
         return
-    screen_y = int(cp.y - camera_y)\n    color = accent if cp.active else (94, 109, 133)
-    pygame.draw.line(surface, (95, 113, 137), (int(x), cp.y - 58), (int(x), cp.y), 3)
+    screen_y = int(cp.y - camera_y)
+    color = accent if cp.active else (94, 109, 133)
+    pygame.draw.line(surface, (95, 113, 137), (int(x), screen_y - 58),
+                     (int(x), screen_y), 3)
     wave = math.sin(now * 4 + cp.x) * 5
-    flag = [(int(x), cp.y - 56), (int(x + 29 + wave), cp.y - 48),
-            (int(x), cp.y - 38)]
+    flag = [(int(x), screen_y - 56), (int(x + 29 + wave), screen_y - 48),
+            (int(x), screen_y - 38)]
     pygame.draw.polygon(surface, color, flag)
     if cp.active:
-        draw_glow(surface, int(x + 8), cp.y - 47, accent, 20)
-        pygame.draw.circle(surface, WHITE, (int(x), cp.y - 57), 3)
-
+        draw_glow(surface, int(x + 8), screen_y - 47, accent, 20)
+        pygame.draw.circle(surface, WHITE, (int(x), screen_y - 57), 3)
 
 def draw_exit(surface: pygame.Surface, rect: pygame.Rect, camera_x: float,
               accent: tuple[int, int, int], now: float, camera_y: float = 0.0) -> None:
-    rect = rect.move(0, -int(camera_y))\n    x = int(rect.x - camera_x)
+    rect = rect.move(0, -int(camera_y))
+    x = int(rect.x - camera_x)
     if x < -100 or x > WIDTH + 100:
         return
     center = (x + rect.w // 2, rect.y + rect.h // 2)
