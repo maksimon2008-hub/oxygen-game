@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "oxygen_web/**"
+      - "neon_ruins_platformer/**"
+      - "tests/**"
       - ".github/workflows/build-web.yml"
   workflow_dispatch:
 
