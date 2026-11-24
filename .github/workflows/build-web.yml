@@ -24,7 +24,8 @@ jobs:
       - name: Validate browser Python source
         run: |
           set -euo pipefail
-          python3 -m py_compile oxygen_web/main.py
+          python3 -m py_compile neon_ruins_platformer/main.py oxygen_web/main.py
+          python3 -m unittest discover -s tests -v
 
       - name: Package browser game
         run: |
