@@ -7425,7 +7425,7 @@ class Game:
 
         for platform in self.level.platforms:
             draw_platform(self.screen, platform, self.camera_x, accent,
-                          self.level_index, self.graphics_mode)
+                          self.level_index, self.graphics_mode, self.camera_y)
             if detailed and self.level_index == 8 and platform.h <= 24:
                 # Exposed relay catwalks: industrial grating with warning lights.
                 px = int(platform.x - self.camera_x)
@@ -7476,15 +7476,16 @@ class Game:
         self.draw_boss_arena_floor()
         for pad in self.level.launch_pads:
             px = int(pad.x - self.camera_x)
+            pad_y = int(pad.y - self.camera_y)
             if -pad.w < px < WIDTH:
-                pygame.draw.rect(self.screen, (9, 42, 54), (px, pad.y, pad.w, pad.h), border_radius=4)
-                pygame.draw.rect(self.screen, (73, 237, 218), (px + 3, pad.y + 2, pad.w - 6, 3), border_radius=2)
+                pygame.draw.rect(self.screen, (9, 42, 54), (px, pad_y, pad.w, pad.h), border_radius=4)
+                pygame.draw.rect(self.screen, (73, 237, 218), (px + 3, pad_y + 2, pad.w - 6, 3), border_radius=2)
                 for stripe in range(px + 10, px + pad.w - 6, 16):
-                    pygame.draw.line(self.screen, (38, 151, 158), (stripe, pad.y + 6),
-                                     (stripe + 6, pad.y + 10), 2)
+                    pygame.draw.line(self.screen, (38, 151, 158), (stripe, pad_y + 6),
+                                     (stripe + 6, pad_y + 10), 2)
         for moving in self.level.moving_platforms:
             mx = int(moving.x - self.camera_x)
-            my = int(moving.y)
+            my = int(moving.y - self.camera_y)
             if -moving.w < mx < WIDTH:
                 pygame.draw.line(self.screen, accent2, (mx + 8, my + 7),
                                  (mx + moving.w - 8, my + 7), 2)
@@ -7500,25 +7501,25 @@ class Game:
                 if bridge.state in ("ready", "warning"):
                     bridge_accent = (255, 170, 80) if bridge.state == "warning" else accent
                     draw_platform(self.screen, bridge, self.camera_x, bridge_accent,
-                                  self.level_index, self.graphics_mode)
+                                  self.level_index, self.graphics_mode, self.camera_y)
                     if bridge.state == "warning":
                         pulse = 1 + int(2 * abs(math.sin(self.time * 18)))
                         pygame.draw.line(self.screen, (255, 186, 86),
-                                         (bx + 5, bridge.y + 8), (bx + bridge.w - 5, bridge.y + 8), pulse)
+                                         (bx + 5, bridge.y + 8 - self.camera_y), (bx + bridge.w - 5, bridge.y + 8 - self.camera_y), pulse)
                 elif bridge.state == "broken":
-                    pygame.draw.line(self.screen, (55, 67, 87), (bx + 8, bridge.y + 9),
-                                     (bx + bridge.w - 8, bridge.y + 9), 1)
+                    pygame.draw.line(self.screen, (55, 67, 87), (bx + 8, bridge.y + 9 - self.camera_y),
+                                     (bx + bridge.w - 8, bridge.y + 9 - self.camera_y), 1)
                     if int(self.time * 12) % 2 == 0:
                         pygame.draw.line(self.screen, (96, 124, 145),
-                                         (bx + 12, bridge.y + 5), (bx + bridge.w - 12, bridge.y + 5), 1)
+                                         (bx + 12, bridge.y + 5 - self.camera_y), (bx + bridge.w - 12, bridge.y + 5 - self.camera_y), 1)
                 else:
                     pygame.draw.rect(self.screen, (60, 122, 132),
-                                     (bx, bridge.y, bridge.w, bridge.h), 1, border_radius=3)
+                                     (bx, int(bridge.y - self.camera_y), bridge.w, bridge.h), 1, border_radius=3)
 
         for laser in self.level.lasers:
             lx = int(laser.x - self.camera_x)
             if -35 < lx < WIDTH + 35:
-                top_y, bottom_y = laser.y, laser.y + laser.h
+                top_y, bottom_y = int(laser.y - self.camera_y), int(laser.y + laser.h - self.camera_y)
                 pygame.draw.rect(self.screen, (14, 22, 39), (lx - 7, top_y - 8, laser.w + 14, 16), border_radius=4)
                 pygame.draw.rect(self.screen, (14, 22, 39), (lx - 7, bottom_y - 8, laser.w + 14, 16), border_radius=4)
                 pygame.draw.circle(self.screen, (67, 88, 111), (lx + laser.w // 2, top_y), 5)
@@ -7548,48 +7549,48 @@ class Game:
 
         for saw in self.level.saws:
             draw_saw_hazard(self.screen, saw, self.camera_x, self.time, accent,
-                            detailed=detailed)
+                            detailed=detailed, camera_y=self.camera_y)
         for spike in self.level.spikes:
-            draw_spikes(self.screen, spike, self.camera_x, accent2)
+            draw_spikes(self.screen, spike, self.camera_x, accent2, self.camera_y)
         for cp in self.level.checkpoints:
-            draw_checkpoint(self.screen, cp, self.camera_x, accent, self.time)
+            draw_checkpoint(self.screen, cp, self.camera_x, accent, self.time, self.camera_y)
         exit_color = accent
         if self.level.boss is not None and not self.level.boss.defeated:
             exit_color = (112, 65, 95)
-        draw_exit(self.screen, self.level.exit_rect, self.camera_x, exit_color, self.time)
+        draw_exit(self.screen, self.level.exit_rect, self.camera_x, exit_color, self.time, self.camera_y)
         for coin in self.level.coins:
-            draw_coin(self.screen, coin, self.camera_x, self.time, accent)
+            draw_coin(self.screen, coin, self.camera_x, self.time, accent, self.camera_y)
         for cassette in self.level.cassettes:
             if not cassette["collected"]:
                 self.draw_cassette_prop(
-                    self.screen, int(cassette["x"] - self.camera_x), int(cassette["y"]),
+                    self.screen, int(cassette["x"] - self.camera_x), int(cassette["y"] - self.camera_y),
                     accent, 0.72, self.time)
         if self.healing_crystal is not None:
-            self.healing_crystal.draw(self.screen, self.camera_x)
+            self.healing_crystal.draw(self.screen, self.camera_x, self.camera_y)
         if self.level.coin_doubler is not None and not self.level.coin_doubler.collected:
-            self.level.coin_doubler.draw(self.screen, self.camera_x)
+            self.level.coin_doubler.draw(self.screen, self.camera_x, self.camera_y)
         for drone in self.level.drones:
-            draw_drone(self.screen, drone, self.camera_x, accent2)
+            draw_drone(self.screen, drone, self.camera_x, accent2, self.camera_y)
         for seeker in self.level.seekers:
-            draw_seeker(self.screen, seeker, self.camera_x, accent)
+            draw_seeker(self.screen, seeker, self.camera_x, accent, self.camera_y)
         for spider in self.level.spiders:
-            draw_spider(self.screen, spider, self.camera_x, accent2)
+            draw_spider(self.screen, spider, self.camera_x, accent2, self.camera_y)
         for turret in self.level.turrets:
-            draw_turret(self.screen, turret, self.camera_x, accent)
+            draw_turret(self.screen, turret, self.camera_x, accent, self.camera_y)
         for enemy_shot in self.level.enemy_shots:
-            draw_projectile(self.screen, enemy_shot, self.camera_x)
+            draw_projectile(self.screen, enemy_shot, self.camera_x, self.camera_y)
         for secret in self.level.secret_rooms:
             if abs(secret["rect"].centerx - self.player.x) < 180:
-                draw_secret_marker(self.screen, secret, self.camera_x, self.time, accent2)
+                draw_secret_marker(self.screen, secret, self.camera_x, self.time, accent2, self.camera_y)
         if self.level.boss is not None:
-            draw_boss(self.screen, self.level.boss, self.camera_x)
+            draw_boss(self.screen, self.level.boss, self.camera_x, self.camera_y)
             for shot in self.level.boss.shots:
-                draw_projectile(self.screen, shot, self.camera_x)
+                draw_projectile(self.screen, shot, self.camera_x, self.camera_y)
         for shot in self.projectiles:
-            draw_projectile(self.screen, shot, self.camera_x)
+            draw_projectile(self.screen, shot, self.camera_x, self.camera_y)
         for particle in self.particles:
-            particle.draw(self.screen, self.camera_x)
-        self.player.draw(self.screen, self.camera_x)
+            particle.draw(self.screen, self.camera_x, self.camera_y)
+        self.player.draw(self.screen, self.camera_x, self.camera_y)
 
         # Full-screen texture overlays are a Detail-only flourish. Performance
         # mode skips both full-canvas blits on desktop and in the browser.
