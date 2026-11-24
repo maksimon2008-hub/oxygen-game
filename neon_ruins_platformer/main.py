@@ -825,8 +825,8 @@ LEVELS = [
             (4440, -1350, 130, 16, "vertical", 82, 0.90, 0.2),
         ],
         "launch_pads": [
-            (770, 320, 72), (2360, 390, 72),
-            (3290, -900, 72), (4560, 160, 72),
+            (770, 320, 72), (2490, 390, 72),
+            (3290, -900, 72), (4650, 160, 72),
         ],
         "coins": [
             # Preserve the first sixteen indices for existing savegame coin keys.
