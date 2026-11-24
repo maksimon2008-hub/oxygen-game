@@ -720,91 +720,168 @@ class Particle:
 LEVELS = [
     {
         "name": "THE LAST SIGNAL",
-        "subtitle": "CLIMB ABOVE THE CITY THAT FORGOT THE SUN",
-        "width": 6400,
+        "subtitle": "A CITY BUILT ABOVE ITS OWN RUINS",
+        "width": 7350,
+        "top_bound": -1570,
+        "camera_top": -1840,
+        "camera_bottom": 390,
+        "fall_limit": 930,
         "spawn": (80, 410),
+        "wall_jump": True,
         "rooms": [
-            (0, 1120, 62, 475, "THE FORGOTTEN STATION"),
-            (1120, 1120, 54, 475, "THE FLOODED ARCHIVE"),
-            (2240, 1120, 68, 475, "THE SUNKEN COURTYARD"),
-            (3360, 1360, 48, 475, "THE SKY SHRINE"),
-            (4720, 1680, 60, 475, "THE SIGNAL BRIDGE"),
+            (0, 1160, -430, 475, "THE FORGOTTEN STATION"),
+            (1160, 1190, -560, 475, "THE FLOODED ARCHIVE"),
+            (2350, 1280, -940, 475, "THE SUNKEN COURTYARD"),
+            (3630, 1250, -1540, 475, "THE SKY SHRINE"),
+            (4880, 1250, -1180, 475, "THE SIGNAL BRIDGE"),
+            (6130, 1220, -530, 475, "THE LAST GATE"),
         ],
         "platforms": [
-            (0, 475, 560, 100), (670, 475, 500, 100),
-            (1280, 475, 480, 100), (1870, 475, 500, 100),
-            (2480, 475, 500, 100), (3090, 475, 500, 100),
-            (3700, 475, 510, 100), (4320, 475, 510, 100),
-            (4940, 475, 510, 100), (5610, 475, 790, 100),
-            (180, 390, 155, 18), (390, 325, 155, 18),
-            (650, 385, 155, 18), (850, 320, 155, 18),
-            (1030, 250, 155, 18),
-            (1270, 390, 155, 18), (1470, 325, 155, 18),
-            (1660, 260, 155, 18), (1850, 195, 155, 18),
-            (2070, 255, 155, 18), (2280, 325, 155, 18),
-            (2480, 390, 155, 18), (2690, 325, 155, 18),
-            (2890, 260, 155, 18), (3100, 195, 155, 18),
-            (3320, 255, 155, 18), (3530, 325, 155, 18),
-            (3700, 390, 155, 18), (3910, 325, 155, 18),
-            (4110, 260, 155, 18), (4310, 195, 155, 18),
-            (4520, 130, 155, 18), (4740, 195, 155, 18),
-            (4950, 260, 155, 18), (5160, 325, 155, 18),
-            (5360, 390, 155, 18), (5570, 325, 155, 18),
-            (5780, 260, 155, 18), (5980, 325, 155, 18),
-            (6190, 390, 155, 18),
+            (0, 475, 500, 100), (620, 475, 450, 100),
+            (1160, 475, 440, 100), (1690, 475, 220, 100),
+            (2350, 475, 430, 100), (2890, 475, 430, 100),
+            (3430, 475, 430, 100), (3970, 475, 430, 100),
+            (4510, 475, 430, 100), (5050, 475, 430, 100),
+            (5590, 475, 430, 100), (6130, 475, 430, 100),
+            (6670, 475, 680, 100),
+
+            (210, 390, 150, 18), (390, 320, 150, 18),
+            (580, 385, 150, 18), (770, 320, 150, 18),
+            (940, 250, 150, 18),
+            (920, -390, 22, 790), (1100, -390, 22, 790),
+            (940, 360, 125, 18), (1020, 280, 125, 18),
+            (940, 200, 125, 18), (1020, 120, 125, 18),
+            (940, 40, 125, 18), (1020, -40, 125, 18),
+            (940, -120, 125, 18), (1020, -200, 125, 18),
+            (940, -280, 125, 18), (1020, -360, 150, 18),
+
+            (1210, -410, 180, 18), (1410, -410, 180, 18),
+            (1610, -410, 180, 18),
+            (1710, -330, 145, 18), (1810, -250, 145, 18),
+            (1910, -170, 145, 18), (2010, -90, 145, 18),
+            (2110, -10, 145, 18), (2210, 70, 145, 18),
+            (2310, 150, 145, 18), (2410, 230, 145, 18),
+            (2510, 310, 145, 18), (2610, 390, 145, 18),
+
+            (1900, 710, 430, 18), (2150, 635, 110, 18),
+            (2220, 560, 110, 18), (2290, 485, 110, 18),
+            (1970, 645, 115, 18),
+            (1710, 390, 150, 18), (1780, 300, 150, 18),
+            (1810, 200, 150, 18),
+            (1900, 390, 150, 18), (2040, 315, 150, 18),
+            (2180, 240, 150, 18), (2320, 315, 150, 18),
+            (2460, 390, 150, 18),
+
+            (2480, 390, 145, 18), (2630, 320, 145, 18),
+            (2780, 250, 145, 18),
+            (2860, -900, 22, 1300), (3040, -900, 22, 1300),
+            (2880, 360, 125, 18), (2970, 280, 125, 18),
+            (2880, 200, 125, 18), (2970, 120, 125, 18),
+            (2880, 40, 125, 18), (2970, -40, 125, 18),
+            (2880, -120, 125, 18), (2970, -200, 125, 18),
+            (2880, -280, 125, 18), (2970, -360, 125, 18),
+            (2880, -440, 125, 18), (2970, -520, 125, 18),
+            (2880, -600, 125, 18), (2970, -680, 125, 18),
+            (2880, -760, 125, 18), (2970, -840, 180, 18),
+            (3190, -900, 180, 18), (3390, -900, 180, 18),
+            (3590, -900, 180, 18),
+
+            (3070, 200, 150, 18), (3220, 280, 150, 18),
+            (3370, 360, 150, 18),
+            (3470, 390, 150, 18), (3580, 320, 150, 18),
+            (3470, 250, 150, 18), (3580, 180, 150, 18),
+
+            (3660, -760, 150, 18),
+            (3760, -1500, 22, 740), (3960, -1500, 22, 740),
+            (3780, -840, 125, 18), (3880, -920, 125, 18),
+            (3780, -1000, 125, 18), (3880, -1080, 125, 18),
+            (3780, -1160, 125, 18), (3880, -1240, 125, 18),
+            (3780, -1320, 125, 18), (3880, -1400, 180, 18),
+            (4100, -1500, 180, 18), (4300, -1500, 180, 18),
+            (4500, -1500, 180, 18), (4700, -1500, 180, 18),
+            (4900, -1500, 180, 18),
+
+            (5000, -1420, 125, 18), (5100, -1340, 125, 18),
+            (5200, -1260, 125, 18), (5300, -1180, 125, 18),
+            (5400, -1100, 125, 18), (5500, -1020, 125, 18),
+            (5600, -940, 125, 18), (5700, -860, 125, 18),
+            (5800, -780, 125, 18), (5900, -700, 125, 18),
+            (6000, -620, 125, 18), (6100, -540, 125, 18),
+            (6200, -460, 125, 18), (6300, -380, 125, 18),
+            (6400, -300, 125, 18), (6500, -220, 125, 18),
+            (6600, -140, 125, 18), (6700, -60, 125, 18),
+            (6800, 20, 125, 18), (6900, 100, 125, 18),
+            (7000, 180, 125, 18), (7100, 260, 125, 18),
+            (7200, 340, 125, 18),
+
+            (4350, 400, 145, 18), (4440, 320, 145, 18),
+            (4530, 240, 145, 18), (4620, 160, 145, 18),
+            (4710, 80, 145, 18),
         ],
         "moving_platforms": [
-            (1115, 245, 132, 16, "vertical", 78, 0.82, 0.0),
-            (2220, 220, 132, 16, "horizontal", 96, 0.80, 0.4),
-            (3440, 220, 132, 16, "vertical", 88, 0.85, 1.2),
-            (4850, 155, 132, 16, "horizontal", 105, 0.80, 1.8),
+            (1460, -470, 130, 16, "horizontal", 90, 0.85, 0.0),
+            (2460, 210, 130, 16, "vertical", 92, 0.85, 0.8),
+            (3300, -820, 130, 16, "horizontal", 105, 0.85, 1.4),
+            (4440, -1350, 130, 16, "vertical", 82, 0.90, 0.2),
         ],
         "launch_pads": [
-            (1470, 325, 72), (2690, 325, 72),
-            (4350, 195, 72), (5580, 325, 72),
+            (770, 320, 72), (2360, 390, 72),
+            (3290, -900, 72), (4560, 160, 72),
         ],
         "coins": [
-            # Keep the original first sixteen indices stable for existing saves.
+            # Preserve the first sixteen indices for existing savegame coin keys.
             (365, 352), (575, 292), (850, 350), (1085, 297),
             (1480, 345), (1720, 287), (2095, 345), (2345, 287),
             (2705, 345), (2945, 290), (120, 425), (740, 420),
             (1370, 420), (1980, 420), (2570, 420), (3180, 420),
-            # New rewards follow the raised route through each room.
-            (220, 352), (445, 287), (705, 347), (920, 282), (1100, 212),
-            (1320, 347), (1520, 282), (1710, 217), (1900, 157), (2120, 217),
-            (2320, 287), (2515, 347), (2730, 282), (2930, 217), (3130, 152),
-            (3350, 212), (3555, 287), (3750, 347), (3950, 282), (4160, 217),
-            (4370, 152), (4580, 87), (4790, 152), (5000, 222), (5210, 287),
-            (5400, 347), (5600, 282), (5800, 217), (6000, 287), (6230, 347),
+            (260, 350), (445, 282), (650, 350), (825, 280), (980, 160),
+            (1080, -250), (1280, -370), (1480, -370), (1690, -290),
+            (1820, 240), (1940, 260), (2080, 0), (2250, 110), (2440, 270),
+            (2020, 675), (2190, 600), (2280, 450),
+            (2500, 350), (2660, 280), (2810, 210), (2910, -300),
+            (3000, -780), (3200, -860), (3400, -860), (3600, -860),
+            (3100, 160), (3260, 245), (3500, 320),
+            (3800, -1280), (3900, -1450), (4100, -1450), (4300, -1450),
+            (4500, -1450), (4700, -1450), (4900, -1450),
+            (5100, -1300), (5300, -1140), (5500, -980), (5700, -820),
+            (5900, -660), (6100, -500), (6300, -340), (6500, -180),
+            (6700, -20), (6900, 140), (7100, 300),
+            (4450, 360), (4540, 200), (4660, 120), (4800, 60),
         ],
         "drones": [
-            (900, 286, 830, 960), (1560, 220, 1490, 1640),
-            (2340, 290, 2260, 2420), (3210, 145, 3120, 3300),
-            (4080, 210, 3990, 4170), (4680, 95, 4590, 4770),
-            (5480, 285, 5390, 5570), (5990, 290, 5900, 6080),
+            (700, 350, 650, 790), (1510, -430, 1430, 1600),
+            (2160, 220, 2080, 2250), (2630, 285, 2550, 2700),
+            (3290, -850, 3200, 3380), (3560, 280, 3480, 3660),
+            (4470, 205, 4390, 4560), (5520, -980, 5440, 5600),
+            (6420, -280, 6340, 6500),
         ],
         "seekers": [
-            (1840, 145, 1760, 1920),
-            (2980, 145, 2900, 3060),
-            (4550, 90, 4470, 4630),
+            (1860, -120, 1780, 1940),
+            (2990, -430, 2910, 3070),
+            (3890, -1120, 3810, 3970),
+            (6080, -570, 6000, 6160),
         ],
-        "turrets": [(1370, 432), (3810, 432)],
+        "turrets": [(1380, 432), (4140, 432)],
         "spikes": [
-            (760, 452, 68), (1360, 452, 70), (1950, 452, 68),
-            (2550, 452, 68), (3160, 452, 68), (3780, 452, 68),
-            (4400, 452, 68), (5020, 452, 68), (5680, 452, 68),
+            (680, 452, 66), (1250, 452, 66), (1530, 452, 66),
+            (2530, 452, 66), (3490, 452, 66), (4080, 452, 66),
+            (4650, 452, 66), (5250, 452, 66), (5730, 452, 66),
+            (6280, 452, 66), (6900, 452, 66),
         ],
         "checkpoints": [
-            (1130, 475), (2340, 475), (3540, 475),
-            (4800, 475), (5850, 475),
+            (900, 475), (1600, 475), (2430, 475),
+            (3500, 475), (4460, 475), (5600, 475), (6900, 475),
         ],
         "secrets": [
             (1030, 175, 100, 65, "UPPER WATCHTOWER"),
             (1850, 120, 105, 65, "ARCHIVE LOFT"),
             (3100, 120, 105, 65, "BELL CHAMBER"),
             (4520, 55, 110, 65, "SKY SHRINE"),
+            (2030, 650, 95, 55, "DRAINAGE CACHE"),
+            (4290, -1580, 120, 65, "HIGH SIGNAL VAULT"),
+            (5500, -1080, 115, 65, "BRIDGE RELAY"),
         ],
-        "exit": (6280, 393),
+        "exit": (7210, 393),
     },
     {
         "name": "PURPLE STATIC",
@@ -1103,6 +1180,10 @@ class Level:
         self.subtitle = data["subtitle"]
         self.width = data["width"]
         self.spawn = data["spawn"]
+        self.top_bound = float(data.get("top_bound", 0.0))
+        self.camera_top = float(data.get("camera_top", self.top_bound - 180.0))
+        self.camera_bottom = float(data.get("camera_bottom", 0.0))
+        self.fall_limit = float(data.get("fall_limit", HEIGHT + 130))
         self.moving_platforms = [MovingPlatform(*item) for item in data.get("moving_platforms", [])]
         self.platforms = [Platform(*p) for p in data["platforms"]] + self.moving_platforms
         self.solids = [p.rect for p in self.platforms]
@@ -1434,8 +1515,9 @@ class Player:
                                               random.uniform(80, 210), 0.38, 3.5))
 
         self.x = max(0.0, min(self.x, level.width - self.w))
-        if self.y < 0:
-            self.y = 0.0
+        top_bound = float(getattr(level, "top_bound", 0.0))
+        if self.y < top_bound:
+            self.y = top_bound
             self.vy = max(0.0, self.vy)
 
     def begin_dash(self, particles: list[Particle]) -> None:
@@ -1924,6 +2006,7 @@ class Game:
         self.level = Level(0)
         self.player = Player(self.level.spawn, speed_level=self.save_data["speed_level"])
         self.camera_x = 0.0
+        self.camera_y = 0.0
         self.particles: list[Particle] = []
         self.score = 0
         self.time = 0.0
@@ -2420,7 +2503,7 @@ class Game:
 
     def calculate_level_rating(self) -> dict:
         elapsed = max(0.01, self.level_elapsed)
-        target = 150.0 if self.level_index == 0 else 72.0 + self.level_index * 5.0
+        target = 240.0 if self.level_index == 0 else 72.0 + self.level_index * 5.0
         has_secret_route = bool(self.level.secret_rooms)
         secret_condition = self.level_secrets > 0 or not has_secret_route
         if self.level_deaths == 0 and elapsed <= target and secret_condition:
@@ -2572,6 +2655,7 @@ class Game:
                              speed_level=self.save_data["speed_level"])
         self.apply_player_skills()
         self.camera_x = 0.0
+        self.camera_y = 0.0
         self.score = 0
         self.level_elapsed = 0.0
         self.level_deaths = 0
@@ -2754,6 +2838,7 @@ class Game:
         for i, secret in enumerate(self.level.secret_rooms):
             secret["found"] = f"{index}:{i}" in self.save_data["found_secrets"]
         self.camera_x = 0.0
+        self.camera_y = 0.0
         self.particles.clear()
         self.projectiles.clear()
         self.level_banner = 2.8
@@ -2790,6 +2875,7 @@ class Game:
             secret["found"] = f"{self.level_index}:{i}" in self.save_data["found_secrets"]
         self.last_wall_jump_count = 0
         self.camera_x = 0.0
+        self.camera_y = 0.0
         self.particles.clear()
         self.projectiles.clear()
         self.level_banner = 1.4
@@ -3852,7 +3938,7 @@ class Game:
         if self.player.invuln <= 0:
             if any(spike_hits_player(self.player.rect, s) for s in self.level.spikes):
                 self.damage_player()
-            elif self.player.y > HEIGHT + 130:
+            elif self.player.y > self.level.fall_limit:
                 self.damage_player()
 
         # Exit gate.
@@ -3867,6 +3953,19 @@ class Game:
         target = self.player.x - WIDTH * 0.39
         target = max(0.0, min(target, self.level.width - WIDTH))
         self.camera_x += (target - self.camera_x) * min(1.0, dt * 6.5)
+
+        # Sector 01 uses a vertical dead-zone camera; all other sectors keep their original framing.
+        if self.level_index == 0:
+            screen_y = self.player.y - self.camera_y
+            target_y = self.camera_y
+            if screen_y < 190:
+                target_y = self.player.y - 190
+            elif screen_y > 450:
+                target_y = self.player.y - 450
+            target_y = max(self.level.camera_top, min(target_y, self.level.camera_bottom))
+            self.camera_y += (target_y - self.camera_y) * min(1.0, dt * 5.5)
+        else:
+            self.camera_y = 0.0
 
         self.particles = [p for p in self.particles if p.update(dt)]
         self.update_arena_progression(dt)
@@ -3963,18 +4062,19 @@ class Game:
             pygame.draw.line(self.screen, (20, 33, 55), (0, y), (WIDTH, y), 1)
 
     def draw_messenger_sector_one_environment(self, theme) -> None:
-        """A layered, pixel-edged ruin interior for the expanded first sector."""
+        """Layered ruin architecture for a vertically connected, six-district world."""
+        cam_x = self.camera_x
+        cam_y = self.camera_y
         self.screen.blit(self.gradient, (0, 0))
 
-        # Distant rooflines move more slowly than the playable world.
-        skyline_start = int(self.camera_x * 0.12 // 260) - 2
+        skyline_start = int((cam_x * 0.12) // 260) - 2
+        skyline_base = int(468 - cam_y * 0.16)
         for tile_index in range(skyline_start, skyline_start + 13):
             world_x = tile_index * 260
-            sx = int(world_x - self.camera_x * 0.18)
+            sx = int(world_x - cam_x * 0.18)
             height = 90 + ((tile_index * 43 + 171) % 74)
             width = 105 + ((tile_index * 29 + 70) % 90)
-            base_y = 468
-            body = pygame.Rect(sx, base_y - height, width, height)
+            body = pygame.Rect(sx, skyline_base - height, width, height)
             pygame.draw.rect(self.screen, (8, 17, 31), body)
             pygame.draw.rect(self.screen, (25, 43, 59), body, 2)
             pygame.draw.polygon(
@@ -3984,26 +4084,34 @@ class Game:
             )
             for window_x in range(sx + 15, sx + width - 8, 26):
                 pygame.draw.rect(self.screen, (31, 82, 91),
-                                 (window_x, base_y - height + 28, 5, 11))
+                                 (window_x, skyline_base - height + 28, 5, 11))
             pygame.draw.line(self.screen, (37, 81, 88),
-                             (sx, base_y - 2), (sx + width, base_y - 2), 2)
+                             (sx, skyline_base - 2), (sx + width, skyline_base - 2), 2)
 
-        # A broken moon and a distant bridge establish the silhouette.
-        moon_x = int(175 - self.camera_x * 0.035)
-        pygame.draw.circle(self.screen, (25, 42, 57), (moon_x, 150), 61)
-        pygame.draw.circle(self.screen, (76, 133, 137), (moon_x, 150), 61, 2)
+        moon_x = int(175 - cam_x * 0.035)
+        moon_y = int(150 - cam_y * 0.12)
+        pygame.draw.circle(self.screen, (25, 42, 57), (moon_x, moon_y), 61)
+        pygame.draw.circle(self.screen, (76, 133, 137), (moon_x, moon_y), 61, 2)
         pygame.draw.arc(self.screen, (113, 183, 170),
-                        (moon_x - 69, 81, 138, 138), 0.25, 2.65, 3)
-        bridge_y = 420
-        bridge_left = int(300 - self.camera_x * 0.24)
-        pygame.draw.line(self.screen, (24, 54, 65),
-                         (bridge_left, bridge_y), (bridge_left + 880, bridge_y - 52), 4)
-        for span in range(0, 900, 90):
-            bx = bridge_left + span
-            pygame.draw.line(self.screen, (19, 43, 57),
-                             (bx, bridge_y), (bx + 18, bridge_y - 56), 3)
+                        (moon_x - 69, moon_y - 69, 138, 138), 0.25, 2.65, 3)
 
-        # Reusable alpha layer keeps the chamber walls translucent and cheap to redraw.
+        shaft_anchors = (
+            (920, -390, 400, (77, 185, 174)),
+            (2860, -900, 400, (86, 151, 180)),
+            (3760, -1500, -760, (174, 126, 183)),
+        )
+        for world_x, top_y, bottom_y, cable_color in shaft_anchors:
+            sx = int(world_x - cam_x)
+            sy1, sy2 = int(top_y - cam_y), int(bottom_y - cam_y)
+            if -40 <= sx <= WIDTH + 40:
+                pygame.draw.line(self.screen, (10, 22, 33), (sx, sy1), (sx, sy2), 9)
+                pygame.draw.line(self.screen, cable_color, (sx, sy1), (sx, sy2), 2)
+                pygame.draw.line(self.screen, (34, 72, 83), (sx + 8, sy1), (sx + 8, sy2), 1)
+                for world_y in range(top_y + 40, bottom_y, 120):
+                    ring_y = int(world_y - cam_y)
+                    pygame.draw.line(self.screen, cable_color,
+                                     (sx - 12, ring_y), (sx + 12, ring_y), 2)
+
         overlay = getattr(self, "_messenger_room_overlay", None)
         if overlay is None or overlay.get_size() != (WIDTH, HEIGHT):
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
@@ -4012,74 +4120,93 @@ class Game:
 
         room_edges = (
             (77, 185, 174), (86, 151, 180), (174, 126, 183),
-            (113, 184, 139), (201, 157, 104),
+            (113, 184, 139), (201, 157, 104), (102, 188, 202),
         )
         room_labels = []
         for room_index, room in enumerate(LEVELS[0].get("rooms", [])):
             world_x, room_width, top_y, floor_y, label = room
-            left = int(world_x - self.camera_x)
-            right = int(world_x + room_width - self.camera_x)
-            if right < -20 or left > WIDTH + 20:
+            left = int(world_x - cam_x)
+            right = int(world_x + room_width - cam_x)
+            if right < -30 or left > WIDTH + 30:
                 continue
-
             edge = room_edges[room_index % len(room_edges)]
             wall_left = max(-8, left + 14)
             wall_right = min(WIDTH + 8, right - 14)
-            wall_top = int(top_y + 18)
-            wall_bottom = int(floor_y - 4)
+            wall_top = int(top_y + 18 - cam_y)
+            wall_bottom = int(floor_y - 4 - cam_y)
             if wall_right <= wall_left:
                 continue
 
             wall = pygame.Rect(wall_left, wall_top, wall_right - wall_left,
                                max(1, wall_bottom - wall_top))
-            pygame.draw.rect(overlay, (7, 17, 29, 174), wall)
-            pygame.draw.rect(overlay, (*edge, 90), wall, 2)
+            pygame.draw.rect(overlay, (7, 17, 29, 142), wall)
+            pygame.draw.rect(overlay, (*edge, 105), wall, 2)
 
-            # Stone courses and square-cut masonry make the rooms read as one place.
-            for row_y in range(wall_top + 44, wall_bottom - 8, 48):
-                pygame.draw.line(overlay, (56, 76, 87, 92),
+            visible_world_top = max(top_y + 38, int(cam_y) - 35)
+            visible_world_bottom = min(floor_y - 10, int(cam_y + HEIGHT) + 35)
+            for row_world_y in range(visible_world_top, visible_world_bottom, 48):
+                row_y = int(row_world_y - cam_y)
+                pygame.draw.line(overlay, (56, 76, 87, 88),
                                  (wall_left + 4, row_y), (wall_right - 4, row_y), 1)
-                offset = 0 if (row_y // 48) % 2 else 22
-                for block_world_x in range(world_x + offset, world_x + room_width, 44):
-                    block_x = int(block_world_x - self.camera_x)
-                    if wall_left < block_x < wall_right:
-                        pygame.draw.line(overlay, (47, 69, 81, 88),
-                                         (block_x, row_y - 1), (block_x, row_y + 12), 1)
 
-            # Heavy pillars divide the long level into readable chambers.
-            pillar_positions = list(range(world_x + 28, world_x + room_width - 12, 300))
-            pillar_positions.extend((world_x + room_width - 50,))
-            for pillar_world_x in pillar_positions:
-                px = int(pillar_world_x - self.camera_x)
+                if room_index in (0, 1):
+                    offset = 0 if (row_world_y // 48) % 2 else 22
+                    for block_world_x in range(world_x + offset, world_x + room_width, 44):
+                        block_x = int(block_world_x - cam_x)
+                        if wall_left < block_x < wall_right:
+                            pygame.draw.line(overlay, (47, 69, 81, 90),
+                                             (block_x, row_y - 1), (block_x, row_y + 12), 1)
+                elif room_index == 2:
+                    for root_x in range(world_x + 80, world_x + room_width, 190):
+                        rx = int(root_x - cam_x)
+                        if wall_left < rx < wall_right:
+                            pygame.draw.line(overlay, (37, 95, 73, 115),
+                                             (rx, wall_top + 4), (rx - 24, row_y + 22), 3)
+                            pygame.draw.ellipse(overlay, (64, 143, 98, 120),
+                                                (rx - 32, row_y + 8, 18, 8))
+                elif room_index == 3:
+                    for conduit_x in range(world_x + 90, world_x + room_width, 260):
+                        cx = int(conduit_x - cam_x)
+                        if wall_left < cx < wall_right:
+                            pygame.draw.line(overlay, (*edge, 95),
+                                             (cx, wall_top + 2), (cx, wall_bottom - 2), 2)
+                            pygame.draw.circle(overlay, (*edge, 125), (cx, row_y), 5, 1)
+                elif room_index == 4:
+                    for cable_x in range(world_x + 70, world_x + room_width, 220):
+                        cx = int(cable_x - cam_x)
+                        if wall_left < cx < wall_right:
+                            pygame.draw.line(overlay, (68, 99, 110, 110),
+                                             (cx - 30, row_y - 16), (cx + 30, row_y + 16), 2)
+                else:
+                    for arch_x in range(world_x + 80, world_x + room_width, 240):
+                        ax = int(arch_x - cam_x)
+                        if wall_left < ax < wall_right:
+                            pygame.draw.arc(overlay, (*edge, 100),
+                                            (ax - 55, row_y - 28, 110, 56),
+                                            math.pi, math.tau, 2)
+
+            pillar_step = 260 if room_index in (0, 1, 5) else 320
+            for pillar_world_x in range(world_x + 28, world_x + room_width - 12, pillar_step):
+                px = int(pillar_world_x - cam_x)
                 if px < -42 or px > WIDTH + 42:
                     continue
-                pillar = pygame.Rect(px, wall_top, 28, wall_bottom - wall_top)
-                pygame.draw.rect(overlay, (13, 27, 42, 230), pillar)
-                pygame.draw.rect(overlay, (*edge, 145), pillar, 2)
+                pillar_top = max(-20, wall_top)
+                pillar_bottom = min(HEIGHT + 20, wall_bottom)
+                pillar = pygame.Rect(px, pillar_top, 28, max(1, pillar_bottom - pillar_top))
+                pygame.draw.rect(overlay, (13, 27, 42, 225), pillar)
+                pygame.draw.rect(overlay, (*edge, 150), pillar, 2)
                 pygame.draw.rect(overlay, (29, 48, 61, 235),
-                                 (px - 5, wall_top + 7, 38, 12))
+                                 (px - 5, pillar.y + 7, 38, 12))
                 pygame.draw.rect(overlay, (27, 43, 57, 235),
-                                 (px - 6, wall_bottom - 18, 40, 14))
-                pygame.draw.line(overlay, (112, 171, 162, 150),
-                                 (px + 8, wall_top + 28), (px + 8, wall_bottom - 28), 2)
-                for seam_y in range(wall_top + 45, wall_bottom - 28, 54):
-                    pygame.draw.line(overlay, (54, 77, 87, 170),
-                                     (px + 3, seam_y), (px + 25, seam_y), 1)
+                                 (px - 6, pillar.bottom - 18, 40, 14))
+                pygame.draw.line(overlay, (112, 171, 162, 145),
+                                 (px + 8, pillar.y + 28), (px + 8, pillar.bottom - 28), 2)
 
-            # Block lintel and a sign above the playable route.
-            for block_world_x in range(world_x + 12, world_x + room_width - 12, 42):
-                bx = int(block_world_x - self.camera_x)
-                if wall_left - 8 <= bx <= wall_right:
-                    pygame.draw.rect(overlay, (20, 37, 51, 235),
-                                     (bx, int(top_y + 7), 38, 15))
-                    pygame.draw.line(overlay, (*edge, 150),
-                                     (bx + 2, int(top_y + 7)),
-                                     (bx + 34, int(top_y + 7)), 2)
-
-            title_width = min(360, self.font_xs.size(label)[0] + 30)
-            title_x = int(left + room_width // 2 - title_width // 2)
-            if -title_width < title_x < WIDTH:
-                title_rect = pygame.Rect(title_x, int(top_y + 24), title_width, 25)
+            label_width = min(360, self.font_xs.size(label)[0] + 30)
+            label_x = int(left + room_width // 2 - label_width // 2)
+            label_y = int(top_y + 26 - cam_y)
+            if -label_width < label_x < WIDTH and -30 < label_y < HEIGHT:
+                title_rect = pygame.Rect(label_x, label_y, label_width, 25)
                 pygame.draw.rect(overlay, (6, 14, 25, 235), title_rect)
                 pygame.draw.rect(overlay, (*edge, 220), title_rect, 1)
                 room_labels.append((label, edge, title_rect.center))
@@ -4088,10 +4215,21 @@ class Game:
         for label, edge, center in room_labels:
             draw_text(self.screen, self.font_xs, label, edge,
                       center, center=True, shadow=False)
-        pygame.draw.line(self.screen, (35, 76, 80), (0, 468), (WIDTH, 468), 2)
-        for glint_x in range(0, WIDTH, 64):
-            pygame.draw.rect(self.screen, (22, 50, 60), (glint_x, 472, 28, 2))
 
+        water_y = int(710 - cam_y)
+        water_left, water_right = int(1880 - cam_x), int(2330 - cam_x)
+        if -18 < water_y < HEIGHT + 18 and water_right > 0 and water_left < WIDTH:
+            pygame.draw.line(self.screen, (23, 83, 102), (max(0, water_left), water_y),
+                             (min(WIDTH, water_right), water_y), 5)
+            pygame.draw.line(self.screen, (78, 170, 177), (max(0, water_left), water_y - 3),
+                             (min(WIDTH, water_right), water_y - 3), 1)
+            for bubble_x in range(max(0, water_left + 24), min(WIDTH, water_right), 58):
+                bubble_y = water_y - 10 - int((self.time * 24 + bubble_x) % 22)
+                pygame.draw.circle(self.screen, (64, 132, 145), (bubble_x, bubble_y), 2, 1)
+
+        horizon_y = int(468 - cam_y)
+        if -2 < horizon_y < HEIGHT + 2:
+            pygame.draw.line(self.screen, (35, 76, 80), (0, horizon_y), (WIDTH, horizon_y), 2)
     def draw_world(self) -> None:
         theme = THEMES[self.level_index]
         accent, accent2 = theme["accent"], theme["accent2"]
