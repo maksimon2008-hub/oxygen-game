@@ -7142,6 +7142,7 @@ class Game:
             (77, 185, 174), (86, 151, 180), (174, 126, 183),
             (113, 184, 139), (201, 157, 104),
         )
+        room_labels = []
         for room_index, room in enumerate(LEVELS[0].get("rooms", [])):
             world_x, room_width, top_y, floor_y, label = room
             left = int(world_x - self.camera_x)
@@ -7207,12 +7208,14 @@ class Game:
             title_x = int(left + room_width // 2 - title_width // 2)
             if -title_width < title_x < WIDTH:
                 title_rect = pygame.Rect(title_x, int(top_y + 24), title_width, 25)
-                pygame.draw.rect(self.screen, (6, 14, 25), title_rect)
-                pygame.draw.rect(self.screen, edge, title_rect, 1)
-                draw_text(self.screen, self.font_xs, label, edge,
-                          title_rect.center, center=True, shadow=False)
+                pygame.draw.rect(overlay, (6, 14, 25, 235), title_rect)
+                pygame.draw.rect(overlay, (*edge, 220), title_rect, 1)
+                room_labels.append((label, edge, title_rect.center))
 
         self.screen.blit(overlay, (0, 0))
+        for label, edge, center in room_labels:
+            draw_text(self.screen, self.font_xs, label, edge,
+                      center, center=True, shadow=False)
         pygame.draw.line(self.screen, (35, 76, 80), (0, 468), (WIDTH, 468), 2)
         for glint_x in range(0, WIDTH, 64):
             pygame.draw.rect(self.screen, (22, 50, 60), (glint_x, 472, 28, 2))
