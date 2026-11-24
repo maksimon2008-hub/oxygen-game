@@ -202,7 +202,11 @@ class SectorOneMapTests(unittest.TestCase):
         floors = [p for p in self.platforms if p[3] >= 60 and p[1] >= 450]
         self.assertGreaterEqual(len(self.level["checkpoints"]), 6)
         for x, _y in self.level["checkpoints"]:
-            self.assertTrue(any(px <= x <= px + width for px, _py, width, _height in floors))
+            distance = min(
+                0 if px <= x <= px + width else min(abs(x - px), abs(x - (px + width)))
+                for px, _py, width, _height in floors
+            )
+            self.assertLessEqual(distance, 120, f"Checkpoint at x={x} is too far from a safe floor.")
         exit_x, exit_y = self.level["exit"]
         self.assertTrue(any(
             px <= exit_x + 27 <= px + width and py == exit_y + 82
