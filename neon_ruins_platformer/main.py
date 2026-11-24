@@ -1845,51 +1845,53 @@ def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
     x = int(p.x - camera_x)
     if x > WIDTH or x + p.w < 0:
         return
-    y = int(p.y - camera_y)\n    rect = pygame.Rect(x, y, p.w, p.h)
+    y = int(p.y - camera_y)
+    rect = pygame.Rect(x, y, p.w, p.h)
     shadow_rect = pygame.Rect(x + 4, y + 7, p.w, p.h)
     if level_index == 0:
         pygame.draw.rect(surface, (5, 9, 20), shadow_rect)
         pygame.draw.rect(surface, (27, 39, 51), rect)
         pygame.draw.rect(surface, (75, 100, 105), rect, 1)
-        pygame.draw.line(surface, (103, 209, 187), (x + 2, p.y), (x + p.w - 2, p.y), 3)
+        pygame.draw.line(surface, (103, 209, 187), (x + 2, y), (x + p.w - 2, y), 3)
         if p.h > 24:
             for px in range(x + 8, x + p.w - 4, 34):
                 pygame.draw.line(surface, (52, 72, 82), (px, y + 8),
-                                 (px, p.y + p.h - 5), 1)
-                pygame.draw.line(surface, (104, 125, 124), (px + 4, p.y + 11),
-                                 (min(x + p.w - 5, px + 18), p.y + 11), 1)
+                                 (px, y + p.h - 5), 1)
+                pygame.draw.line(surface, (104, 125, 124), (px + 4, y + 11),
+                                 (min(x + p.w - 5, px + 18), y + 11), 1)
                 pygame.draw.rect(surface, (19, 31, 44),
-                                 (px + 4, p.y + 18, 20, max(3, p.h - 26)), 1)
-            pygame.draw.line(surface, (13, 23, 34), (x + 4, p.y + p.h - 3),
-                             (x + p.w - 4, p.y + p.h - 3), 2)
+                                 (px + 4, y + 18, 20, max(3, p.h - 26)), 1)
+            pygame.draw.line(surface, (13, 23, 34), (x + 4, y + p.h - 3),
+                             (x + p.w - 4, y + p.h - 3), 2)
         else:
             for px in range(x + 12, x + p.w - 5, 28):
-                pygame.draw.line(surface, (57, 82, 91), (px, p.y + 5),
-                                 (px + 8, p.y + p.h - 4), 1)
-                pygame.draw.rect(surface, (16, 29, 42), (px + 13, p.y + 6, 5, 4))
+                pygame.draw.line(surface, (57, 82, 91), (px, y + 5),
+                                 (px + 8, y + p.h - 4), 1)
+                pygame.draw.rect(surface, (16, 29, 42), (px + 13, y + 6, 5, 4))
         return
     pygame.draw.rect(surface, (5, 9, 20), shadow_rect, border_radius=4)
     pygame.draw.rect(surface, (17, 26, 45), rect, border_radius=4)
     pygame.draw.rect(surface, (37, 55, 75), rect, 1, border_radius=4)
-    pygame.draw.line(surface, accent, (x + 3, p.y), (x + p.w - 3, p.y), 3)
+    pygame.draw.line(surface, accent, (x + 3, y), (x + p.w - 3, y), 3)
     # Subtle panels and bolts.
     # Recessed panels, tiny fasteners and a lower bevel give the metal more
     # depth without relying on external low-resolution textures.
-    pygame.draw.line(surface, (76, 103, 126), (x + 5, p.y + 4),
-                     (x + p.w - 5, p.y + 4), 1)
-    pygame.draw.line(surface, (7, 12, 25), (x + 4, p.y + p.h - 3),
-                     (x + p.w - 4, p.y + p.h - 3), 2)
+    pygame.draw.line(surface, (76, 103, 126), (x + 5, y + 4),
+                     (x + p.w - 5, y + 4), 1)
+    pygame.draw.line(surface, (7, 12, 25), (x + 4, y + p.h - 3),
+                     (x + p.w - 4, y + p.h - 3), 2)
     for px in range(x + 18, x + p.w - 8, 42):
-        pygame.draw.rect(surface, (22, 37, 57), (px, p.y + 8, 25, max(8, p.h - 15)), 1, border_radius=2)
-        pygame.draw.line(surface, (40, 58, 79), (px + 4, p.y + 12),
-                         (px + 15, p.y + 12), 1)
-        pygame.draw.circle(surface, (91, 119, 139), (px + 3, p.y + 5), 1)
-        pygame.draw.circle(surface, (8, 14, 27), (px + 20, p.y + 5), 1)
+        pygame.draw.rect(surface, (22, 37, 57), (px, y + 8, 25, max(8, p.h - 15)), 1, border_radius=2)
+        pygame.draw.line(surface, (40, 58, 79), (px + 4, y + 12),
+                         (px + 15, y + 12), 1)
+        pygame.draw.circle(surface, (91, 119, 139), (px + 3, y + 5), 1)
+        pygame.draw.circle(surface, (8, 14, 27), (px + 20, y + 5), 1)
 
 
 def draw_spikes(surface: pygame.Surface, spike: pygame.Rect, camera_x: float,
                 accent2: tuple[int, int, int], camera_y: float = 0.0) -> None:
-    spike = spike.move(0, -int(camera_y))\n    x = int(spike.x - camera_x)
+    spike = spike.move(0, -int(camera_y))
+    x = int(spike.x - camera_x)
     if x > WIDTH or x + spike.w < 0:
         return
     count = max(2, spike.w // 22)
@@ -1909,20 +1911,22 @@ def draw_checkpoint(surface: pygame.Surface, cp: Checkpoint, camera_x: float,
     x = cp.x - camera_x
     if x < -40 or x > WIDTH + 40:
         return
-    screen_y = int(cp.y - camera_y)\n    color = accent if cp.active else (94, 109, 133)
-    pygame.draw.line(surface, (95, 113, 137), (int(x), cp.y - 58), (int(x), cp.y), 3)
+    screen_y = int(cp.y - camera_y)
+    color = accent if cp.active else (94, 109, 133)
+    pygame.draw.line(surface, (95, 113, 137), (int(x), screen_y - 58),
+                     (int(x), screen_y), 3)
     wave = math.sin(now * 4 + cp.x) * 5
-    flag = [(int(x), cp.y - 56), (int(x + 29 + wave), cp.y - 48),
-            (int(x), cp.y - 38)]
+    flag = [(int(x), screen_y - 56), (int(x + 29 + wave), screen_y - 48),
+            (int(x), screen_y - 38)]
     pygame.draw.polygon(surface, color, flag)
     if cp.active:
-        draw_glow(surface, int(x + 8), cp.y - 47, accent, 20)
-        pygame.draw.circle(surface, WHITE, (int(x), cp.y - 57), 3)
-
+        draw_glow(surface, int(x + 8), screen_y - 47, accent, 20)
+        pygame.draw.circle(surface, WHITE, (int(x), screen_y - 57), 3)
 
 def draw_exit(surface: pygame.Surface, rect: pygame.Rect, camera_x: float,
               accent: tuple[int, int, int], now: float, camera_y: float = 0.0) -> None:
-    rect = rect.move(0, -int(camera_y))\n    x = int(rect.x - camera_x)
+    rect = rect.move(0, -int(camera_y))
+    x = int(rect.x - camera_x)
     if x < -100 or x > WIDTH + 100:
         return
     center = (x + rect.w // 2, rect.y + rect.h // 2)
@@ -4238,29 +4242,31 @@ class Game:
         else:
             self.draw_background(theme)
 
-        # Background signal glyphs.
+        # Background glyphs use a gentler vertical parallax than the playable layer.
         for i in range(7):
             wx = i * 560 + 180
             x = int(wx - self.camera_x * 0.55)
             if -80 < x < WIDTH + 80:
-                y = 100 + (i % 3) * 63
+                y = int(100 + (i % 3) * 63 - self.camera_y * 0.18)
                 pygame.draw.circle(self.screen, (25, 43, 67), (x, y), 23, 1)
                 pygame.draw.line(self.screen, (26, 44, 70), (x - 31, y), (x + 31, y), 1)
                 pygame.draw.line(self.screen, (26, 44, 70), (x, y - 31), (x, y + 31), 1)
 
         for platform in self.level.platforms:
-            draw_platform(self.screen, platform, self.camera_x, accent, self.level_index)
+            draw_platform(self.screen, platform, self.camera_x, accent,
+                          self.level_index, self.camera_y)
         for pad in self.level.launch_pads:
             px = int(pad.x - self.camera_x)
+            pad_y = int(pad.y - self.camera_y)
             if -pad.w < px < WIDTH:
-                pygame.draw.rect(self.screen, (9, 42, 54), (px, pad.y, pad.w, pad.h), border_radius=4)
-                pygame.draw.rect(self.screen, (73, 237, 218), (px + 3, pad.y + 2, pad.w - 6, 3), border_radius=2)
+                pygame.draw.rect(self.screen, (9, 42, 54), (px, pad_y, pad.w, pad.h), border_radius=4)
+                pygame.draw.rect(self.screen, (73, 237, 218), (px + 3, pad_y + 2, pad.w - 6, 3), border_radius=2)
                 for stripe in range(px + 10, px + pad.w - 6, 16):
-                    pygame.draw.line(self.screen, (38, 151, 158), (stripe, pad.y + 6),
-                                     (stripe + 6, pad.y + 10), 2)
+                    pygame.draw.line(self.screen, (38, 151, 158), (stripe, pad_y + 6),
+                                     (stripe + 6, pad_y + 10), 2)
         for moving in self.level.moving_platforms:
             mx = int(moving.x - self.camera_x)
-            my = int(moving.y)
+            my = int(moving.y - self.camera_y)
             if -moving.w < mx < WIDTH:
                 pygame.draw.line(self.screen, accent2, (mx + 8, my + 7),
                                  (mx + moving.w - 8, my + 7), 2)
@@ -4269,48 +4275,47 @@ class Game:
                                      (mx + moving.w // 2 + 5, my - 4),
                                      (mx + moving.w // 2, my + 2)])
         for spike in self.level.spikes:
-            draw_spikes(self.screen, spike, self.camera_x, accent2)
+            draw_spikes(self.screen, spike, self.camera_x, accent2, self.camera_y)
         for cp in self.level.checkpoints:
-            draw_checkpoint(self.screen, cp, self.camera_x, accent, self.time)
+            draw_checkpoint(self.screen, cp, self.camera_x, accent, self.time, self.camera_y)
         exit_color = accent
         if self.level.boss is not None and not self.level.boss.defeated:
             exit_color = (112, 65, 95)
-        draw_exit(self.screen, self.level.exit_rect, self.camera_x, exit_color, self.time)
+        draw_exit(self.screen, self.level.exit_rect, self.camera_x, exit_color,
+                  self.time, self.camera_y)
         for coin in self.level.coins:
-            draw_coin(self.screen, coin, self.camera_x, self.time, accent)
+            draw_coin(self.screen, coin, self.camera_x, self.time, accent, self.camera_y)
         if self.healing_crystal is not None:
-            self.healing_crystal.draw(self.screen, self.camera_x)
+            self.healing_crystal.draw(self.screen, self.camera_x, self.camera_y)
         if self.level.coin_doubler is not None and not self.level.coin_doubler.collected:
-            self.level.coin_doubler.draw(self.screen, self.camera_x)
+            self.level.coin_doubler.draw(self.screen, self.camera_x, self.camera_y)
         for drone in self.level.drones:
-            draw_drone(self.screen, drone, self.camera_x, accent2)
+            draw_drone(self.screen, drone, self.camera_x, accent2, self.camera_y)
         for seeker in self.level.seekers:
-            draw_seeker(self.screen, seeker, self.camera_x, accent)
+            draw_seeker(self.screen, seeker, self.camera_x, accent, self.camera_y)
         for spider in self.level.spiders:
-            draw_spider(self.screen, spider, self.camera_x, accent2)
+            draw_spider(self.screen, spider, self.camera_x, accent2, self.camera_y)
         for turret in self.level.turrets:
-            draw_turret(self.screen, turret, self.camera_x, accent)
+            draw_turret(self.screen, turret, self.camera_x, accent, self.camera_y)
         for enemy_shot in self.level.enemy_shots:
-            draw_projectile(self.screen, enemy_shot, self.camera_x)
+            draw_projectile(self.screen, enemy_shot, self.camera_x, self.camera_y)
         for secret in self.level.secret_rooms:
             if abs(secret["rect"].centerx - self.player.x) < 180:
-                draw_secret_marker(self.screen, secret, self.camera_x, self.time, accent2)
+                draw_secret_marker(self.screen, secret, self.camera_x, self.time,
+                                   accent2, self.camera_y)
         if self.level.boss is not None:
-            draw_boss(self.screen, self.level.boss, self.camera_x)
+            draw_boss(self.screen, self.level.boss, self.camera_x, self.camera_y)
             for shot in self.level.boss.shots:
-                draw_projectile(self.screen, shot, self.camera_x)
+                draw_projectile(self.screen, shot, self.camera_x, self.camera_y)
         for shot in self.projectiles:
-            draw_projectile(self.screen, shot, self.camera_x)
+            draw_projectile(self.screen, shot, self.camera_x, self.camera_y)
         for particle in self.particles:
-            particle.draw(self.screen, self.camera_x)
-        self.player.draw(self.screen, self.camera_x)
+            particle.draw(self.screen, self.camera_x, self.camera_y)
+        self.player.draw(self.screen, self.camera_x, self.camera_y)
 
-        # Fine scan texture makes the vector materials read better on large displays.
+        # Fine scan texture and vignette stay attached to the viewport, not the world.
         self.screen.blit(self.surface_grain, (0, 0))
-
-        # Faint top/bottom vignette.
         self.screen.blit(self.vignette, (0, 0))
-
     def draw_hud(self) -> None:
         theme = THEMES[self.level_index]
         # Top left label.
