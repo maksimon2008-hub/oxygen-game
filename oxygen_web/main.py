@@ -852,9 +852,9 @@ class HealingCrystal:
     def update(self, dt: float) -> None:
         self.phase += dt * 2.2
 
-    def draw(self, surface: pygame.Surface, camera_x: float) -> None:
+    def draw(self, surface: pygame.Surface, camera_x: float, camera_y: float = 0.0) -> None:
         sx = int(self.x - camera_x)
-        sy = int(self.y + math.sin(self.phase) * 5)
+        sy = int(self.y + math.sin(self.phase) * 5 - camera_y)
         if sx < -40 or sx > WIDTH + 40:
             return
         glow = pygame.Surface((64, 64), pygame.SRCALPHA)
@@ -881,8 +881,8 @@ class CoinDoubler:
     def update(self, dt: float) -> None:
         self.phase += dt * 3.0
 
-    def draw(self, surface: pygame.Surface, camera_x: float) -> None:
-        sx, sy = int(self.x - camera_x), int(self.y + math.sin(self.phase) * 5)
+    def draw(self, surface: pygame.Surface, camera_x: float, camera_y: float = 0.0) -> None:
+        sx, sy = int(self.x - camera_x), int(self.y + math.sin(self.phase) * 5 - camera_y)
         if sx < -45 or sx > WIDTH + 45:
             return
         draw_glow(surface, sx, sy, (255, 207, 93), 36)
@@ -946,11 +946,11 @@ class Particle:
         self.vx *= 0.985
         return self.life > 0
 
-    def draw(self, surface: pygame.Surface, camera_x: float) -> None:
+    def draw(self, surface: pygame.Surface, camera_x: float, camera_y: float = 0.0) -> None:
         k = max(0.0, self.life / self.max_life)
         r = max(1, int(self.size * k))
         pygame.draw.circle(surface, self.color,
-                           (int(self.x - camera_x), int(self.y)), r)
+                           (int(self.x - camera_x), int(self.y - camera_y)), r)
 
 
 # -----------------------------------------------------------------------------
@@ -2214,10 +2214,10 @@ class Player:
                                           CYAN, random.uniform(-220, 220),
                                           random.uniform(-100, 100), 0.28, 3.5))
 
-    def draw(self, surface: pygame.Surface, camera_x: float) -> None:
+    def draw(self, surface: pygame.Surface, camera_x: float, camera_y: float = 0.0) -> None:
         if self.invuln > 0 and int(self.invuln * 12) % 2 == 0:
             return
-        x, y = int(self.x - camera_x), int(self.y)
+        x, y = int(self.x - camera_x), int(self.y - camera_y)
         # Trailing dash streak.
         if self.dash_time > 0:
             for i in range(4):
@@ -2362,13 +2362,13 @@ def draw_glow(surface: pygame.Surface, x: int, y: int,
 
 
 def draw_coin(surface: pygame.Surface, coin: Coin, camera_x: float, now: float,
-              accent: tuple[int, int, int]) -> None:
+              accent: tuple[int, int, int], camera_y: float = 0.0) -> None:
     if coin.collected:
         return
     x = int(coin.x - camera_x)
     if x < -30 or x > WIDTH + 30:
         return
-    y = int(coin.y + math.sin(now * 4 + coin.phase) * 5)
+    y = int(coin.y + math.sin(now * 4 + coin.phase) * 5 - camera_y)
     pulse = 1.0 + 0.12 * math.sin(now * 7 + coin.phase)
     r = int(9 * pulse)
     draw_glow(surface, x, y, accent, 22)
@@ -2379,11 +2379,11 @@ def draw_coin(surface: pygame.Surface, coin: Coin, camera_x: float, now: float,
 
 
 def draw_drone(surface: pygame.Surface, drone: Drone, camera_x: float,
-               accent2: tuple[int, int, int]) -> None:
+               accent2: tuple[int, int, int], camera_y: float = 0.0) -> None:
     if not drone.alive:
         return
     x = int(drone.x - camera_x)
-    y = int(drone.y + math.sin(drone.phase) * 3)
+    y = int(drone.y + math.sin(drone.phase) * 3 - camera_y)
     drone_accent = (255, 105, 112) if drone.alert > 0.12 else accent2
     draw_glow(surface, x, y, drone_accent, 34 if drone.alert > 0.12 else 28)
     shell = pygame.Rect(x - 18, y - 12, 36, 24)
@@ -2399,11 +2399,11 @@ def draw_drone(surface: pygame.Surface, drone: Drone, camera_x: float,
 
 
 def draw_seeker(surface: pygame.Surface, seeker: Seeker, camera_x: float,
-                accent: tuple[int, int, int]) -> None:
+                accent: tuple[int, int, int], camera_y: float = 0.0) -> None:
     if not seeker.alive:
         return
     x = int(seeker.x - camera_x)
-    y = int(seeker.y + math.sin(seeker.phase * 1.8) * 3)
+    y = int(seeker.y + math.sin(seeker.phase * 1.8) * 3 - camera_y)
     draw_glow(surface, x, y, accent, 36)
     pygame.draw.circle(surface, (30, 25, 48), (x, y), 16)
     pygame.draw.circle(surface, accent, (x, y), 15, 2)
@@ -2418,10 +2418,10 @@ def draw_seeker(surface: pygame.Surface, seeker: Seeker, camera_x: float,
     pygame.draw.circle(surface, accent, (x, y), 3)
 
 
-def draw_spider(surface: pygame.Surface, spider: Spider, camera_x: float, accent) -> None:
+def draw_spider(surface: pygame.Surface, spider: Spider, camera_x: float, accent, camera_y: float = 0.0) -> None:
     if not spider.alive:
         return
-    x, y = int(spider.x - camera_x), int(spider.y)
+    x, y = int(spider.x - camera_x), int(spider.y - camera_y)
     draw_glow(surface, x, y, accent, 28)
     pygame.draw.circle(surface, (24, 28, 48), (x, y), 12)
     pygame.draw.circle(surface, accent, (x, y), 11, 2)
@@ -2433,10 +2433,10 @@ def draw_spider(surface: pygame.Surface, spider: Spider, camera_x: float, accent
     pygame.draw.circle(surface, WHITE, (x + 3, y - 2), 2)
 
 
-def draw_turret(surface: pygame.Surface, turret: Turret, camera_x: float, accent) -> None:
+def draw_turret(surface: pygame.Surface, turret: Turret, camera_x: float, accent, camera_y: float = 0.0) -> None:
     if not turret.alive:
         return
-    x, y = int(turret.x - camera_x), int(turret.y)
+    x, y = int(turret.x - camera_x), int(turret.y - camera_y)
     draw_glow(surface, x, y, accent, 32)
     body = pygame.Rect(x - 17, y - 16, 34, 32)
     pygame.draw.rect(surface, (31, 28, 49), body, border_radius=5)
@@ -2446,20 +2446,20 @@ def draw_turret(surface: pygame.Surface, turret: Turret, camera_x: float, accent
     pygame.draw.line(surface, accent, (x, y + 16), (x, y + 22), 3)
 
 
-def draw_secret_marker(surface: pygame.Surface, secret: dict, camera_x: float, now: float, accent) -> None:
+def draw_secret_marker(surface: pygame.Surface, secret: dict, camera_x: float, now: float, accent, camera_y: float = 0.0) -> None:
     if secret["found"]:
         return
     rect = secret["rect"]
     x = rect.centerx - camera_x
     if -140 < x < WIDTH + 140:
         pulse = int(70 + 35 * math.sin(now * 2.4))
-        r = pygame.Rect(int(x - rect.w / 2), rect.y, rect.w, rect.h)
+        r = pygame.Rect(int(x - rect.w / 2), int(rect.y - camera_y), rect.w, rect.h)
         pygame.draw.rect(surface, (*accent, pulse), r, 2, border_radius=5)
         pygame.draw.line(surface, accent, (r.centerx, r.top + 8), (r.centerx, r.bottom - 8), 2)
 
 
-def draw_projectile(surface: pygame.Surface, shot: Projectile, camera_x: float) -> None:
-    x, y = int(shot.x - camera_x), int(shot.y)
+def draw_projectile(surface: pygame.Surface, shot: Projectile, camera_x: float, camera_y: float = 0.0) -> None:
+    x, y = int(shot.x - camera_x), int(shot.y - camera_y)
     fade = max(0.18, min(1.0, shot.life / 0.22))
     radius = max(1, int(shot.radius * fade))
     if shot.radius >= 10 and abs(shot.vy) < 1.0:
@@ -2472,10 +2472,10 @@ def draw_projectile(surface: pygame.Surface, shot: Projectile, camera_x: float) 
     pygame.draw.circle(surface, WHITE, (x - 2, y - 2), max(1, radius // 2))
 
 
-def draw_boss(surface: pygame.Surface, boss: Boss, camera_x: float) -> None:
+def draw_boss(surface: pygame.Surface, boss: Boss, camera_x: float, camera_y: float = 0.0) -> None:
     if not boss.active or boss.defeated:
         return
-    x, y = int(boss.x - camera_x), int(boss.y)
+    x, y = int(boss.x - camera_x), int(boss.y - camera_y)
     phase_two = boss.hp <= boss.max_hp // 2
     if boss.variant == "warden":
         core = (105, 244, 255) if not phase_two else (240, 255, 255)
@@ -2548,14 +2548,14 @@ def draw_boss(surface: pygame.Surface, boss: Boss, camera_x: float) -> None:
 
 def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
                   accent: tuple[int, int, int], level_index: int = 5,
-                  graphics_mode: str = "detail") -> None:
+                  graphics_mode: str = "detail", camera_y: float = 0.0) -> None:
     x = int(p.x - camera_x)
     if x > WIDTH or x + p.w + 4 < 0:
         return
     # Each sector has its own baked platform material. Rendering remains one
     # cached blit per platform per frame, so richer art does not add a trail of
     # Python draw calls while the player is moving.
-    width, height = int(p.w), int(p.h)
+    y = int(p.y - camera_y)\n    width, height = int(p.w), int(p.h)
     style = int(level_index) if 0 <= int(level_index) <= 4 else 5
     quality = "performance" if graphics_mode == "performance" else "detail"
     key = (width, height, tuple(accent), style, quality)
@@ -2695,11 +2695,11 @@ def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
                 pygame.draw.circle(tile, (8, 14, 27), (px + 20, 5), 1)
 
         _PLATFORM_SURFACE_CACHE[key] = tile
-    surface.blit(tile, (x, p.y))
+    surface.blit(tile, (x, y))
 
 def draw_spikes(surface: pygame.Surface, spike: pygame.Rect, camera_x: float,
-                accent2: tuple[int, int, int]) -> None:
-    x = int(spike.x - camera_x)
+                accent2: tuple[int, int, int], camera_y: float = 0.0) -> None:
+    spike = spike.move(0, -int(camera_y))\n    x = int(spike.x - camera_x)
     if x > WIDTH or x + spike.w < 0:
         return
     count = max(2, spike.w // 22)
@@ -2716,16 +2716,16 @@ def draw_spikes(surface: pygame.Surface, spike: pygame.Rect, camera_x: float,
 
 def draw_saw_hazard(surface: pygame.Surface, saw: SawHazard, camera_x: float,
                     now: float, accent: tuple[int, int, int],
-                    detailed: bool = True) -> None:
+                    detailed: bool = True, camera_y: float = 0.0) -> None:
     """Draw a readable industrial saw with a cable/mount and rotating teeth."""
     cx = int(saw.center_x - camera_x)
-    cy = int(saw.center_y)
+    cy = int(saw.center_y - camera_y)
     radius = saw.radius
     if cx < -radius - 330 or cx > WIDTH + radius + 330:
         return
 
     if saw.kind == "swing":
-        ax, ay = int(saw.x - camera_x), int(saw.y)
+        ax, ay = int(saw.x - camera_x), int(saw.y - camera_y)
         pygame.draw.line(surface, (13, 22, 34), (ax, ay), (cx, cy), 8)
         pygame.draw.line(surface, (91, 113, 127), (ax, ay), (cx, cy), 3)
         pygame.draw.line(surface, (34, 59, 70), (ax - 1, ay), (cx - 1, cy), 1)
@@ -2781,11 +2781,11 @@ def draw_saw_hazard(surface: pygame.Surface, saw: SawHazard, camera_x: float,
 
 
 def draw_checkpoint(surface: pygame.Surface, cp: Checkpoint, camera_x: float,
-                    accent: tuple[int, int, int], now: float) -> None:
+                    accent: tuple[int, int, int], now: float, camera_y: float = 0.0) -> None:
     x = cp.x - camera_x
     if x < -40 or x > WIDTH + 40:
         return
-    color = accent if cp.active else (94, 109, 133)
+    screen_y = int(cp.y - camera_y)\n    color = accent if cp.active else (94, 109, 133)
     pygame.draw.line(surface, (95, 113, 137), (int(x), cp.y - 58), (int(x), cp.y), 3)
     wave = math.sin(now * 4 + cp.x) * 5
     flag = [(int(x), cp.y - 56), (int(x + 29 + wave), cp.y - 48),
@@ -2797,8 +2797,8 @@ def draw_checkpoint(surface: pygame.Surface, cp: Checkpoint, camera_x: float,
 
 
 def draw_exit(surface: pygame.Surface, rect: pygame.Rect, camera_x: float,
-              accent: tuple[int, int, int], now: float) -> None:
-    x = int(rect.x - camera_x)
+              accent: tuple[int, int, int], now: float, camera_y: float = 0.0) -> None:
+    rect = rect.move(0, -int(camera_y))\n    x = int(rect.x - camera_x)
     if x < -100 or x > WIDTH + 100:
         return
     center = (x + rect.w // 2, rect.y + rect.h // 2)
