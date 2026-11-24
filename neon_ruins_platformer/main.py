@@ -720,30 +720,91 @@ class Particle:
 LEVELS = [
     {
         "name": "THE LAST SIGNAL",
-        "subtitle": "THE CITY FORGOT THE SUN",
-        "width": 3400,
+        "subtitle": "CLIMB ABOVE THE CITY THAT FORGOT THE SUN",
+        "width": 6400,
         "spawn": (80, 410),
+        "rooms": [
+            (0, 1120, 62, 475, "THE FORGOTTEN STATION"),
+            (1120, 1120, 54, 475, "THE FLOODED ARCHIVE"),
+            (2240, 1120, 68, 475, "THE SUNKEN COURTYARD"),
+            (3360, 1360, 48, 475, "THE SKY SHRINE"),
+            (4720, 1680, 60, 475, "THE SIGNAL BRIDGE"),
+        ],
         "platforms": [
-            (0, 475, 560, 100), (690, 475, 470, 100),
-            (1290, 475, 490, 100), (1920, 475, 450, 100),
-            (2520, 475, 880, 100),
-            (310, 390, 155, 18), (520, 330, 145, 18),
-            (800, 390, 155, 18), (1030, 335, 155, 18),
-            (1430, 385, 165, 18), (1670, 325, 150, 18),
-            (2050, 385, 160, 18), (2290, 325, 155, 18),
-            (2660, 385, 160, 18), (2900, 330, 155, 18),
+            (0, 475, 560, 100), (670, 475, 500, 100),
+            (1280, 475, 480, 100), (1870, 475, 500, 100),
+            (2480, 475, 500, 100), (3090, 475, 500, 100),
+            (3700, 475, 510, 100), (4320, 475, 510, 100),
+            (4940, 475, 510, 100), (5610, 475, 790, 100),
+            (180, 390, 155, 18), (390, 325, 155, 18),
+            (650, 385, 155, 18), (850, 320, 155, 18),
+            (1030, 250, 155, 18),
+            (1270, 390, 155, 18), (1470, 325, 155, 18),
+            (1660, 260, 155, 18), (1850, 195, 155, 18),
+            (2070, 255, 155, 18), (2280, 325, 155, 18),
+            (2480, 390, 155, 18), (2690, 325, 155, 18),
+            (2890, 260, 155, 18), (3100, 195, 155, 18),
+            (3320, 255, 155, 18), (3530, 325, 155, 18),
+            (3700, 390, 155, 18), (3910, 325, 155, 18),
+            (4110, 260, 155, 18), (4310, 195, 155, 18),
+            (4520, 130, 155, 18), (4740, 195, 155, 18),
+            (4950, 260, 155, 18), (5160, 325, 155, 18),
+            (5360, 390, 155, 18), (5570, 325, 155, 18),
+            (5780, 260, 155, 18), (5980, 325, 155, 18),
+            (6190, 390, 155, 18),
+        ],
+        "moving_platforms": [
+            (1115, 245, 132, 16, "vertical", 78, 0.82, 0.0),
+            (2220, 220, 132, 16, "horizontal", 96, 0.80, 0.4),
+            (3440, 220, 132, 16, "vertical", 88, 0.85, 1.2),
+            (4850, 155, 132, 16, "horizontal", 105, 0.80, 1.8),
+        ],
+        "launch_pads": [
+            (1470, 325, 72), (2690, 325, 72),
+            (4350, 195, 72), (5580, 325, 72),
         ],
         "coins": [
+            # Keep the original first sixteen indices stable for existing saves.
             (365, 352), (575, 292), (850, 350), (1085, 297),
             (1480, 345), (1720, 287), (2095, 345), (2345, 287),
             (2705, 345), (2945, 290), (120, 425), (740, 420),
             (1370, 420), (1980, 420), (2570, 420), (3180, 420),
+            # New rewards follow the raised route through each room.
+            (220, 352), (445, 287), (705, 347), (920, 282), (1100, 212),
+            (1320, 347), (1520, 282), (1710, 217), (1900, 157), (2120, 217),
+            (2320, 287), (2515, 347), (2730, 282), (2930, 217), (3130, 152),
+            (3350, 212), (3555, 287), (3750, 347), (3950, 282), (4160, 217),
+            (4370, 152), (4580, 87), (4790, 152), (5000, 222), (5210, 287),
+            (5400, 347), (5600, 282), (5800, 217), (6000, 287), (6230, 347),
         ],
-        "drones": [(900, 355, 820, 930), (1540, 435, 1380, 1760),
-                   (2165, 350, 2050, 2220), (2780, 350, 2650, 2820)],
-        "spikes": [(780, 452, 72), (1450, 452, 74), (2720, 452, 72)],
-        "checkpoints": [(1740, 475), (2640, 475)],
-        "exit": (3280, 393),
+        "drones": [
+            (900, 286, 830, 960), (1560, 220, 1490, 1640),
+            (2340, 290, 2260, 2420), (3210, 145, 3120, 3300),
+            (4080, 210, 3990, 4170), (4680, 95, 4590, 4770),
+            (5480, 285, 5390, 5570), (5990, 290, 5900, 6080),
+        ],
+        "seekers": [
+            (1840, 145, 1760, 1920),
+            (2980, 145, 2900, 3060),
+            (4550, 90, 4470, 4630),
+        ],
+        "turrets": [(1370, 432), (3810, 432)],
+        "spikes": [
+            (760, 452, 68), (1360, 452, 70), (1950, 452, 68),
+            (2550, 452, 68), (3160, 452, 68), (3780, 452, 68),
+            (4400, 452, 68), (5020, 452, 68), (5680, 452, 68),
+        ],
+        "checkpoints": [
+            (1130, 475), (2340, 475), (3540, 475),
+            (4800, 475), (5850, 475),
+        ],
+        "secrets": [
+            (1030, 175, 100, 65, "UPPER WATCHTOWER"),
+            (1850, 120, 105, 65, "ARCHIVE LOFT"),
+            (3100, 120, 105, 65, "BELL CHAMBER"),
+            (4520, 55, 110, 65, "SKY SHRINE"),
+        ],
+        "exit": (6280, 393),
     },
     {
         "name": "PURPLE STATIC",
@@ -1698,12 +1759,33 @@ def draw_boss(surface: pygame.Surface, boss: Boss, camera_x: float) -> None:
 
 
 def draw_platform(surface: pygame.Surface, p: Platform, camera_x: float,
-                  accent: tuple[int, int, int]) -> None:
+                  accent: tuple[int, int, int], level_index: int = 5) -> None:
     x = int(p.x - camera_x)
     if x > WIDTH or x + p.w < 0:
         return
     rect = pygame.Rect(x, p.y, p.w, p.h)
     shadow_rect = pygame.Rect(x + 4, p.y + 7, p.w, p.h)
+    if level_index == 0:
+        pygame.draw.rect(surface, (5, 9, 20), shadow_rect)
+        pygame.draw.rect(surface, (27, 39, 51), rect)
+        pygame.draw.rect(surface, (75, 100, 105), rect, 1)
+        pygame.draw.line(surface, (103, 209, 187), (x + 2, p.y), (x + p.w - 2, p.y), 3)
+        if p.h > 24:
+            for px in range(x + 8, x + p.w - 4, 34):
+                pygame.draw.line(surface, (52, 72, 82), (px, p.y + 8),
+                                 (px, p.y + p.h - 5), 1)
+                pygame.draw.line(surface, (104, 125, 124), (px + 4, p.y + 11),
+                                 (min(x + p.w - 5, px + 18), p.y + 11), 1)
+                pygame.draw.rect(surface, (19, 31, 44),
+                                 (px + 4, p.y + 18, 20, max(3, p.h - 26)), 1)
+            pygame.draw.line(surface, (13, 23, 34), (x + 4, p.y + p.h - 3),
+                             (x + p.w - 4, p.y + p.h - 3), 2)
+        else:
+            for px in range(x + 12, x + p.w - 5, 28):
+                pygame.draw.line(surface, (57, 82, 91), (px, p.y + 5),
+                                 (px + 8, p.y + p.h - 4), 1)
+                pygame.draw.rect(surface, (16, 29, 42), (px + 13, p.y + 6, 5, 4))
+        return
     pygame.draw.rect(surface, (5, 9, 20), shadow_rect, border_radius=4)
     pygame.draw.rect(surface, (17, 26, 45), rect, border_radius=4)
     pygame.draw.rect(surface, (37, 55, 75), rect, 1, border_radius=4)
@@ -2338,7 +2420,7 @@ class Game:
 
     def calculate_level_rating(self) -> dict:
         elapsed = max(0.01, self.level_elapsed)
-        target = 72.0 + self.level_index * 5.0
+        target = 150.0 if self.level_index == 0 else 72.0 + self.level_index * 5.0
         has_secret_route = bool(self.level.secret_rooms)
         secret_condition = self.level_secrets > 0 or not has_secret_route
         if self.level_deaths == 0 and elapsed <= target and secret_condition:
@@ -3880,10 +3962,140 @@ class Game:
         for y in range(465, HEIGHT, 18):
             pygame.draw.line(self.screen, (20, 33, 55), (0, y), (WIDTH, y), 1)
 
+    def draw_messenger_sector_one_environment(self, theme) -> None:
+        """A layered, pixel-edged ruin interior for the expanded first sector."""
+        self.screen.blit(self.gradient, (0, 0))
+
+        # Distant rooflines move more slowly than the playable world.
+        skyline_start = int(self.camera_x * 0.12 // 260) - 2
+        for tile_index in range(skyline_start, skyline_start + 13):
+            world_x = tile_index * 260
+            sx = int(world_x - self.camera_x * 0.18)
+            height = 90 + ((tile_index * 43 + 171) % 74)
+            width = 105 + ((tile_index * 29 + 70) % 90)
+            base_y = 468
+            body = pygame.Rect(sx, base_y - height, width, height)
+            pygame.draw.rect(self.screen, (8, 17, 31), body)
+            pygame.draw.rect(self.screen, (25, 43, 59), body, 2)
+            pygame.draw.polygon(
+                self.screen, (13, 25, 40),
+                [(sx - 10, body.top + 8), (sx + width // 2, body.top - 22),
+                 (sx + width + 10, body.top + 8)]
+            )
+            for window_x in range(sx + 15, sx + width - 8, 26):
+                pygame.draw.rect(self.screen, (31, 82, 91),
+                                 (window_x, base_y - height + 28, 5, 11))
+            pygame.draw.line(self.screen, (37, 81, 88),
+                             (sx, base_y - 2), (sx + width, base_y - 2), 2)
+
+        # A broken moon and a distant bridge establish the silhouette.
+        moon_x = int(175 - self.camera_x * 0.035)
+        pygame.draw.circle(self.screen, (25, 42, 57), (moon_x, 150), 61)
+        pygame.draw.circle(self.screen, (76, 133, 137), (moon_x, 150), 61, 2)
+        pygame.draw.arc(self.screen, (113, 183, 170),
+                        (moon_x - 69, 81, 138, 138), 0.25, 2.65, 3)
+        bridge_y = 420
+        bridge_left = int(300 - self.camera_x * 0.24)
+        pygame.draw.line(self.screen, (24, 54, 65),
+                         (bridge_left, bridge_y), (bridge_left + 880, bridge_y - 52), 4)
+        for span in range(0, 900, 90):
+            bx = bridge_left + span
+            pygame.draw.line(self.screen, (19, 43, 57),
+                             (bx, bridge_y), (bx + 18, bridge_y - 56), 3)
+
+        # Reusable alpha layer keeps the chamber walls translucent and cheap to redraw.
+        overlay = getattr(self, "_messenger_room_overlay", None)
+        if overlay is None or overlay.get_size() != (WIDTH, HEIGHT):
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            self._messenger_room_overlay = overlay
+        overlay.fill((0, 0, 0, 0))
+
+        room_edges = (
+            (77, 185, 174), (86, 151, 180), (174, 126, 183),
+            (113, 184, 139), (201, 157, 104),
+        )
+        for room_index, room in enumerate(LEVELS[0].get("rooms", [])):
+            world_x, room_width, top_y, floor_y, label = room
+            left = int(world_x - self.camera_x)
+            right = int(world_x + room_width - self.camera_x)
+            if right < -20 or left > WIDTH + 20:
+                continue
+
+            edge = room_edges[room_index % len(room_edges)]
+            wall_left = max(-8, left + 14)
+            wall_right = min(WIDTH + 8, right - 14)
+            wall_top = int(top_y + 18)
+            wall_bottom = int(floor_y - 4)
+            if wall_right <= wall_left:
+                continue
+
+            wall = pygame.Rect(wall_left, wall_top, wall_right - wall_left,
+                               max(1, wall_bottom - wall_top))
+            pygame.draw.rect(overlay, (7, 17, 29, 174), wall)
+            pygame.draw.rect(overlay, (*edge, 90), wall, 2)
+
+            # Stone courses and square-cut masonry make the rooms read as one place.
+            for row_y in range(wall_top + 44, wall_bottom - 8, 48):
+                pygame.draw.line(overlay, (56, 76, 87, 92),
+                                 (wall_left + 4, row_y), (wall_right - 4, row_y), 1)
+                offset = 0 if (row_y // 48) % 2 else 22
+                for block_world_x in range(world_x + offset, world_x + room_width, 44):
+                    block_x = int(block_world_x - self.camera_x)
+                    if wall_left < block_x < wall_right:
+                        pygame.draw.line(overlay, (47, 69, 81, 88),
+                                         (block_x, row_y - 1), (block_x, row_y + 12), 1)
+
+            # Heavy pillars divide the long level into readable chambers.
+            pillar_positions = list(range(world_x + 28, world_x + room_width - 12, 300))
+            pillar_positions.extend((world_x + room_width - 50,))
+            for pillar_world_x in pillar_positions:
+                px = int(pillar_world_x - self.camera_x)
+                if px < -42 or px > WIDTH + 42:
+                    continue
+                pillar = pygame.Rect(px, wall_top, 28, wall_bottom - wall_top)
+                pygame.draw.rect(overlay, (13, 27, 42, 230), pillar)
+                pygame.draw.rect(overlay, (*edge, 145), pillar, 2)
+                pygame.draw.rect(overlay, (29, 48, 61, 235),
+                                 (px - 5, wall_top + 7, 38, 12))
+                pygame.draw.rect(overlay, (27, 43, 57, 235),
+                                 (px - 6, wall_bottom - 18, 40, 14))
+                pygame.draw.line(overlay, (112, 171, 162, 150),
+                                 (px + 8, wall_top + 28), (px + 8, wall_bottom - 28), 2)
+                for seam_y in range(wall_top + 45, wall_bottom - 28, 54):
+                    pygame.draw.line(overlay, (54, 77, 87, 170),
+                                     (px + 3, seam_y), (px + 25, seam_y), 1)
+
+            # Block lintel and a sign above the playable route.
+            for block_world_x in range(world_x + 12, world_x + room_width - 12, 42):
+                bx = int(block_world_x - self.camera_x)
+                if wall_left - 8 <= bx <= wall_right:
+                    pygame.draw.rect(overlay, (20, 37, 51, 235),
+                                     (bx, int(top_y + 7), 38, 15))
+                    pygame.draw.line(overlay, (*edge, 150),
+                                     (bx + 2, int(top_y + 7)),
+                                     (bx + 34, int(top_y + 7)), 2)
+
+            title_width = min(360, self.font_xs.size(label)[0] + 30)
+            title_x = int(left + room_width // 2 - title_width // 2)
+            if -title_width < title_x < WIDTH:
+                title_rect = pygame.Rect(title_x, int(top_y + 24), title_width, 25)
+                pygame.draw.rect(self.screen, (6, 14, 25), title_rect)
+                pygame.draw.rect(self.screen, edge, title_rect, 1)
+                draw_text(self.screen, self.font_xs, label, edge,
+                          title_rect.center, center=True, shadow=False)
+
+        self.screen.blit(overlay, (0, 0))
+        pygame.draw.line(self.screen, (35, 76, 80), (0, 468), (WIDTH, 468), 2)
+        for glint_x in range(0, WIDTH, 64):
+            pygame.draw.rect(self.screen, (22, 50, 60), (glint_x, 472, 28, 2))
+
     def draw_world(self) -> None:
         theme = THEMES[self.level_index]
         accent, accent2 = theme["accent"], theme["accent2"]
-        self.draw_background(theme)
+        if self.level_index == 0:
+            self.draw_messenger_sector_one_environment(theme)
+        else:
+            self.draw_background(theme)
 
         # Background signal glyphs.
         for i in range(7):
@@ -3896,7 +4108,7 @@ class Game:
                 pygame.draw.line(self.screen, (26, 44, 70), (x, y - 31), (x, y + 31), 1)
 
         for platform in self.level.platforms:
-            draw_platform(self.screen, platform, self.camera_x, accent)
+            draw_platform(self.screen, platform, self.camera_x, accent, self.level_index)
         for pad in self.level.launch_pads:
             px = int(pad.x - self.camera_x)
             if -pad.w < px < WIDTH:
