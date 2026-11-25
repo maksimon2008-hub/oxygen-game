@@ -173,22 +173,32 @@ class SectorOneMapTests(unittest.TestCase):
         self.assertTrue(any(i in reached for i in final_floor),
                         "The descending bridge must reconnect to the final district.")
 
-    def test_secrets_overlap_a_real_player_standing_position(self):
+    def test_secrets_overlap_reachable_player_standing_positions(self):
         player_height = 43
+        spawn_x, spawn_y = self.level["spawn"]
+        start_index = next(
+            i for i, p in enumerate(self.platforms)
+            if p[0] <= spawn_x + 15 <= p[0] + p[2]
+            and 0 <= p[1] - (spawn_y + player_height) <= 60
+        )
+        reached = reachable_nodes(self.platforms, start_index)
+
         for x, y, width, height, name in self.level["secrets"]:
-            secret = (x, y, width, height)
             accessible = False
-            for px, py, pw, _ph in self.platforms:
+            for i, (px, py, pw, _ph) in enumerate(self.platforms):
                 player_left = px
                 player_right = px + pw
                 player_top = py - player_height
                 player_bottom = py
                 overlaps_x = player_right > x and player_left < x + width
                 overlaps_y = player_bottom > y and player_top < y + height
-                if overlaps_x and overlaps_y:
+                if i in reached and overlaps_x and overlaps_y:
                     accessible = True
                     break
-            self.assertTrue(accessible, f"Secret room {name!r} has no reachable standing ledge.")
+            self.assertTrue(
+                accessible,
+                f"Secret room {name!r} has no reachable standing ledge.",
+            )
 
     def test_launch_pads_are_attached_to_their_takeoff_decks(self):
         for x, y, width in self.level.get("launch_pads", []):
