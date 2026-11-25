@@ -2,7 +2,7 @@ name: Build OXYGEN web archive
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/autumn-hills-mode]
     paths:
       - "oxygen_web/**"
       - "neon_ruins_platformer/**"
@@ -65,7 +65,7 @@ jobs:
           fi
 
       - name: Commit updated browser archive
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref_name == 'main'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
