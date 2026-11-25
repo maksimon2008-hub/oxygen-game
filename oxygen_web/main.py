@@ -975,7 +975,7 @@ LEVELS = [
             "arrival": (150, 475), "lantern_path": (1800, 475),
             "broken_shrine": (3300, 475), "shop": (4300, 475),
             "red_canopy": (6000, 475), "hunters_reach": (7900, 475),
-            "old_roots": (9500, 475), "flooded_roots": (11600, 540),
+            "old_roots": (9500, 475), "flooded_roots": (10000, 540),
             "second_portal": (13000, 475), "final_ascent": (19500, 475),
             "beacon_vault": (21400, 475)
         },
