@@ -105,6 +105,8 @@ class AutumnHillsScene:
         self.saws = []
         self.water = []
         self.currents = []
+        self.birds = []
+        self.swinging_spikes = []
         self.checkpoints = []
         self.shops = []
         self.potions = []
@@ -187,6 +189,7 @@ class AutumnHillsScene:
         ]
         self._add_platform(4380, 438, 1120, 35, "underwater")
         self._add_platform(5170, 392, 380, 18, "underwater")
+        self.currents = [_rect(4650, 280, 260, 125), _rect(5200, 245, 340, 140)]
         for p in [
             (4415, 350, 74, 10), (4560, 393, 60, 10),
             (4760, 337, 66, 10), (4920, 378, 62, 10),
@@ -326,6 +329,17 @@ class AutumnHillsScene:
         self.saws = [
             {"x": 4470.0, "cy": 327.0, "r": 12.0, "phase": 0.0, "speed": 1.8},
             {"x": 5000.0, "cy": 360.0, "r": 12.0, "phase": 1.7, "speed": 1.45},
+        ]
+        self.swinging_spikes = [
+            {"ax": 7240.0, "ay": 128.0, "length": 84.0, "range": 0.70, "speed": 1.15, "phase": 0.8},
+            {"ax": 7830.0, "ay": 118.0, "length": 92.0, "range": 0.72, "speed": 1.3, "phase": 2.1},
+            {"ax": 9600.0, "ay": 126.0, "length": 88.0, "range": 0.76, "speed": 1.2, "phase": 0.4},
+        ]
+        self.birds = [
+            {"x": 6920.0, "y": 155.0, "phase": 0.0, "alive": True},
+            {"x": 7115.0, "y": 132.0, "phase": 1.7, "alive": True},
+            {"x": 7490.0, "y": 165.0, "phase": 2.3, "alive": True},
+            {"x": 9720.0, "y": 149.0, "phase": 0.9, "alive": True},
         ]
         self.checkpoints = [
             {"x": 0, "y": 270, "active": True, "name": "AUTUMN GATE"},
@@ -618,6 +632,11 @@ class AutumnHillsScene:
                     shot["alive"] = False
                     hit_any = True
                     p["cloudstep"] = True
+        for bird in self.birds:
+            if bird["alive"] and sword.colliderect(_rect(bird["x"] - 7, bird["y"] - 5, 14, 10)):
+                bird["alive"] = False
+                p["cloudstep"] = True
+                hit_any = True
         if self.boss["active"] and not self.boss["defeated"]:
             if sword.colliderect(self._boss_rect()) and self.boss["vulnerable"] > 0:
                 self.boss["hp"] = max(0, self.boss["hp"] - 1)
@@ -687,6 +706,8 @@ class AutumnHillsScene:
         wet = self._in_water()
         speed = 102.0 if wet else 132.0
         p["vx"] = move * speed
+        if wet and any(current.colliderect(self._player_rect()) for current in self.currents):
+            p["vx"] += 52.0
         if p["cling"]:
             if not self.climbing_claws:
                 p["cling"] = False
@@ -832,6 +853,9 @@ class AutumnHillsScene:
         self.projectiles = [s for s in self.projectiles if s["alive"]]
 
         # Enemy routines: harmless walkers, fixed fire spitters and arcing casters.
+        for bird in self.birds:
+            bird["phase"] += dt * 5.0
+
         for enemy in self.enemies:
             if not enemy["alive"]:
                 continue
@@ -869,6 +893,14 @@ class AutumnHillsScene:
 
             if self._player_rect().colliderect(self._enemy_rect(enemy)) and p["invuln"] <= 0:
                 self._damage(1)
+
+        # Pendulum spike balls swing across the late forest routes.
+        for hazard in self.swinging_spikes:
+            angle = math.sin(self.elapsed * hazard["speed"] + hazard["phase"]) * hazard["range"]
+            hx = hazard["ax"] + math.sin(angle) * hazard["length"]
+            hy = hazard["ay"] + math.cos(angle) * hazard["length"]
+            if _rect(hx - 10, hy - 10, 20, 20).colliderect(self._player_rect()):
+                self._damage(2)
 
         # Spinning saws orbit a fixed point inside the flooded tunnel.
         for saw in self.saws:
@@ -1208,6 +1240,18 @@ class AutumnHillsScene:
             r = _rect(obj["x"] - self.camera_x, obj["y"] - self.camera_y, obj["w"], obj["h"])
             pygame.draw.rect(self.frame, (48, 47, 63), r)
             pygame.draw.rect(self.frame, (167, 148, 116), (r.x, r.y, r.w, 2))
+        for hazard in self.swinging_spikes:
+            angle = math.sin(self.elapsed * hazard["speed"] + hazard["phase"]) * hazard["range"]
+            hx = hazard["ax"] + math.sin(angle) * hazard["length"]
+            hy = hazard["ay"] + math.cos(angle) * hazard["length"]
+            sx, sy = int(hx - self.camera_x), int(hy - self.camera_y)
+            ax, ay = int(hazard["ax"] - self.camera_x), int(hazard["ay"] - self.camera_y)
+            pygame.draw.line(self.frame, (125, 105, 94), (ax, ay), (sx, sy), 2)
+            pygame.draw.circle(self.frame, (102, 94, 96), (sx, sy), 9)
+            for angle_deg in range(0, 360, 90):
+                ex = sx + int(math.cos(math.radians(angle_deg)) * 14)
+                ey = sy + int(math.sin(math.radians(angle_deg)) * 14)
+                pygame.draw.line(self.frame, (193, 189, 182), (sx, sy), (ex, ey), 3)
         for obj in self.swinging:
             sx = int(obj["x"] - self.camera_x)
             sy = int(obj["y"] - self.camera_y)
@@ -1281,6 +1325,20 @@ class AutumnHillsScene:
         if p["attack"] > 0:
             sword_x = sx + 15 if p["facing"] > 0 else sx - 11
             pygame.draw.rect(self.frame, (226, 225, 214), (sword_x, sy + 7, 10, 2))
+
+    def _draw_birds(self):
+        for bird in self.birds:
+            if not bird["alive"]:
+                continue
+            sx = int(bird["x"] - self.camera_x)
+            sy = int(bird["y"] + math.sin(bird["phase"]) * 3 - self.camera_y)
+            if sx < -20 or sx > VIEW_W + 20:
+                continue
+            wing = 1 if int(bird["phase"] * 4) % 2 else -1
+            pygame.draw.rect(self.frame, (83, 172, 210), (sx - 3, sy - 2, 7, 5))
+            pygame.draw.line(self.frame, (152, 220, 229), (sx - 1, sy), (sx - 7, sy + wing * 4), 2)
+            pygame.draw.line(self.frame, (152, 220, 229), (sx + 2, sy), (sx + 8, sy + wing * 4), 2)
+            pygame.draw.rect(self.frame, WHITE, (sx + 2, sy - 1, 1, 1))
 
     def _draw_projectiles(self):
         for shot in self.projectiles:
@@ -1479,6 +1537,7 @@ class AutumnHillsScene:
         self._draw_lanterns()
         self._draw_collectibles()
         self._draw_checkpoints_and_shops()
+        self._draw_birds()
         self._draw_enemies()
         self._draw_projectiles()
         self._draw_boss()
