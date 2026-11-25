@@ -135,7 +135,7 @@ class AutumnHillsScene:
             (0, 660), (680, 600), (1320, 630), (2050, 45), (2165, 65),
             (2250, 780), (3090, 390), (3530, 710), (4280, 650),
             (5020, 520), (5570, 570), (6170, 590), (6790, 720),
-            (7560, 620), (8240, 620), (8890, 380), (9340, 710),
+            (7560, 620), (8240, 70), (8390, 470), (8890, 210), (9340, 710),
             (10100, 790), (10980, 220),
         ]:
             self._add_ground(x, w)
@@ -146,7 +146,7 @@ class AutumnHillsScene:
             (730, 225, 82, 10), (850, 188, 68, 10), (1000, 218, 72, 10),
             (1190, 204, 76, 10), (1390, 215, 80, 10), (1525, 178, 72, 10),
             (1660, 212, 78, 10), (1810, 184, 70, 10),
-            (1900, 238, 90, 10), (1975, 320, 190, 12),
+            (1900, 238, 90, 10),
             (2290, 232, 82, 10), (2400, 191, 68, 10),
             (2540, 153, 78, 10), (2660, 205, 82, 10),
             (2820, 222, 70, 10), (2935, 190, 68, 10),
@@ -329,10 +329,11 @@ class AutumnHillsScene:
         ]
         self.checkpoints = [
             {"x": 0, "y": 270, "active": True, "name": "AUTUMN GATE"},
+            {"x": 2112, "y": 355, "active": False, "name": "FIRST SHOP PORTAL"},
             {"x": 3330, "y": 270, "active": False, "name": "OLD ROOTS"},
-            {"x": 6130, "y": 270, "active": False, "name": "SECOND PORTAL"},
-            {"x": 8240, "y": 270, "active": False, "name": "BROKEN SHRINE"},
-            {"x": 10010, "y": 270, "active": False, "name": "FINAL SHOP"},
+            {"x": 6410, "y": 252, "active": False, "name": "SECOND SHOP PORTAL"},
+            {"x": 8440, "y": 420, "active": False, "name": "POWER SEAL SHRINE"},
+            {"x": 10230, "y": 270, "active": False, "name": "FINAL SHOP"},
         ]
         self.shops = [
             {"x": 2112, "y": 360, "opened": False},
@@ -451,10 +452,18 @@ class AutumnHillsScene:
         elif key in (pygame.K_m, pygame.K_TAB):
             self.map_open = True
         elif key in (pygame.K_SPACE, pygame.K_w, pygame.K_UP):
-            self.player["jump_buffer"] = 0.14
-            self.player["jump_held"] = True
-            if self._in_water():
-                self.player["swim_burst"] = 0.32
+            near_portal = any(
+                abs((self.player["x"] + self.player["w"] / 2) - shop["x"]) < 48
+                and abs((self.player["y"] + self.player["h"] / 2) - shop["y"]) < 70
+                for shop in self.shops
+            )
+            if key in (pygame.K_w, pygame.K_UP) and near_portal:
+                self._interact()
+            else:
+                self.player["jump_buffer"] = 0.14
+                self.player["jump_held"] = True
+                if self._in_water():
+                    self.player["swim_burst"] = 0.32
         elif key in (pygame.K_j, pygame.K_c, pygame.K_z):
             self._attack()
         elif key in (pygame.K_LSHIFT, pygame.K_RSHIFT, pygame.K_x):
@@ -505,8 +514,8 @@ class AutumnHillsScene:
                 shop["opened"] = True
                 return
         if abs(px - 8440) < 65 and self.player["y"] > 340:
-            self.checkpoints[3]["active"] = True
-            self.checkpoint_index = max(self.checkpoint_index, 3)
+            self.checkpoints[4]["active"] = True
+            self.checkpoint_index = max(self.checkpoint_index, 4)
 
     def _shop_items(self):
         return [
@@ -681,6 +690,12 @@ class AutumnHillsScene:
         if p["cling"]:
             if not self.climbing_claws:
                 p["cling"] = False
+            elif p["jump_buffer"] > 0:
+                p["vy"] = -286.0
+                p["vx"] = -p["cling_side"] * 170.0
+                p["cling"] = False
+                p["ground"] = False
+                p["jump_buffer"] = 0.0
             else:
                 p["vx"] = 0.0
                 p["vy"] = 0.0
@@ -887,9 +902,9 @@ class AutumnHillsScene:
             self._set_banner("POWER SEAL", "A secret challenge completed.")
 
         # The lower seal chamber has a hidden checkpoint below the breakable floor.
-        if 8240 <= p["x"] <= 9000 and p["y"] > 330 and not self.checkpoints[3]["active"]:
-            self.checkpoints[3]["active"] = True
-            self.checkpoint_index = max(self.checkpoint_index, 3)
+        if 8240 <= p["x"] <= 9000 and p["y"] > 330 and not self.checkpoints[4]["active"]:
+            self.checkpoints[4]["active"] = True
+            self.checkpoint_index = max(self.checkpoint_index, 4)
             self._set_banner("CHECKPOINT", "BROKEN SHRINE")
 
         # Checkpoints remember a safe return point; a shop is also a checkpoint.
@@ -1016,8 +1031,9 @@ class AutumnHillsScene:
                 shot["vy"] += 110 * dt
             else:
                 shot["vy"] += 42 * dt
-            if shot["life"] < 1.0:
+            if shot["life"] < 1.0 and not shot["turn"]:
                 shot["vx"] *= -1
+                shot["turn"] = True
                 shot["split"] = False
             if shot["life"] <= 0:
                 shot["life"] = 0
