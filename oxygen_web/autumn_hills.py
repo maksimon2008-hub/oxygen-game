@@ -111,7 +111,7 @@ class AutumnHillsScene:
         self.breakables = []
         self.seal = {"rect": _rect(8955, 370, 18, 23), "found": False}
         self.seal_gate = _rect(9230, 215, 35, 55)
-        self.secret_checkpoint = _rect(8410, 404, 24, 16)
+        self.secret_checkpoint = _rect(8330, 404, 24, 16)
         self.rooms = [
             (0, 660, "AUTUMN GATE"),
             (660, 1370, "LANTERN PATH"),
@@ -332,7 +332,7 @@ class AutumnHillsScene:
             {"x": 2112, "y": 355, "active": False, "name": "FIRST SHOP PORTAL"},
             {"x": 3330, "y": 270, "active": False, "name": "OLD ROOTS"},
             {"x": 6410, "y": 252, "active": False, "name": "SECOND SHOP PORTAL"},
-            {"x": 8440, "y": 420, "active": False, "name": "POWER SEAL SHRINE"},
+            {"x": 8330, "y": 420, "active": False, "name": "POWER SEAL SHRINE"},
             {"x": 10230, "y": 270, "active": False, "name": "FINAL SHOP"},
         ]
         self.shops = [
@@ -513,7 +513,7 @@ class AutumnHillsScene:
                 self.dialog_timer = 3.0
                 shop["opened"] = True
                 return
-        if abs(px - 8440) < 65 and self.player["y"] > 340:
+        if abs(px - 8330) < 65 and self.player["y"] > 340:
             self.checkpoints[4]["active"] = True
             self.checkpoint_index = max(self.checkpoint_index, 4)
 
