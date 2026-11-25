@@ -265,6 +265,16 @@ class SectorOneMapTests(unittest.TestCase):
             for px, py, width, height in floors
         ))
 
+    def test_sector_map_is_bound_to_authored_rooms_and_tab(self):
+        for source, label in ((self.desktop_source, "desktop"), (self.web_source, "web")):
+            self.assertIn("self.map_open = False", source, label)
+            self.assertIn("event.key == pygame.K_TAB", source, label)
+            self.assertIn("def draw_sector_map(self)", source, label)
+            self.assertIn("self.level.rooms", source, label)
+            self.assertIn("self.draw_sector_map()", source, label)
+        self.assertGreaterEqual(len(self.level["rooms"]), 6)
+        self.assertGreaterEqual(len(self.level.get("seekers", [])), 1)
+
     def test_vertical_camera_offsets_are_wired_to_world_objects(self):
         for source, label in ((self.desktop_source, "desktop"), (self.web_source, "web")):
             for fragment in (
