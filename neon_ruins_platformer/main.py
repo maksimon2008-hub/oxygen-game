@@ -1173,6 +1173,7 @@ class Level:
         self.name = data["name"]
         self.subtitle = data["subtitle"]
         self.width = data["width"]
+        self.rooms = list(data.get("rooms", []))
         self.spawn = data["spawn"]
         self.top_bound = float(data.get("top_bound", 0.0))
         self.camera_top = float(data.get("camera_top", self.top_bound - 180.0))
