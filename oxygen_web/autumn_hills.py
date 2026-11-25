@@ -221,7 +221,7 @@ class AutumnHillsScene:
             _rect(4930, 430, 112, 16), _rect(5310, 430, 94, 16),
             _rect(6070, 264, 95, 20), _rect(6750, 264, 40, 20),
             _rect(7510, 264, 46, 20), _rect(8170, 264, 50, 20),
-            _rect(8395, 380, 510, 24), _rect(9250, 264, 72, 20),
+            _rect(8395, 410, 510, 10), _rect(9250, 264, 72, 20),
             _rect(10080, 264, 28, 20),
         ]
         self.lanterns = [
@@ -1139,6 +1139,11 @@ class AutumnHillsScene:
                 pygame.draw.polygon(f, (179, 188, 196),
                                     [(x, r.bottom - 2), (x + 4, r.top), (x + 8, r.bottom - 2)])
                 pygame.draw.line(f, WHITE, (x + 4, r.top + 2), (x + 4, r.bottom - 3), 1)
+        if not self.gate_open:
+            gate = self._world_rect(self.seal_gate)
+            pygame.draw.rect(f, (74, 57, 74), gate)
+            pygame.draw.rect(f, (176, 126, 110), (gate.x, gate.y, gate.w, 4))
+            pygame.draw.line(f, (39, 31, 49), gate.topleft, gate.bottomright, 2)
         for rect in self.water:
             r = self._world_rect(rect)
             if r.right < 0 or r.left > VIEW_W:
@@ -1406,6 +1411,10 @@ class AutumnHillsScene:
         pygame.draw.rect(self.frame, (45, 35, 64), panel)
         pygame.draw.rect(self.frame, (158, 125, 178), panel, 2)
         self._text("THE SHOP", (VIEW_W // 2, 55), GOLD, self.font_big, center=True)
+        # A small hooded shopkeeper silhouette anchors the portal room.
+        pygame.draw.ellipse(self.frame, (27, 25, 42), (VIEW_W // 2 - 9, 72, 18, 28))
+        pygame.draw.rect(self.frame, (109, 87, 121), (VIEW_W // 2 - 8, 79, 16, 17))
+        pygame.draw.rect(self.frame, (214, 198, 178), (VIEW_W // 2 - 5, 75, 10, 7))
         self._text("TIME SHARDS", (94, 78), (169, 202, 211), self.font_small)
         self._text(f"{self.shards_count:03d}", (VIEW_W - 99, 77), SHARD, self.font)
         for i, (title, cost, desc, item) in enumerate(self._shop_items()):
