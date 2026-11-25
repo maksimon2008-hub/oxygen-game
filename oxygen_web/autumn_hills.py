@@ -109,8 +109,8 @@ class AutumnHillsScene:
         self.shops = []
         self.potions = []
         self.breakables = []
-        self.seal = {"rect": _rect(8955, 353, 18, 23), "found": False}
-        self.seal_gate = _rect(9245, 218, 20, 52)
+        self.seal = {"rect": _rect(8955, 370, 18, 23), "found": False}
+        self.seal_gate = _rect(9230, 215, 35, 55)
         self.secret_checkpoint = _rect(8410, 404, 24, 16)
         self.rooms = [
             (0, 660, "AUTUMN GATE"),
@@ -132,7 +132,7 @@ class AutumnHillsScene:
 
         # The broad route and drops are organized into screen-sized scenes.
         for x, w in [
-            (0, 660), (680, 600), (1320, 630), (2050, 180),
+            (0, 660), (680, 600), (1320, 630), (2050, 45), (2165, 65),
             (2250, 780), (3090, 390), (3530, 710), (4280, 650),
             (5020, 520), (5570, 570), (6170, 590), (6790, 720),
             (7560, 620), (8240, 620), (8890, 380), (9340, 710),
@@ -198,13 +198,17 @@ class AutumnHillsScene:
         # The optional first-visit Power Seal route is below the main path.
         # The blocks are breakable; the two swinging platforms cross the pit.
         self._add_platform(8230, 392, 110, 12, "secret_floor")
-        self._add_platform(9350, 392, 120, 12, "secret_floor")
         self._add_platform(8230, 420, 1240, 45, "secret_floor")
-        self._add_platform(9230, 215, 35, 55, "gate")
+        # A stepped return connects the lower seal chamber to the main route.
+        self._add_platform(9100, 385, 70, 10, "secret_stair")
+        self._add_platform(9190, 350, 70, 10, "secret_stair")
+        self._add_platform(9280, 315, 65, 10, "secret_stair")
+        self.solids.append(self.seal_gate)
         self.breakables = [
-            {"rect": _rect(8260, 248, 20, 22), "alive": True},
-            {"rect": _rect(8281, 248, 20, 22), "alive": True},
-            {"rect": _rect(8302, 248, 20, 22), "alive": True},
+            {"rect": _rect(8310, 248, 20, 22), "alive": True},
+            {"rect": _rect(8330, 248, 20, 22), "alive": True},
+            {"rect": _rect(8350, 248, 20, 22), "alive": True},
+            {"rect": _rect(8370, 248, 20, 22), "alive": True},
         ]
         # Breakables are collision solids until destroyed.
         for block in self.breakables:
@@ -296,6 +300,8 @@ class AutumnHillsScene:
             {"x": 6910.0, "y": 223.0, "w": 42, "h": 8, "axis": "y",
              "range": 34.0, "speed": 1.35, "phase": 2.1, "px": 6910.0, "py": 223.0},
         ]
+        for obj in self.moving:
+            obj["ox"], obj["oy"] = obj["x"], obj["y"]
         self.swinging = [
             {"ax": 4215.0, "ay": 156.0, "length": 95.0, "w": 42, "h": 8,
              "range": 0.62, "speed": 1.2, "phase": 0.0, "x": 4215.0, "y": 250.0,
@@ -329,7 +335,7 @@ class AutumnHillsScene:
             {"x": 10010, "y": 270, "active": False, "name": "FINAL SHOP"},
         ]
         self.shops = [
-            {"x": 2112, "y": 334, "opened": False},
+            {"x": 2112, "y": 360, "opened": False},
             {"x": 6410, "y": 252, "opened": False},
             {"x": 10230, "y": 252, "opened": False},
         ]
@@ -486,8 +492,10 @@ class AutumnHillsScene:
                 self.shop_index = i
                 self.shop_cursor = 0
                 self.shop_open = True
-                self.checkpoints[min(i, len(self.checkpoints) - 1)]["active"] = True
-                self.checkpoint_index = max(self.checkpoint_index, min(i, len(self.checkpoints) - 1))
+                cp_i = min(range(len(self.checkpoints)),
+                           key=lambda j: abs(self.checkpoints[j]["x"] - shop["x"]))
+                self.checkpoints[cp_i]["active"] = True
+                self.checkpoint_index = max(self.checkpoint_index, cp_i)
                 if i == 0 and not self.climbing_claws:
                     self.climbing_claws = True
                     self.dialog_text = "CLIMBING CLAWS ACQUIRED"
@@ -874,7 +882,15 @@ class AutumnHillsScene:
             self.seal["found"] = True
             self.power_seals += 1
             self.gate_open = True
+            if self.seal_gate in self.solids:
+                self.solids.remove(self.seal_gate)
             self._set_banner("POWER SEAL", "A secret challenge completed.")
+
+        # The lower seal chamber has a hidden checkpoint below the breakable floor.
+        if 8240 <= p["x"] <= 9000 and p["y"] > 330 and not self.checkpoints[3]["active"]:
+            self.checkpoints[3]["active"] = True
+            self.checkpoint_index = max(self.checkpoint_index, 3)
+            self._set_banner("CHECKPOINT", "BROKEN SHRINE")
 
         # Checkpoints remember a safe return point; a shop is also a checkpoint.
         for i, cp in enumerate(self.checkpoints):
