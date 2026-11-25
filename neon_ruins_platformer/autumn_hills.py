@@ -757,16 +757,19 @@ class AutumnHillsScene:
                     p["coyote"] = 0.0
                     p["jump_buffer"] = 0.0
                     p["cloudstep"] = False
+                elif p["jump_buffer"] > 0 and p["cloudstep"]:
+                    # A sword-earned Cloudstep takes priority over the short
+                    # coyote window, otherwise the extra jump can be swallowed.
+                    p["vy"] = -286.0
+                    p["cloudstep"] = False
+                    p["coyote"] = 0.0
+                    p["jump_buffer"] = 0.0
+                    self._set_banner("CLOUDSTEP", "EXTRA MID-AIR JUMP")
                 elif p["jump_buffer"] > 0 and p["coyote"] > 0:
                     p["vy"] = -286.0
                     p["ground"] = False
                     p["coyote"] = 0.0
                     p["jump_buffer"] = 0.0
-                elif p["jump_buffer"] > 0 and p["cloudstep"]:
-                    p["vy"] = -286.0
-                    p["cloudstep"] = False
-                    p["jump_buffer"] = 0.0
-                    self._set_banner("CLOUDSTEP", "EXTRA MID-AIR JUMP")
 
         # Update moving and pendulum platforms before resolving the player.
         dynamic = []
