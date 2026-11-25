@@ -60,6 +60,13 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp oxygen_web.tar.gz /tmp/oxygen_web.tar.gz
+          git fetch origin main
+          # A parallel build may have published the same archive after this
+          # job checked out its source. Rebase the artifact onto the current
+          # main tree before deciding whether another commit is necessary.
+          git reset --hard origin/main
+          cp /tmp/oxygen_web.tar.gz oxygen_web.tar.gz
           git add oxygen_web.tar.gz
           if git diff --cached --quiet; then
             echo "Browser archive is already up to date."
