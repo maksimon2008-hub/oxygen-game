@@ -2,6 +2,13 @@ name: Build OXYGEN web archive
 
 on:
   push:
+    branches: [main, feature/autumn-hills-mode]
+    paths:
+      - "oxygen_web/**"
+      - "neon_ruins_platformer/**"
+      - "tests/**"
+      - ".github/workflows/build-web.yml"
+  pull_request:
     branches: [main]
     paths:
       - "oxygen_web/**"
@@ -24,16 +31,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate browser Python source
         run: |
           set -euo pipefail
-          python3 -m py_compile neon_ruins_platformer/main.py oxygen_web/main.py
+          python3 -m py_compile neon_ruins_platformer/main.py neon_ruins_platformer/autumn_hills.py oxygen_web/main.py oxygen_web/autumn_hills.py
           python3 -m unittest discover -s tests -v
           python3 -m pip install --disable-pip-version-check "pygame-ce>=2.5.3"
           SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python3 tests/smoke_sector01.py
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python3 tests/smoke_autumn_hills.py
 
       - name: Package browser game
         run: |
@@ -41,6 +48,7 @@ jobs:
           rm -rf /tmp/oxygen-web-package
           mkdir -p /tmp/oxygen-web-package/assets
           cp oxygen_web/main.py /tmp/oxygen-web-package/assets/main.py
+          cp oxygen_web/autumn_hills.py /tmp/oxygen-web-package/assets/autumn_hills.py
           cp -a oxygen_web/assets /tmp/oxygen-web-package/assets/assets
           cp -a oxygen_web/locales /tmp/oxygen-web-package/assets/locales
           tar -czf oxygen_web.tar.gz -C /tmp/oxygen-web-package assets
@@ -49,6 +57,7 @@ jobs:
           sed -n '1,40p' /tmp/oxygen-archive-contents.txt
           test -s oxygen_web.tar.gz
           grep -qx 'assets/main.py' /tmp/oxygen-archive-contents.txt
+          grep -qx 'assets/autumn_hills.py' /tmp/oxygen-archive-contents.txt
           grep -qx 'assets/locales/ru.json' /tmp/oxygen-archive-contents.txt
           if grep -Eq '(^|/)savegame[.]json$' /tmp/oxygen-archive-contents.txt; then
             echo "ERROR: browser archive must never contain a bundled savegame"
@@ -56,6 +65,7 @@ jobs:
           fi
 
       - name: Commit updated browser archive
+        if: github.event_name == 'push' && github.ref_name == 'main'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

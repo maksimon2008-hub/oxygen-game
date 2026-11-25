@@ -14,6 +14,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_module(path: Path, module_name: str):
+    # main.py imports build-local modules; make the matching build folder
+    # importable and clear the previous build's same-named scene module.
+    sys.path.insert(0, str(path.parent))
+    sys.modules.pop("autumn_hills", None)
     spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Cannot load OXYGEN module: {path}")
