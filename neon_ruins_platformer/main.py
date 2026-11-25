@@ -2014,6 +2014,7 @@ class Game:
         self.notice_timer = 0.0
         self.shake = 0.0
         self.pause_selection = 0
+        self.map_open = False
         self.menu_selection = 0
         self.skill_selection = 0
         self.journal_selection = 0
@@ -3419,7 +3420,13 @@ class Game:
                     self.menu_selection = 0
 
             elif self.mode == "playing":
-                if event.key in (pygame.K_SPACE, pygame.K_w, pygame.K_UP):
+                if event.key == pygame.K_TAB:
+                    self.map_open = not self.map_open
+                elif self.map_open and event.key == pygame.K_ESCAPE:
+                    self.map_open = False
+                elif self.map_open:
+                    return
+                elif event.key in (pygame.K_SPACE, pygame.K_w, pygame.K_UP):
                     if self.player.character_id == "flyer" and not self.player.on_ground:
                         self.player.flight_requested = True
                     else:
@@ -3649,7 +3656,7 @@ class Game:
         if self.mode == "safehouse":
             self.update_safehouse(dt)
             return
-        if self.mode != "playing":
+        if self.mode != "playing" or self.map_open:
             return
         self.level_elapsed += dt
 
@@ -4422,6 +4429,8 @@ class Game:
                   theme["accent"], (37, 29), shadow=False)
         draw_text(self.screen, self.font_s, level_label,
                   WHITE, (37, 51), shadow=False)
+        if self.level_index == 0:
+            draw_text(self.screen, self.font_xs, "TAB  MAP", accent, (WIDTH - 112, 84), shadow=False)
         draw_text(self.screen, self.font_xs, CHARACTERS[self.player.character_id]["name"],
                   CHARACTERS[self.player.character_id]["accent"], (WIDTH // 2, 76),
                   center=True, shadow=False)
@@ -4518,6 +4527,94 @@ class Game:
             sub.set_alpha(int(255 * k))
             self.screen.blit(main, main.get_rect(center=(WIDTH // 2, 225)))
             self.screen.blit(sub, sub.get_rect(center=(WIDTH // 2, 267)))
+
+    def draw_sector_map(self) -> None:
+        """Full-screen schematic of the current OXYGEN sector, opened with TAB."""
+        veil = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        veil.fill((3, 7, 19, 238))
+        self.screen.blit(veil, (0, 0))
+        theme = THEMES[self.level_index]
+        accent, accent2 = theme["accent"], theme["accent2"]
+        draw_text(self.screen, self.font_l, "SECTOR MAP", WHITE,
+                  (WIDTH // 2, 48), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs, "TAB / ESC  CLOSE MAP",
+                  MUTED, (WIDTH // 2, 91), center=True, shadow=False)
+
+        map_rect = pygame.Rect(54, 145, WIDTH - 108, 330)
+        pygame.draw.rect(self.screen, (7, 17, 34), map_rect, border_radius=12)
+        pygame.draw.rect(self.screen, (49, 79, 103), map_rect, 1, border_radius=12)
+        scale_x = map_rect.w / max(1, self.level.width)
+        floor_min, floor_max = -360.0, 760.0
+        scale_y = (map_rect.h - 56) / (floor_max - floor_min)
+
+        def point(wx: float, wy: float) -> tuple[int, int]:
+            return (map_rect.x + int(wx * scale_x),
+                    map_rect.y + 28 + int((wy - floor_min) * scale_y))
+
+        # Room bands provide geographic context; the player's current room is highlighted.
+        player_room = None
+        for i, room in enumerate(self.level.rooms):
+            rx, rw, _top, _floor, label = room
+            if rx <= self.player.x <= rx + rw:
+                player_room = i
+            x0 = map_rect.x + int(rx * scale_x)
+            x1 = map_rect.x + int((rx + rw) * scale_x)
+            band = pygame.Rect(x0, map_rect.y + 16, max(2, x1 - x0), map_rect.h - 32)
+            fill = (20, 49, 65) if i == player_room else ((12, 30, 48) if i % 2 == 0 else (10, 24, 41))
+            pygame.draw.rect(self.screen, fill, band)
+            pygame.draw.line(self.screen, (39, 64, 83), (x0, band.top), (x0, band.bottom), 1)
+            label_color = accent if i == player_room else (126, 151, 174)
+            label_surface = self.font_xs.render(label, True, label_color)
+            if label_surface.get_width() > max(25, band.w - 8):
+                label_surface = pygame.transform.smoothscale(
+                    label_surface, (max(25, band.w - 8), label_surface.get_height()))
+            self.screen.blit(label_surface, (x0 + 4, map_rect.y + 2))
+
+        # Actual collision geometry is drawn in miniature, not a decorative route line.
+        for platform in self.level.platforms:
+            x0, y0 = point(platform.x, platform.y)
+            x1, _ = point(platform.x + platform.w, platform.y)
+            pygame.draw.line(self.screen, (112, 147, 163),
+                             (x0, y0), (x1, y0), max(2, min(5, platform.h // 24)))
+        for moving in self.level.moving_platforms:
+            x0, y0 = point(moving.x, moving.y)
+            x1, _ = point(moving.x + moving.w, moving.y)
+            pygame.draw.line(self.screen, accent2, (x0, y0), (x1, y0), 4)
+
+        for cp in self.level.checkpoints:
+            cx, cy = point(cp.x, cp.y)
+            pygame.draw.circle(self.screen, (120, 224, 153), (cx, cy), 5)
+        for secret in self.level.secret_rooms:
+            if not secret["found"]:
+                sx, sy = point(secret["rect"].centerx, secret["rect"].centery)
+                pygame.draw.circle(self.screen, (205, 130, 255), (sx, sy), 4, 1)
+        for enemy in self.level.drones + self.level.seekers + self.level.spiders + self.level.turrets:
+            if getattr(enemy, "alive", True):
+                ex, ey = point(enemy.x, enemy.y)
+                pygame.draw.circle(self.screen, (255, 112, 130), (ex, ey), 3)
+
+        px, py = point(self.player.x + self.player.w / 2, self.player.y + self.player.h / 2)
+        pygame.draw.circle(self.screen, (255, 229, 126), (px, py), 7)
+        pygame.draw.circle(self.screen, WHITE, (px, py), 3)
+
+        legend_y = 515
+        legend = [
+            ((255, 229, 126), "YOU"),
+            ((120, 224, 153), "CHECKPOINT"),
+            ((205, 130, 255), "SECRET"),
+            ((255, 112, 130), "HOSTILE"),
+            (accent2, "MOVING PLATFORM"),
+        ]
+        x = 105
+        for color, label in legend:
+            pygame.draw.circle(self.screen, color, (x, legend_y + 7), 5)
+            draw_text(self.screen, self.font_xs, label, WHITE, (x + 12, legend_y), shadow=False)
+            x += 185
+        draw_text(self.screen, self.font_s,
+                  f"COINS  {sum(not c.collected for c in self.level.coins)}   //   SECRETS  {self.level_secrets}/{len(self.level.secret_rooms)}",
+                  accent, (WIDTH // 2, 566), center=True, shadow=False)
+        draw_text(self.screen, self.font_xs, "THE MAP SHOWS THE WHOLE SECTOR; EXPLORE SIDE ROUTES TO FIND HIDDEN ROOMS.",
+                  MUTED, (WIDTH // 2, 594), center=True, shadow=False)
 
     def draw_button(self, text: str, y: int, selected: bool = False,
                     width: int = 290) -> None:
@@ -5069,6 +5166,8 @@ class Game:
         elif self.mode in ("playing", "paused"):
             self.draw_world()
             self.draw_hud()
+            if self.map_open and self.mode == "playing":
+                self.draw_sector_map()
             if self.mode == "paused":
                 self.draw_pause()
         elif self.mode == "gameover":
