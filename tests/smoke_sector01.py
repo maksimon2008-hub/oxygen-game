@@ -72,6 +72,11 @@ def smoke_build(relative_path: str, module_name: str) -> None:
         draw_at(game, 3100.0, 92.0, 2500.0, -75.0)    # Signal Bridge
         draw_at(game, 4580.0, 57.0, 3750.0, -145.0)  # beacon vault
 
+        # Exercise the full-screen TAB map renderer in headless mode.
+        game.map_open = True
+        game.draw_sector_map()
+        game.map_open = False
+
         # Start again and render a few ordinary gameplay frames.
         game.load_level(0)
         game.mode = "playing"
