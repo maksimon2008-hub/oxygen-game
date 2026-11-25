@@ -13,6 +13,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: oxygen-web-package
+  cancel-in-progress: true
+
 jobs:
   package:
     runs-on: ubuntu-latest
