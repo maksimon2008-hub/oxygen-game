@@ -38,10 +38,12 @@ class AutumnHillsScene:
     def __init__(self, output_size=(1100, 620)):
         self.output_size = output_size
         self.frame = pygame.Surface((VIEW_W, VIEW_H))
-        self.font_tiny = pygame.font.SysFont("consolas", 6, bold=True)
-        self.font_small = pygame.font.SysFont("consolas", 8, bold=True)
-        self.font = pygame.font.SysFont("consolas", 10, bold=True)
-        self.font_big = pygame.font.SysFont("consolas", 17, bold=True)
+        # UI text is rasterized with antialiasing before the pixel-art frame is enlarged.
+        # Larger logical fonts keep labels readable at the 1100x620 host resolution.
+        self.font_tiny = pygame.font.SysFont("arial", 8, bold=True)
+        self.font_small = pygame.font.SysFont("arial", 10, bold=True)
+        self.font = pygame.font.SysFont("arial", 12, bold=True)
+        self.font_big = pygame.font.SysFont("arial", 19, bold=True)
         self.random = random.Random(1988)
         self.stars = [
             (self.random.randrange(0, WORLD_W), self.random.randrange(8, 160),
@@ -590,6 +592,14 @@ class AutumnHillsScene:
         y = p["y"] + (p["h"] - h)
         return _rect(p["x"], y, p["w"], h)
 
+    def _grant_cloudstep(self, source="TARGET"):
+        """Refresh the aerial jump after a successful sword hit while airborne."""
+        if self.player["ground"]:
+            return False
+        self.player["cloudstep"] = True
+        self._set_banner("CLOUDSTEP READY", f"{source} HIT // PRESS SPACE FOR AN EXTRA JUMP")
+        return True
+
     def _attack(self):
         p = self.player
         if p["attack_cd"] > 0 or self.paused or self.shop_open:
@@ -610,6 +620,7 @@ class AutumnHillsScene:
             if lantern["lit"] and abs(lantern["x"] - px) < 46 and abs(lantern["y"] - (p["y"] + 10)) < 34:
                 lantern["lit"] = False
                 hit_any = True
+                self._grant_cloudstep("LANTERN")
                 for i in range(5):
                     self.shards.append({
                         "x": lantern["x"] + (i - 2) * 8.0,
@@ -746,14 +757,18 @@ class AutumnHillsScene:
                     p["coyote"] = 0.0
                     p["jump_buffer"] = 0.0
                     p["cloudstep"] = False
+                elif p["jump_buffer"] > 0 and p["cloudstep"]:
+                    # A sword-earned Cloudstep takes priority over the short
+                    # coyote window, otherwise the extra jump can be swallowed.
+                    p["vy"] = -286.0
+                    p["cloudstep"] = False
+                    p["coyote"] = 0.0
+                    p["jump_buffer"] = 0.0
+                    self._set_banner("CLOUDSTEP", "EXTRA MID-AIR JUMP")
                 elif p["jump_buffer"] > 0 and p["coyote"] > 0:
                     p["vy"] = -286.0
                     p["ground"] = False
                     p["coyote"] = 0.0
-                    p["jump_buffer"] = 0.0
-                elif p["jump_buffer"] > 0 and p["cloudstep"]:
-                    p["vy"] = -270.0
-                    p["cloudstep"] = False
                     p["jump_buffer"] = 0.0
 
         # Update moving and pendulum platforms before resolving the player.
@@ -1084,7 +1099,7 @@ class AutumnHillsScene:
     # Drawing: bespoke pixel art, HUD and world map
     # ------------------------------------------------------------------
     def _text(self, text, pos, color=WHITE, font=None, center=False):
-        surf = (font or self.font).render(str(text), False, color)
+        surf = (font or self.font).render(str(text), True, color)
         rect = surf.get_rect()
         if center:
             rect.center = (int(pos[0]), int(pos[1]))
@@ -1416,6 +1431,8 @@ class AutumnHillsScene:
         pygame.draw.polygon(self.frame, SHARD, [(169, 7), (174, 12), (169, 17), (164, 12)])
         self._text(f"{self.shards_count:03d}", (179, 7), (178, 223, 224), self.font_small)
         self._text(f"SEALS {self.power_seals}/1", (225, 7), (165, 210, 157), self.font_small)
+        if self.player["cloudstep"]:
+            self._text("CLOUDSTEP READY", (330, 7), (121, 226, 242), self.font_small)
         self._text("M  MAP", (VIEW_W - 60, 7), (187, 174, 206), self.font_small)
 
     def _draw_quarble(self):

@@ -66,10 +66,26 @@ def smoke_build(relative_path: str, module_name: str) -> None:
         # Hitting a lantern produces Time Shards.
         scene.player["x"] = 110.0
         scene.player["y"] = 200.0
+        scene.player["ground"] = False
+        scene.player["vy"] = 0.0
         before = scene.shards_count
         scene._attack()
         assert not scene.lanterns[0]["lit"]
         assert scene.shards_count == before
+        assert scene.player["cloudstep"], "Airborne lantern strike must grant Cloudstep"
+        assert scene.banner_name == "CLOUDSTEP READY"
+
+        # The acquired Cloudstep charge must launch a second jump on the next
+        # jump press, consuming the charge and restoring upward velocity.
+        key(module, scene, module.pygame.K_SPACE)
+        scene.update(1 / 60)
+        assert not scene.player["cloudstep"], "Cloudstep charge must be consumed by the extra jump"
+        assert scene.player["vy"] < -200, "Cloudstep must produce a strong upward impulse"
+
+        # Fonts are larger and use antialiasing so labels remain legible after
+        # the scene is enlarged into the host's 1100x620 frame.
+        assert scene.font_small.get_height() >= 10
+        assert scene.font.get_height() > scene.font_small.get_height()
 
         # Shop portal grants the first Climbing Claws and becomes a checkpoint.
         scene.player["x"] = 2105.0
