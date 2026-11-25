@@ -1,4 +1,4 @@
-"""Headless runtime smoke test for sector 01 in both Pygame builds."""
+"""Headless runtime smoke test for both OXYGEN builds and Sector 01 routes."""
 from __future__ import annotations
 
 import importlib.util
@@ -23,6 +23,18 @@ def load_module(path: Path, module_name: str):
     return module
 
 
+def draw_at(game, x: float, y: float, camera_x: float, camera_y: float) -> None:
+    game.player.x = x
+    game.player.y = y
+    game.player.vx = 0.0
+    game.player.vy = 0.0
+    game.player.on_ground = True
+    game.camera_x = camera_x
+    game.camera_y = camera_y
+    game.draw_world()
+    game.draw_hud()
+
+
 def smoke_build(relative_path: str, module_name: str) -> None:
     module = load_module(ROOT / relative_path, module_name)
     game = None
@@ -31,46 +43,34 @@ def smoke_build(relative_path: str, module_name: str) -> None:
         game.load_level(0)
         game.mode = "playing"
 
-        # First tall shaft: execute physics and verify the camera tracks upward.
-        game.player.x = 1030.0
-        game.player.y = -403.0  # standing on the authored ledge at y=-360
-        game.player.vx = 0.0
-        game.player.vy = 0.0
-        game.player.on_ground = True
-        game.camera_y = 0.0
+        # Pump Atrium's upper landing: real physics frames must move the camera up.
+        draw_at(game, 2500.0, 92.0, 1900.0, 0.0)
         for _ in range(4):
             game.update(1 / 60)
         assert game.camera_y < -10.0, (
-            f"{relative_path}: vertical camera did not follow the upper shaft"
+            f"{relative_path}: vertical camera did not follow the Pump stair"
         )
         game.draw_world()
         game.draw_hud()
 
-        # Lower drainage route: verify the camera can scroll down as well.
-        game.player.x = 2030.0
-        game.player.y = 667.0  # standing on the lower tunnel deck at y=710
-        game.player.vx = 0.0
-        game.player.vy = 0.0
-        game.player.on_ground = True
-        game.camera_y = 0.0
+        # Drainage floor: the camera must also follow the lower service route.
+        draw_at(game, 1320.0, 647.0, 900.0, 0.0)
         for _ in range(4):
             game.update(1 / 60)
         assert game.camera_y > 10.0, (
-            f"{relative_path}: vertical camera did not follow the lower tunnel"
+            f"{relative_path}: vertical camera did not follow the lower underpass"
         )
         game.draw_world()
         game.draw_hud()
 
-        # Render the highest bridge and its surrounding room at real world coordinates.
-        game.player.x = 4300.0
-        game.player.y = -1543.0
-        game.camera_x = 3850.0
-        game.camera_y = -1743.0
-        game.draw_world()
-        game.draw_hud()
+        # Render both sides of the upper loop and the final beacon mast.
+        draw_at(game, 810.0, 372.0, 0.0, -55.0)       # west return ramp
+        draw_at(game, 3100.0, 92.0, 2500.0, -75.0)    # Signal Bridge
+        draw_at(game, 4580.0, 57.0, 3750.0, -145.0)  # beacon vault
 
-        # Exercise a few ordinary frames after returning to the start.
+        # Start again and render a few ordinary gameplay frames.
         game.load_level(0)
+        game.mode = "playing"
         for _ in range(8):
             game.update(1 / 60)
             game.draw_world()
