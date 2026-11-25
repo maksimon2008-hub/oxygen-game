@@ -77,7 +77,9 @@ class AutumnHillsScene:
         return rect
 
     def _add_ground(self, x, w, y=GROUND_Y):
-        return self._add_platform(x, y, w, WORLD_H - y + 60, "ground")
+        # The collision lip is thin so the player can fall or swim beneath it.
+        # Its deep rocky underside is purely visual in _draw_terrain().
+        return self._add_platform(x, y, w, 12, "ground")
 
     def _add_enemy(self, kind, x, y, left=None, right=None, hp=None):
         defaults = {"green": 3, "orange": 2, "blue": 1, "slug": 1, "runner": 1}
@@ -135,8 +137,8 @@ class AutumnHillsScene:
         # The broad route and drops are organized into screen-sized scenes.
         for x, w in [
             (0, 660), (680, 600), (1320, 630), (2050, 45), (2165, 65),
-            (2250, 780), (3090, 390), (3530, 710), (4280, 650),
-            (5020, 520), (5570, 570), (6170, 590), (6790, 720),
+            (2250, 780), (3090, 390), (3530, 710), (4280, 100),
+            (5500, 70), (5570, 570), (6170, 590), (6790, 720),
             (7560, 620), (8240, 70), (8390, 470), (8890, 210), (9340, 710),
             (10100, 790), (10980, 220),
         ]:
@@ -185,7 +187,7 @@ class AutumnHillsScene:
         # A real submerged route, not a blue overlay painted over dry ground.
         self.water = [
             _rect(4380, 224, 1120, 235),
-            _rect(5050, 180, 680, 270),
+            _rect(5050, 180, 450, 270),
         ]
         self._add_platform(4380, 438, 1120, 35, "underwater")
         self._add_platform(5170, 392, 380, 18, "underwater")
@@ -1150,6 +1152,9 @@ class AutumnHillsScene:
             kind = platform["kind"]
             base = (58, 46, 55) if kind != "underwater" else (48, 63, 76)
             pygame.draw.rect(f, base, r)
+            if kind == "ground":
+                pygame.draw.rect(f, (42, 33, 45), (r.x, r.y + 12, r.w, 34))
+                pygame.draw.line(f, (91, 68, 69), (r.x, r.y + 13), (r.right, r.y + 13), 2)
             pygame.draw.rect(f, MOSS if kind not in ("underwater", "secret_floor") else (76, 104, 87),
                              (r.x, r.y, r.w, 3))
             for tx in range(r.left + 3, r.right - 2, 8):
