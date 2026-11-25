@@ -855,7 +855,11 @@ LEVELS = [
             (2960, 420, 2780, 3060),
             (3470, 105, 3310, 3610),
         ],
-        "seekers": [],
+        "seekers": [
+            # OXYGEN hunter units guard the Foundry floor and its upper approach.
+            (2920, 260, 2780, 3090),
+            (3500, 255, 3320, 3660),
+        ],
         "turrets": [],
         "spikes": [
             (2860, 452, 66),
@@ -2629,6 +2633,7 @@ class Game:
         self.mode = "character_select"
 
     def start_arena_mode(self) -> None:
+        self.map_open = False
         self.coin_multiplier_timer = 0.0
         self.is_arena_mode = True
         self.pending_next_level = None
@@ -2810,6 +2815,7 @@ class Game:
         self.make_burst(self.player.x + 15, self.player.y + 18, THEMES[self.level_index]["accent"], 24)
 
     def load_level(self, index: int) -> None:
+        self.map_open = False
         self.is_arena_mode = False
         self.boss_arena_active = False
         self.boss_arena_bounds = None
@@ -2850,6 +2856,7 @@ class Game:
         self.mode = "playing"
 
     def restart_level(self) -> None:
+        self.map_open = False
         if self.is_arena_mode:
             self.start_arena_mode()
             return
