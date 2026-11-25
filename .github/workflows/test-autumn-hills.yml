@@ -1,0 +1,53 @@
+name: Test OXYGEN and Autumn Hills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "oxygen_web/**"
+      - "neon_ruins_platformer/**"
+      - "tests/**"
+      - ".github/workflows/test-autumn-hills.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "oxygen_web/**"
+      - "neon_ruins_platformer/**"
+      - "tests/**"
+      - ".github/workflows/test-autumn-hills.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile both builds and run structural tests
+        run: |
+          set -euo pipefail
+          python -m py_compile neon_ruins_platformer/main.py neon_ruins_platformer/autumn_hills.py oxygen_web/main.py oxygen_web/autumn_hills.py
+          python -m unittest discover -s tests -v
+
+      - name: Install Pygame CE
+        run: python -m pip install --disable-pip-version-check "pygame-ce>=2.5.3"
+
+      - name: Headless OXYGEN sector smoke test
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: python tests/smoke_sector01.py
+
+      - name: Headless Autumn Hills smoke test
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: python tests/smoke_autumn_hills.py
