@@ -28,6 +28,8 @@ jobs:
           set -euo pipefail
           python3 -m py_compile neon_ruins_platformer/main.py oxygen_web/main.py
           python3 -m unittest discover -s tests -v
+          python3 -m pip install --disable-pip-version-check "pygame-ce>=2.5.3"
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python3 tests/smoke_sector01.py
 
       - name: Package browser game
         run: |
