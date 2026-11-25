@@ -116,6 +116,13 @@ class SectorOneMapTests(unittest.TestCase):
         cls.desktop_source, cls.level = read_first_level(SOURCES[0])
         cls.web_source, cls.web_level = read_first_level(SOURCES[1])
         cls.platforms = as_platforms(cls.level)
+        spawn_x, spawn_y = cls.level["spawn"]
+        cls.start_index = next(
+            i for i, p in enumerate(cls.platforms)
+            if p[0] <= spawn_x + 15 <= p[0] + p[2]
+            and 0 <= p[1] - (spawn_y + 43) <= 60
+        )
+        cls.reached = reachable_nodes(cls.platforms, cls.start_index)
 
     def test_desktop_and_web_maps_are_identical(self):
         self.assertEqual(self.level, self.web_level)
