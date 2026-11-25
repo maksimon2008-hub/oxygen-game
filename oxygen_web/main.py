@@ -27,6 +27,8 @@ from pathlib import Path
 
 import pygame
 
+from autumn_hills import AutumnHillsScene
+
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
@@ -2927,6 +2929,7 @@ class Game:
         self.total_coins = int(self.save_data.get("coins", 0))
         self.apply_pending_achievement_rewards()
         self.mode = "menu"
+        self.autumn_hills_scene: AutumnHillsScene | None = None
         self.mobile_jump_was_down = False
         self.mobile_menu_requested = False
         self.level_index = 0
@@ -4489,7 +4492,7 @@ class Game:
             self.notice_timer = 3.0
 
     def open_menu_item(self, index: int) -> None:
-        self.menu_selection = max(0, min(8, int(index)))
+        self.menu_selection = max(0, min(9, int(index)))
         if index == 0:
             self.start_game()
         elif index == 1:
@@ -4511,10 +4514,15 @@ class Game:
             self.mode = "rankings"
             self.ranking_scroll = 0
         elif index == 7:
-            self.running = False
+            self.start_autumn_hills()
         elif index == 8:
+            self.running = False
+        elif index == 9:
             self.open_graphics_settings("menu")
 
+    def start_autumn_hills(self) -> None:
+        self.autumn_hills_scene = AutumnHillsScene((WIDTH, HEIGHT))
+        self.mode = "autumn_hills"
     def draw_personnel(self) -> None:
         self.draw_background(THEMES[1], 1)
         draw_text(self.screen, self.font_l, "PERSONNEL", WHITE, (WIDTH // 2, 83), center=True)
@@ -4545,6 +4553,19 @@ class Game:
             self.display = pygame.display.set_mode(self.windowed_size, pygame.RESIZABLE)
             self._scaled_frame = None
             self._scaled_size = None
+            return
+
+        if self.mode == "autumn_hills":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                self.toggle_fullscreen()
+                return
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
+                self.show_fps = not self.show_fps
+                return
+            if self.autumn_hills_scene is not None and self.autumn_hills_scene.handle_event(event):
+                self.autumn_hills_scene = None
+                self.mode = "menu"
+                self.menu_selection = 0
             return
 
         if event.type == pygame.KEYDOWN:
@@ -4581,11 +4602,20 @@ class Game:
                 return
 
             if self.mode == "menu":
-                # Two-column menu with a centered final settings row.
                 if event.key in (pygame.K_UP, pygame.K_w):
-                    self.menu_selection = 6 if self.menu_selection == 8 else max(0, self.menu_selection - 2)
+                    if self.menu_selection == 9:
+                        self.menu_selection = 8
+                    elif self.menu_selection == 8:
+                        self.menu_selection = 6
+                    elif self.menu_selection >= 2:
+                        self.menu_selection -= 2
                 elif event.key in (pygame.K_DOWN, pygame.K_s):
-                    self.menu_selection = min(8, self.menu_selection + 2)
+                    if self.menu_selection < 6:
+                        self.menu_selection += 2
+                    elif self.menu_selection in (6, 7):
+                        self.menu_selection = 8
+                    elif self.menu_selection == 8:
+                        self.menu_selection = 9
                 elif event.key in (pygame.K_LEFT, pygame.K_a):
                     if self.menu_selection < 8 and self.menu_selection % 2:
                         self.menu_selection -= 1
@@ -4905,9 +4935,10 @@ class Game:
                 if pygame.Rect(870, 23, 205, 38).collidepoint(mouse_pos):
                     self.toggle_language()
                     return
-                menu_rects = [pygame.Rect(95 + (i % 2) * 460, 270 + (i // 2) * 55, 450, 46)
+                menu_rects = [pygame.Rect(95 + (i % 2) * 460, 260 + (i // 2) * 50, 450, 42)
                               for i in range(8)]
-                menu_rects.append(pygame.Rect(325, 490, 450, 46))
+                menu_rects.append(pygame.Rect(325, 462, 450, 40))
+                menu_rects.append(pygame.Rect(325, 506, 450, 40))
                 for menu_i, rect in enumerate(menu_rects):
                     if rect.collidepoint(mouse_pos):
                         self.open_menu_item(menu_i)
@@ -5105,6 +5136,10 @@ class Game:
                     self.start_arena_mode() if self.is_arena_mode else self.start_game()
 
     def update(self, dt: float) -> None:
+        if self.mode == "autumn_hills":
+            if self.autumn_hills_scene is not None:
+                self.autumn_hills_scene.update(dt)
+            return
         self.time += dt
         self.shake = max(0.0, self.shake - dt)
         self.notice_timer = max(0.0, self.notice_timer - dt)
@@ -7818,7 +7853,6 @@ class Game:
         draw_text(self.screen, self.font_xs, language_label, CYAN, language_rect.center, center=True, shadow=False)
         title = self.font_title.render("OXYGEN", True, WHITE)
         rect = title.get_rect(center=(WIDTH // 2, 125))
-        # Keep a restrained one-pixel pink accent instead of a heavy doubled title.
         echo = self.font_title.render("OXYGEN", True, PINK)
         self.screen.blit(echo, (rect.x + 1, rect.y + 1))
         self.screen.blit(title, rect)
@@ -7827,22 +7861,23 @@ class Game:
         draw_text(self.screen, self.font_m, f"COINS  {self.total_coins:04d}",
                   YELLOW, (WIDTH // 2, 230), center=True, shadow=False)
         buttons = ["START GAME", "SAFEHOUSE", "LEVEL SELECT", "SALVAGE ARENA",
-                   "PERSONNEL", "ACHIEVEMENTS", "RANKINGS", "EXIT GAME"]
+                   "PERSONNEL", "ACHIEVEMENTS", "RANKINGS", "THE MESSENGER"]
         for i, label in enumerate(buttons):
             col, row = i % 2, i // 2
-            rect = pygame.Rect(95 + col * 460, 270 + row * 55, 450, 46)
+            rect = pygame.Rect(95 + col * 460, 260 + row * 50, 450, 42)
             self.draw_button_at(localize(label), rect, self.menu_selection == i)
-        settings_rect = pygame.Rect(325, 490, 450, 46)
-        self.draw_button_at(localize("GRAPHICS SETTINGS"), settings_rect, self.menu_selection == 8)
+        self.draw_button_at(localize("EXIT GAME"), pygame.Rect(325, 462, 450, 40),
+                            self.menu_selection == 8)
+        self.draw_button_at(localize("GRAPHICS SETTINGS"), pygame.Rect(325, 506, 450, 40),
+                            self.menu_selection == 9)
         selected_cfg = CHARACTERS[self.character_id]
         draw_text(self.screen, self.font_xs,
                   f"CURRENT RUNNER: {selected_cfg['name']}  //  {selected_cfg['ability']}",
-                  selected_cfg["accent"], (WIDTH // 2, 548), center=True, shadow=False)
+                  selected_cfg["accent"], (WIDTH // 2, 556), center=True, shadow=False)
         draw_text(self.screen, self.font_xs, localize("F11 FULLSCREEN   F3 FPS   ESC QUIT"),
-                  (80, 102, 130), (WIDTH // 2, 580), center=True, shadow=False)
+                  (80, 102, 130), (WIDTH // 2, 584), center=True, shadow=False)
         draw_text(self.screen, self.font_xs, localize("PLAYER UPGRADES // CREW CONTRACTS // 10 SECTORS"),
-                  (80, 102, 130), (WIDTH // 2, 606), center=True, shadow=False)
-
+                  (80, 102, 130), (WIDTH // 2, 607), center=True, shadow=False)
     def draw_graphics_settings(self) -> None:
         self.draw_background(THEMES[0], 0)
         draw_text(self.screen, self.font_l, localize("GRAPHICS SETTINGS"), WHITE,
@@ -8666,6 +8701,11 @@ class Game:
                   (WIDTH // 2, 490), center=True, shadow=False)
 
     def draw(self) -> None:
+        if self.mode == "autumn_hills":
+            if self.autumn_hills_scene is not None:
+                self.autumn_hills_scene.draw(self.screen)
+            self.present_display()
+            return
         draw_started = perf_counter()
         if self.mode == "menu":
             self.draw_menu()
