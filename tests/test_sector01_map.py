@@ -24,11 +24,11 @@ OLD_COINS = [
     (2705, 345), (2945, 290), (120, 425), (740, 420),
     (1370, 420), (1980, 420), (2570, 420), (3180, 420),
 ]
-OLD_SECRETS = [
-    (1030, 175, 100, 65, "UPPER WATCHTOWER"),
-    (1850, 120, 105, 65, "ARCHIVE LOFT"),
-    (3100, 120, 105, 65, "BELL CHAMBER"),
-    (4520, 55, 110, 65, "SKY SHRINE"),
+OLD_SECRET_POSITIONS = [
+    (1030, 175, 100, 65),
+    (1850, 120, 105, 65),
+    (3100, 120, 105, 65),
+    (4520, 55, 110, 65),
 ]
 
 
@@ -100,6 +100,16 @@ def reachable_nodes(platforms: list[tuple], start_index: int) -> set[int]:
     return reached
 
 
+def reachable_support(platforms: list[tuple], reached: set[int],
+                      x: float, y: float, player_height: int = 43) -> bool:
+    return any(
+        i in reached
+        and p[0] <= x <= p[0] + p[2]
+        and abs(p[1] - (y + player_height)) <= 2
+        for i, p in enumerate(platforms)
+    )
+
+
 class SectorOneMapTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -112,15 +122,22 @@ class SectorOneMapTests(unittest.TestCase):
 
     def test_existing_save_indices_are_preserved(self):
         self.assertEqual(self.level["coins"][:16], OLD_COINS)
-        self.assertEqual(self.level["secrets"][:4], OLD_SECRETS)
-
-    def test_world_bounds_and_room_structure(self):
-        self.assertEqual(self.level["width"], 7350)
-        self.assertLess(self.level["top_bound"], -1500)
+        actual_secrets = [tuple(secret[:4]) for secret in self.level["secrets"][:4]]
+        self.assertEqual(actual_secrets, OLD_SECRET_POSITIONS)
+    def test_world_is_compact_and_has_named_functional_rooms(self):
+        self.assertEqual(self.level["width"], 4850)
+        self.assertGreater(self.level["top_bound"], -400)
         self.assertLessEqual(self.level["camera_top"], self.level["top_bound"])
         self.assertGreater(self.level["camera_bottom"], 0)
-        self.assertGreaterEqual(len(self.level["rooms"]), 6)
-        self.assertGreaterEqual(len(self.level["secrets"]), 7)
+        self.assertEqual(
+            [room[4] for room in self.level["rooms"]],
+            [
+                "ARRIVAL CAUSEWAY", "BROKEN FLOODGATE", "DRAINAGE UNDERPASS",
+                "PUMP ATRIUM", "WEST RELAY WALK", "SIGNAL BRIDGE",
+                "EAST FOUNDRY", "LAST GATE",
+            ],
+        )
+        self.assertLessEqual(len(self.platforms), 50)
         self.assertTrue(self.level.get("wall_jump", False))
 
         for x, y, width, height in self.level["platforms"]:
@@ -129,7 +146,7 @@ class SectorOneMapTests(unittest.TestCase):
             self.assertGreaterEqual(x, 0)
             self.assertLessEqual(x + width, self.level["width"])
             self.assertGreaterEqual(y, self.level["top_bound"] - 10)
-
+            self.assertLess(y, self.level["fall_limit"])
     def test_start_to_exit_has_a_platform_route(self):
         spawn_x, spawn_y = self.level["spawn"]
         start_candidates = [
@@ -153,26 +170,44 @@ class SectorOneMapTests(unittest.TestCase):
             "The mandatory route from spawn to the exit is disconnected.",
         )
 
-    def test_high_bridge_is_reachable_and_returns_to_the_final_district(self):
-        reached = reachable_nodes(
-            self.platforms,
-            next(i for i, p in enumerate(self.platforms)
-                 if p[0] <= 80 <= p[0] + p[2] and p[1] == 475),
-        )
-        high_bridge = [
-            i for i, p in enumerate(self.platforms)
-            if p[0] <= 4300 <= p[0] + p[2] and p[1] == -1500
-        ]
-        final_floor = [
-            i for i, p in enumerate(self.platforms)
-            if p[0] <= 7210 <= p[0] + p[2] and p[1] == 475
-        ]
-        self.assertTrue(high_bridge, "The top bridge needs a real landing platform.")
-        self.assertTrue(any(i in reached for i in high_bridge),
-                        "The route to the high signal bridge is unreachable.")
-        self.assertTrue(any(i in reached for i in final_floor),
-                        "The descending bridge must reconnect to the final district.")
+    def test_authored_room_graph_contains_main_route_and_both_loops(self):
+        actual = {(a, b) for a, b, _purpose in self.level["room_connections"]}
+        expected = {
+            ("ARRIVAL CAUSEWAY", "BROKEN FLOODGATE"),
+            ("BROKEN FLOODGATE", "PUMP ATRIUM"),
+            ("BROKEN FLOODGATE", "DRAINAGE UNDERPASS"),
+            ("DRAINAGE UNDERPASS", "PUMP ATRIUM"),
+            ("PUMP ATRIUM", "WEST RELAY WALK"),
+            ("WEST RELAY WALK", "ARRIVAL CAUSEWAY"),
+            ("PUMP ATRIUM", "SIGNAL BRIDGE"),
+            ("SIGNAL BRIDGE", "LAST GATE"),
+            ("PUMP ATRIUM", "EAST FOUNDRY"),
+            ("EAST FOUNDRY", "LAST GATE"),
+        }
+        self.assertEqual(actual, expected)
+        purposes = {(a, b): purpose for a, b, purpose in self.level["room_connections"]}
+        self.assertIn("optional drop", purposes[("BROKEN FLOODGATE", "DRAINAGE UNDERPASS")])
+        self.assertIn("return", purposes[("DRAINAGE UNDERPASS", "PUMP ATRIUM")])
+        self.assertIn("upper", purposes[("PUMP ATRIUM", "WEST RELAY WALK")])
+        self.assertIn("bypass", purposes[("SIGNAL BRIDGE", "LAST GATE")])
 
+    def test_lower_underpass_is_reachable_and_returns_to_the_pump(self):
+        landmarks = self.level["region_landmarks"]
+        for key in ("drainage", "pump_floor"):
+            x, floor_y = landmarks[key]
+            self.assertTrue(
+                reachable_support(self.platforms, self.reached, x, floor_y - 43),
+                f"Lower-route landmark {key!r} has no reachable standing surface.",
+            )
+
+    def test_pump_climb_reaches_west_return_and_east_bypass(self):
+        landmarks = self.level["region_landmarks"]
+        for key in ("pump_top", "west_return", "signal_bridge", "last_gate", "beacon_vault"):
+            x, floor_y = landmarks[key]
+            self.assertTrue(
+                reachable_support(self.platforms, self.reached, x, floor_y - 43),
+                f"Upper-route landmark {key!r} is not reachable from the start.",
+            )
     def test_secrets_overlap_reachable_player_standing_positions(self):
         player_height = 43
         spawn_x, spawn_y = self.level["spawn"]
@@ -210,7 +245,7 @@ class SectorOneMapTests(unittest.TestCase):
 
     def test_checkpoints_and_exit_have_safe_floor_support(self):
         floors = [p for p in self.platforms if p[3] >= 60 and p[1] >= 450]
-        self.assertGreaterEqual(len(self.level["checkpoints"]), 6)
+        self.assertGreaterEqual(len(self.level["checkpoints"]), 4)
         for x, _y in self.level["checkpoints"]:
             distance = min(
                 0 if px <= x <= px + width else min(abs(x - px), abs(x - (px + width)))
