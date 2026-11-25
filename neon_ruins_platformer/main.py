@@ -720,168 +720,160 @@ class Particle:
 LEVELS = [
     {
         "name": "THE LAST SIGNAL",
-        "subtitle": "A CITY BUILT ABOVE ITS OWN RUINS",
-        "width": 7350,
-        "top_bound": -1570,
-        "camera_top": -1840,
-        "camera_bottom": 390,
-        "fall_limit": 930,
+        "subtitle": "FOLLOW THE RELAY. LEARN THE CITY.",
+        "width": 4850,
+        "top_bound": -330,
+        "camera_top": -420,
+        "camera_bottom": 300,
+        "fall_limit": 820,
         "spawn": (80, 410),
         "wall_jump": True,
         "rooms": [
-            (0, 1160, -430, 475, "THE FORGOTTEN STATION"),
-            (1160, 1190, -560, 475, "THE FLOODED ARCHIVE"),
-            (2350, 1280, -940, 475, "THE SUNKEN COURTYARD"),
-            (3630, 1250, -1540, 475, "THE SKY SHRINE"),
-            (4880, 1250, -1180, 475, "THE SIGNAL BRIDGE"),
-            (6130, 1220, -530, 475, "THE LAST GATE"),
+            (0, 930, -20, 475, "ARRIVAL CAUSEWAY"),
+            (930, 860, -35, 475, "BROKEN FLOODGATE"),
+            (1100, 700, 515, 690, "DRAINAGE UNDERPASS"),
+            (1790, 950, -30, 475, "PUMP ATRIUM"),
+            (760, 1660, -95, 160, "WEST RELAY WALK"),
+            (2740, 1070, -80, 135, "SIGNAL BRIDGE"),
+            (2680, 1020, -25, 475, "EAST FOUNDRY"),
+            (3700, 1150, -20, 475, "LAST GATE"),
         ],
+        "room_connections": [
+            ("ARRIVAL CAUSEWAY", "BROKEN FLOODGATE", "main route: jump the broken causeway"),
+            ("BROKEN FLOODGATE", "PUMP ATRIUM", "main route: ground-level approach"),
+            ("BROKEN FLOODGATE", "DRAINAGE UNDERPASS", "optional drop through the open floodgate floor"),
+            ("DRAINAGE UNDERPASS", "PUMP ATRIUM", "lower exit stair returns to the main floor"),
+            ("PUMP ATRIUM", "WEST RELAY WALK", "pump-core climb reaches the upper junction"),
+            ("WEST RELAY WALK", "ARRIVAL CAUSEWAY", "west return ramp closes the loop"),
+            ("PUMP ATRIUM", "SIGNAL BRIDGE", "upper route crosses over the foundry"),
+            ("SIGNAL BRIDGE", "LAST GATE", "east descent bypasses the foundry floor hazard"),
+            ("PUMP ATRIUM", "EAST FOUNDRY", "ground-level main route"),
+            ("EAST FOUNDRY", "LAST GATE", "moving bridge crosses the foundry gap"),
+        ],
+        "region_landmarks": {
+            "arrival": (80, 475),
+            "floodgate": (1140, 475),
+            "drainage": (1370, 690),
+            "pump_floor": (1870, 475),
+            "pump_top": (2550, 135),
+            "west_return": (810, 415),
+            "signal_bridge": (3100, 135),
+            "foundry": (3300, 475),
+            "last_gate": (4740, 475),
+            "beacon_vault": (4580, 100),
+        },
         "platforms": [
-            (0, 475, 500, 100), (620, 475, 450, 100),
-            (1160, 475, 440, 100), (1690, 475, 220, 100),
-            (2350, 475, 430, 100), (2890, 475, 430, 100),
-            (3430, 475, 430, 100), (3970, 475, 430, 100),
-            (4510, 475, 430, 100), (5050, 475, 430, 100),
-            (5590, 475, 430, 100), (6130, 475, 430, 100),
-            (6670, 475, 680, 100),
+            # Main route: seven substantial floor sections, with only three meaningful openings.
+            (0, 475, 930, 100),
+            (1040, 475, 270, 100),
+            (1460, 475, 330, 100),
+            (1790, 475, 890, 100),
+            (2680, 475, 410, 100),
+            (3210, 475, 490, 100),
+            (3700, 475, 1150, 100),
 
-            (210, 390, 150, 18), (390, 320, 150, 18),
-            (580, 385, 150, 18), (770, 320, 150, 18),
-            (940, 250, 150, 18),
-            (920, -390, 22, 790), (1100, -390, 22, 790),
-            (940, 360, 125, 18), (1020, 280, 125, 18),
-            (940, 200, 125, 18), (1020, 120, 125, 18),
-            (940, 40, 125, 18), (1020, -40, 125, 18),
-            (940, -120, 125, 18), (1020, -200, 125, 18),
-            (940, -280, 125, 18), (1020, -360, 150, 18),
+            # Arrival: three readable ledges teach the jump rhythm and keep the first stretch calm.
+            (290, 390, 160, 18),
+            (500, 335, 170, 18),
+            (790, 390, 150, 18),
+            (940, 410, 100, 18),
 
-            (1210, -410, 180, 18), (1410, -410, 180, 18),
-            (1610, -410, 180, 18),
-            (1710, -330, 145, 18), (1810, -250, 145, 18),
-            (1910, -170, 145, 18), (2010, -90, 145, 18),
-            (2110, -10, 145, 18), (2210, 70, 145, 18),
-            (2310, 150, 145, 18), (2410, 230, 145, 18),
-            (2510, 310, 145, 18), (2610, 390, 145, 18),
+            # Floodgate: one small lip at the optional drop, then a raised continuation.
+            (1060, 340, 150, 18),
+            (1330, 455, 90, 18),
+            (1420, 390, 150, 18),
+            (1640, 330, 160, 18),
 
-            (1900, 710, 430, 18), (2150, 635, 110, 18),
-            (2220, 560, 110, 18), (2290, 485, 110, 18),
-            (1970, 645, 115, 18),
-            (1710, 390, 150, 18), (1780, 300, 150, 18),
-            (1810, 200, 150, 18),
-            (1900, 390, 150, 18), (2040, 315, 150, 18),
-            (2180, 240, 150, 18), (2320, 315, 150, 18),
-            (2460, 390, 150, 18),
+            # Lower drainage passage and its short, stepped return into the Pump Atrium.
+            (1100, 690, 700, 60),
+            (1160, 610, 150, 18),
+            (1440, 610, 150, 18),
+            (1570, 610, 140, 18),
+            (1680, 530, 140, 18),
+            (1780, 450, 140, 18),
 
-            (2480, 390, 145, 18), (2630, 320, 145, 18),
-            (2780, 250, 145, 18),
-            (2860, -900, 22, 1300), (3040, -900, 22, 1300),
-            (2880, 360, 125, 18), (2970, 280, 125, 18),
-            (2880, 200, 125, 18), (2970, 120, 125, 18),
-            (2880, 40, 125, 18), (2970, -40, 125, 18),
-            (2880, -120, 125, 18), (2970, -200, 125, 18),
-            (2880, -280, 125, 18), (2970, -360, 125, 18),
-            (2880, -440, 125, 18), (2970, -520, 125, 18),
-            (2880, -600, 125, 18), (2970, -680, 125, 18),
-            (2880, -760, 125, 18), (2970, -840, 180, 18),
-            (3190, -900, 180, 18), (3390, -900, 180, 18),
-            (3590, -900, 180, 18),
+            # The Pump Atrium: a compact stair wraps around the pump core and reaches the upper junction.
+            (1980, 390, 150, 18),
+            (2130, 305, 150, 18),
+            (2290, 330, 160, 18),
+            (2280, 220, 150, 18),
+            (2430, 135, 300, 18),
 
-            (3070, 200, 150, 18), (3220, 280, 150, 18),
-            (3370, 360, 150, 18),
-            (3470, 390, 150, 18), (3580, 320, 150, 18),
-            (3470, 250, 150, 18), (3580, 180, 150, 18),
+            # The west upper return: a segmented service gallery, followed by three descent steps.
+            (2140, 160, 250, 18),
+            (1860, 160, 250, 18),
+            (1580, 160, 250, 18),
+            (1300, 160, 250, 18),
+            (1020, 160, 250, 18),
+            (760, 160, 230, 18),
+            (1000, 220, 120, 18),
+            (950, 245, 150, 18),
+            (850, 330, 150, 18),
+            (740, 415, 170, 18),
 
-            (3660, -760, 150, 18),
-            (3760, -1500, 22, 740), (3960, -1500, 22, 740),
-            (3780, -840, 125, 18), (3880, -920, 125, 18),
-            (3780, -1000, 125, 18), (3880, -1080, 125, 18),
-            (3780, -1160, 125, 18), (3880, -1240, 125, 18),
-            (3780, -1320, 125, 18), (3880, -1400, 180, 18),
-            (4100, -1500, 180, 18), (4300, -1500, 180, 18),
-            (4500, -1500, 180, 18), (4700, -1500, 180, 18),
-            (4900, -1500, 180, 18),
+            # East upper bridge: crosses above the Foundry pit and descends into the Last Gate district.
+            (2760, 135, 430, 18),
+            (3220, 135, 360, 18),
+            (3610, 135, 180, 18),
+            (3650, 225, 150, 18),
+            (3770, 315, 150, 18),
+            (3890, 405, 150, 18),
 
-            (5000, -1420, 125, 18), (5100, -1340, 125, 18),
-            (5200, -1260, 125, 18), (5300, -1180, 125, 18),
-            (5400, -1100, 125, 18), (5500, -1020, 125, 18),
-            (5600, -940, 125, 18), (5700, -860, 125, 18),
-            (5800, -780, 125, 18), (5900, -700, 125, 18),
-            (6000, -620, 125, 18), (6100, -540, 125, 18),
-            (6200, -460, 125, 18), (6300, -380, 125, 18),
-            (6400, -300, 125, 18), (6500, -220, 125, 18),
-            (6600, -140, 125, 18), (6700, -60, 125, 18),
-            (6800, 20, 125, 18), (6900, 100, 125, 18),
-            (7000, 180, 125, 18), (7100, 260, 125, 18),
-            (7200, 340, 125, 18),
+            # Two Foundry perches are reachable from the lower route and provide a readable hazard overlook.
+            (2630, 390, 160, 18),
+            (2860, 335, 180, 18),
 
-            (4350, 400, 145, 18), (4440, 320, 145, 18),
-            (4530, 240, 145, 18), (4620, 160, 145, 18),
-            (4710, 80, 145, 18),
+            # Optional beacon mast in the final area: its only purpose is the signal-vault secret and overlook.
+            (4210, 390, 160, 18),
+            (4350, 300, 160, 18),
+            (4490, 210, 160, 18),
+            (4480, 100, 250, 18),
         ],
         "moving_platforms": [
-            (1460, -470, 130, 16, "horizontal", 90, 0.85, 0.0),
-            (2460, 210, 130, 16, "vertical", 92, 0.85, 0.8),
-            (3300, -820, 130, 16, "horizontal", 105, 0.85, 1.4),
-            (4440, -1350, 130, 16, "vertical", 82, 0.90, 0.2),
+            # Bridges the single 120 px Foundry gap; the player can also use a full jump.
+            (3090, 430, 130, 16, "horizontal", 45, 0.90, 0.0),
         ],
-        "launch_pads": [
-            (770, 320, 72), (2490, 390, 72),
-            (3290, -900, 72), (4650, 160, 72),
-        ],
+        "launch_pads": [],
         "coins": [
-            # Preserve the first sixteen indices for existing savegame coin keys.
+            # Keep the original first sixteen coin positions and their save keys stable.
             (365, 352), (575, 292), (850, 350), (1085, 297),
             (1480, 345), (1720, 287), (2095, 345), (2345, 287),
             (2705, 345), (2945, 290), (120, 425), (740, 420),
             (1370, 420), (1980, 420), (2570, 420), (3180, 420),
-            (260, 350), (445, 282), (650, 350), (825, 280), (980, 160),
-            (1080, -250), (1280, -370), (1480, -370), (1690, -290),
-            (1820, 240), (1940, 260), (2080, 0), (2250, 110), (2440, 270),
-            (2020, 675), (2190, 600), (2280, 450),
-            (2500, 350), (2660, 280), (2810, 210), (2910, -300),
-            (3000, -780), (3200, -860), (3400, -860), (3600, -860),
-            (3100, 160), (3260, 245), (3500, 320),
-            (3800, -1280), (3900, -1450), (4100, -1450), (4300, -1450),
-            (4500, -1450), (4700, -1450), (4900, -1450),
-            (5100, -1300), (5300, -1140), (5500, -980), (5700, -820),
-            (5900, -660), (6100, -500), (6300, -340), (6500, -180),
-            (6700, -20), (6900, 140), (7100, 300),
-            (4450, 360), (4540, 200), (4660, 120), (4800, 60),
+
+            # Rewards now follow the optional lower route, upper return, and Foundry bypass.
+            (1180, 650), (1370, 650), (1510, 575), (1660, 490),
+            (1850, 425), (2025, 345), (2170, 260), (2340, 175),
+            (2510, 100), (1040, 195), (1320, 125), (1680, 125),
+            (3100, 95), (3550, 95), (4300, 360), (4580, 60),
         ],
         "drones": [
-            (700, 350, 650, 790), (1510, -430, 1430, 1600),
-            (2160, 220, 2080, 2250), (2630, 285, 2550, 2700),
-            (3290, -850, 3200, 3380), (3560, 280, 3480, 3660),
-            (4470, 205, 4390, 4560), (5520, -980, 5440, 5600),
-            (6420, -280, 6340, 6500),
+            (650, 395, 500, 800),
+            (1510, 650, 1420, 1640),
+            (2960, 420, 2780, 3060),
+            (3470, 105, 3310, 3610),
         ],
-        "seekers": [
-            (1860, -120, 1780, 1940),
-            (2990, -430, 2910, 3070),
-            (3890, -1120, 3810, 3970),
-            (6080, -570, 6000, 6160),
-        ],
-        "turrets": [(1380, 432), (4140, 432)],
+        "seekers": [],
+        "turrets": [],
         "spikes": [
-            (680, 452, 66), (1250, 452, 66), (1530, 452, 66),
-            (2530, 452, 66), (3490, 452, 66), (4080, 452, 66),
-            (4650, 452, 66), (5250, 452, 66), (5730, 452, 66),
-            (6280, 452, 66), (6900, 452, 66),
+            (2860, 452, 66),
+            (3340, 452, 66),
         ],
         "checkpoints": [
-            (900, 475), (1600, 475), (2430, 475),
-            (3500, 475), (4460, 475), (5600, 475), (6900, 475),
+            (650, 475),
+            (1620, 475),
+            (2630, 475),
+            (3900, 475),
         ],
         "secrets": [
-            (1030, 175, 100, 65, "UPPER WATCHTOWER"),
-            (1850, 120, 105, 65, "ARCHIVE LOFT"),
-            (3100, 120, 105, 65, "BELL CHAMBER"),
-            (4520, 55, 110, 65, "SKY SHRINE"),
-            (2030, 650, 95, 55, "DRAINAGE CACHE"),
-            (4290, -1580, 120, 65, "HIGH SIGNAL VAULT"),
-            (5500, -1080, 115, 65, "BRIDGE RELAY"),
+            # Keep the original four secret indices and positions stable for old saves.
+            (1030, 175, 100, 65, "WEST OBSERVATION NICHE"),
+            (1850, 120, 105, 65, "PUMP MAINTENANCE NOOK"),
+            (3100, 120, 105, 65, "OVERLOOK RELAY CACHE"),
+            (4520, 55, 110, 65, "SIGNAL MAST VAULT"),
+            (1320, 645, 100, 55, "DRAINAGE CACHE"),
         ],
-        "exit": (7210, 393),
+        "exit": (4740, 393),
     },
     {
         "name": "PURPLE STATIC",
@@ -4066,18 +4058,22 @@ class Game:
             pygame.draw.line(self.screen, (20, 33, 55), (0, y), (WIDTH, y), 1)
 
     def draw_messenger_sector_one_environment(self, theme) -> None:
-        """Layered ruin architecture for a vertically connected, six-district world."""
+        """Architectural backdrop for the Floodgate / Pump / Relay district."""
         cam_x = self.camera_x
         cam_y = self.camera_y
         self.screen.blit(self.gradient, (0, 0))
 
+        def world_point(wx: float, wy: float) -> tuple[int, int]:
+            return int(wx - cam_x), int(wy - cam_y)
+
+        # A distant, continuous skyline gives the player a fixed sense of geography.
         skyline_start = int((cam_x * 0.12) // 260) - 2
         skyline_base = int(468 - cam_y * 0.16)
         for tile_index in range(skyline_start, skyline_start + 13):
             world_x = tile_index * 260
             sx = int(world_x - cam_x * 0.18)
-            height = 90 + ((tile_index * 43 + 171) % 74)
-            width = 105 + ((tile_index * 29 + 70) % 90)
+            height = 88 + ((tile_index * 43 + 171) % 78)
+            width = 112 + ((tile_index * 29 + 70) % 84)
             body = pygame.Rect(sx, skyline_base - height, width, height)
             pygame.draw.rect(self.screen, (8, 17, 31), body)
             pygame.draw.rect(self.screen, (25, 43, 59), body, 2)
@@ -4099,23 +4095,6 @@ class Game:
         pygame.draw.arc(self.screen, (113, 183, 170),
                         (moon_x - 69, moon_y - 69, 138, 138), 0.25, 2.65, 3)
 
-        shaft_anchors = (
-            (920, -390, 400, (77, 185, 174)),
-            (2860, -900, 400, (86, 151, 180)),
-            (3760, -1500, -760, (174, 126, 183)),
-        )
-        for world_x, top_y, bottom_y, cable_color in shaft_anchors:
-            sx = int(world_x - cam_x)
-            sy1, sy2 = int(top_y - cam_y), int(bottom_y - cam_y)
-            if -40 <= sx <= WIDTH + 40:
-                pygame.draw.line(self.screen, (10, 22, 33), (sx, sy1), (sx, sy2), 9)
-                pygame.draw.line(self.screen, cable_color, (sx, sy1), (sx, sy2), 2)
-                pygame.draw.line(self.screen, (34, 72, 83), (sx + 8, sy1), (sx + 8, sy2), 1)
-                for world_y in range(top_y + 40, bottom_y, 120):
-                    ring_y = int(world_y - cam_y)
-                    pygame.draw.line(self.screen, cable_color,
-                                     (sx - 12, ring_y), (sx + 12, ring_y), 2)
-
         overlay = getattr(self, "_messenger_room_overlay", None)
         if overlay is None or overlay.get_size() != (WIDTH, HEIGHT):
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
@@ -4123,8 +4102,14 @@ class Game:
         overlay.fill((0, 0, 0, 0))
 
         room_edges = (
-            (77, 185, 174), (86, 151, 180), (174, 126, 183),
-            (113, 184, 139), (201, 157, 104), (102, 188, 202),
+            (77, 185, 174),   # Arrival Causeway
+            (202, 151, 89),   # Broken Floodgate
+            (72, 158, 187),   # Drainage Underpass
+            (98, 204, 176),   # Pump Atrium
+            (128, 183, 147),  # West Relay Walk
+            (154, 139, 205),  # Signal Bridge
+            (204, 124, 83),   # East Foundry
+            (105, 188, 202),  # Last Gate
         )
         room_labels = []
         for room_index, room in enumerate(LEVELS[0].get("rooms", [])):
@@ -4143,14 +4128,14 @@ class Game:
 
             wall = pygame.Rect(wall_left, wall_top, wall_right - wall_left,
                                max(1, wall_bottom - wall_top))
-            pygame.draw.rect(overlay, (7, 17, 29, 142), wall)
-            pygame.draw.rect(overlay, (*edge, 105), wall, 2)
+            pygame.draw.rect(overlay, (7, 17, 29, 132), wall)
+            pygame.draw.rect(overlay, (*edge, 108), wall, 2)
 
-            visible_world_top = max(top_y + 38, int(cam_y) - 35)
-            visible_world_bottom = min(floor_y - 10, int(cam_y + HEIGHT) + 35)
+            visible_world_top = max(top_y + 34, int(cam_y) - 28)
+            visible_world_bottom = min(floor_y - 12, int(cam_y + HEIGHT) + 28)
             for row_world_y in range(visible_world_top, visible_world_bottom, 48):
                 row_y = int(row_world_y - cam_y)
-                pygame.draw.line(overlay, (56, 76, 87, 88),
+                pygame.draw.line(overlay, (56, 76, 87, 72),
                                  (wall_left + 4, row_y), (wall_right - 4, row_y), 1)
 
                 if room_index in (0, 1):
@@ -4158,52 +4143,69 @@ class Game:
                     for block_world_x in range(world_x + offset, world_x + room_width, 44):
                         block_x = int(block_world_x - cam_x)
                         if wall_left < block_x < wall_right:
-                            pygame.draw.line(overlay, (47, 69, 81, 90),
+                            pygame.draw.line(overlay, (47, 69, 81, 88),
                                              (block_x, row_y - 1), (block_x, row_y + 12), 1)
                 elif room_index == 2:
-                    for root_x in range(world_x + 80, world_x + room_width, 190):
-                        rx = int(root_x - cam_x)
-                        if wall_left < rx < wall_right:
-                            pygame.draw.line(overlay, (37, 95, 73, 115),
-                                             (rx, wall_top + 4), (rx - 24, row_y + 22), 3)
-                            pygame.draw.ellipse(overlay, (64, 143, 98, 120),
-                                                (rx - 32, row_y + 8, 18, 8))
+                    # Drainage wall: ringed conduits and trapped water marks.
+                    for pipe_x in range(world_x + 55, world_x + room_width, 170):
+                        px = int(pipe_x - cam_x)
+                        if wall_left < px < wall_right:
+                            pygame.draw.line(overlay, (31, 91, 111, 145),
+                                             (px, wall_top + 4), (px, wall_bottom - 3), 4)
+                            pygame.draw.line(overlay, (89, 177, 188, 145),
+                                             (px + 5, wall_top + 4), (px + 5, wall_bottom - 3), 1)
+                            pygame.draw.circle(overlay, (83, 178, 194, 150), (px + 2, row_y), 5, 1)
                 elif room_index == 3:
-                    for conduit_x in range(world_x + 90, world_x + room_width, 260):
-                        cx = int(conduit_x - cam_x)
-                        if wall_left < cx < wall_right:
-                            pygame.draw.line(overlay, (*edge, 95),
-                                             (cx, wall_top + 2), (cx, wall_bottom - 2), 2)
-                            pygame.draw.circle(overlay, (*edge, 125), (cx, row_y), 5, 1)
-                elif room_index == 4:
-                    for cable_x in range(world_x + 70, world_x + room_width, 220):
-                        cx = int(cable_x - cam_x)
-                        if wall_left < cx < wall_right:
-                            pygame.draw.line(overlay, (68, 99, 110, 110),
-                                             (cx - 30, row_y - 16), (cx + 30, row_y + 16), 2)
+                    # Pump Atrium: repeated structural ribs frame a single large core.
+                    for rib_x in range(world_x + 110, world_x + room_width, 245):
+                        rx = int(rib_x - cam_x)
+                        if wall_left < rx < wall_right:
+                            pygame.draw.line(overlay, (55, 98, 99, 120),
+                                             (rx, wall_top + 4), (rx, wall_bottom - 4), 3)
+                            pygame.draw.rect(overlay, (30, 63, 69, 170),
+                                             (rx - 8, row_y - 7, 16, 14), 1)
+                elif room_index in (4, 5):
+                    # The upper galleries share cable trays but use different accent colours.
+                    for tray_x in range(world_x + 90, world_x + room_width, 260):
+                        tx = int(tray_x - cam_x)
+                        if wall_left < tx < wall_right:
+                            pygame.draw.line(overlay, (*edge, 125),
+                                             (tx - 22, row_y - 10), (tx + 22, row_y + 10), 2)
+                            pygame.draw.circle(overlay, (*edge, 145), (tx, row_y), 4, 1)
+                elif room_index == 6:
+                    # Foundry panels are broad and horizontal, unlike the Pump's vertical ribs.
+                    for vent_x in range(world_x + 80, world_x + room_width, 205):
+                        vx = int(vent_x - cam_x)
+                        if wall_left < vx < wall_right:
+                            pygame.draw.rect(overlay, (107, 54, 42, 115),
+                                             (vx - 25, row_y - 8, 50, 16), 1)
+                            pygame.draw.line(overlay, (199, 111, 69, 135),
+                                             (vx - 17, row_y), (vx + 17, row_y), 2)
                 else:
-                    for arch_x in range(world_x + 80, world_x + room_width, 240):
+                    for arch_x in range(world_x + 85, world_x + room_width, 250):
                         ax = int(arch_x - cam_x)
                         if wall_left < ax < wall_right:
-                            pygame.draw.arc(overlay, (*edge, 100),
-                                            (ax - 55, row_y - 28, 110, 56),
+                            pygame.draw.arc(overlay, (*edge, 115),
+                                            (ax - 58, row_y - 30, 116, 60),
                                             math.pi, math.tau, 2)
 
-            pillar_step = 260 if room_index in (0, 1, 5) else 320
-            for pillar_world_x in range(world_x + 28, world_x + room_width - 12, pillar_step):
-                px = int(pillar_world_x - cam_x)
+            # Structural piers are deliberately sparse, so they establish scale
+            # without reading as extra collision geometry.
+            pier_step = 285 if room_index in (0, 1, 7) else 340
+            for pier_world_x in range(world_x + 34, world_x + room_width - 18, pier_step):
+                px = int(pier_world_x - cam_x)
                 if px < -42 or px > WIDTH + 42:
                     continue
-                pillar_top = max(-20, wall_top)
-                pillar_bottom = min(HEIGHT + 20, wall_bottom)
-                pillar = pygame.Rect(px, pillar_top, 28, max(1, pillar_bottom - pillar_top))
-                pygame.draw.rect(overlay, (13, 27, 42, 225), pillar)
-                pygame.draw.rect(overlay, (*edge, 150), pillar, 2)
-                pygame.draw.rect(overlay, (29, 48, 61, 235),
-                                 (px - 5, pillar.y + 7, 38, 12))
-                pygame.draw.rect(overlay, (27, 43, 57, 235),
-                                 (px - 6, pillar.bottom - 18, 40, 14))
-                pygame.draw.line(overlay, (112, 171, 162, 145),
+                pillar_top = max(-24, wall_top)
+                pillar_bottom = min(HEIGHT + 24, wall_bottom)
+                pillar = pygame.Rect(px, pillar_top, 26, max(1, pillar_bottom - pillar_top))
+                pygame.draw.rect(overlay, (13, 27, 42, 220), pillar)
+                pygame.draw.rect(overlay, (*edge, 145), pillar, 2)
+                pygame.draw.rect(overlay, (29, 48, 61, 230),
+                                 (px - 5, pillar.y + 7, 36, 12))
+                pygame.draw.rect(overlay, (27, 43, 57, 230),
+                                 (px - 6, pillar.bottom - 18, 38, 14))
+                pygame.draw.line(overlay, (112, 171, 162, 135),
                                  (px + 8, pillar.y + 28), (px + 8, pillar.bottom - 28), 2)
 
             label_width = min(360, self.font_xs.size(label)[0] + 30)
@@ -4211,8 +4213,8 @@ class Game:
             label_y = int(top_y + 26 - cam_y)
             if -label_width < label_x < WIDTH and -30 < label_y < HEIGHT:
                 title_rect = pygame.Rect(label_x, label_y, label_width, 25)
-                pygame.draw.rect(overlay, (6, 14, 25, 235), title_rect)
-                pygame.draw.rect(overlay, (*edge, 220), title_rect, 1)
+                pygame.draw.rect(overlay, (6, 14, 25, 236), title_rect)
+                pygame.draw.rect(overlay, (*edge, 225), title_rect, 1)
                 room_labels.append((label, edge, title_rect.center))
 
         self.screen.blit(overlay, (0, 0))
@@ -4220,20 +4222,82 @@ class Game:
             draw_text(self.screen, self.font_xs, label, edge,
                       center, center=True, shadow=False)
 
-        water_y = int(710 - cam_y)
-        water_left, water_right = int(1880 - cam_x), int(2330 - cam_x)
+        # The Pump core is the level's spatial anchor: its circular housing remains
+        # visible from the ground hall and from the upper stair landing.
+        pump_x, pump_y = world_point(2280, 300)
+        if -180 < pump_x < WIDTH + 180 and -180 < pump_y < HEIGHT + 180:
+            pygame.draw.circle(self.screen, (8, 28, 38), (pump_x, pump_y), 128)
+            pygame.draw.circle(self.screen, (51, 119, 119), (pump_x, pump_y), 128, 5)
+            pygame.draw.circle(self.screen, (28, 67, 79), (pump_x, pump_y), 96, 3)
+            pygame.draw.circle(self.screen, (96, 204, 177), (pump_x, pump_y), 52, 2)
+            pygame.draw.circle(self.screen, (13, 38, 49), (pump_x, pump_y), 38)
+            for i in range(8):
+                angle = i * math.tau / 8
+                inner = (pump_x + int(math.cos(angle) * 62),
+                         pump_y + int(math.sin(angle) * 62))
+                outer = (pump_x + int(math.cos(angle) * 112),
+                         pump_y + int(math.sin(angle) * 112))
+                pygame.draw.line(self.screen, (72, 135, 137), inner, outer, 3)
+            for i in range(4):
+                angle = i * math.pi / 2 + self.time * 0.12
+                bx = pump_x + int(math.cos(angle) * 79)
+                by = pump_y + int(math.sin(angle) * 79)
+                pygame.draw.circle(self.screen, (153, 227, 203), (bx, by), 5, 1)
+
+        # A restrained waterline anchors the lower underpass to the causeway above.
+        water_y = int(690 - cam_y)
+        water_left, water_right = int(1100 - cam_x), int(1800 - cam_x)
         if -18 < water_y < HEIGHT + 18 and water_right > 0 and water_left < WIDTH:
-            pygame.draw.line(self.screen, (23, 83, 102), (max(0, water_left), water_y),
+            pygame.draw.line(self.screen, (20, 78, 100), (max(0, water_left), water_y),
                              (min(WIDTH, water_right), water_y), 5)
-            pygame.draw.line(self.screen, (78, 170, 177), (max(0, water_left), water_y - 3),
+            pygame.draw.line(self.screen, (78, 170, 183), (max(0, water_left), water_y - 3),
                              (min(WIDTH, water_right), water_y - 3), 1)
-            for bubble_x in range(max(0, water_left + 24), min(WIDTH, water_right), 58):
-                bubble_y = water_y - 10 - int((self.time * 24 + bubble_x) % 22)
+            for bubble_x in range(max(0, water_left + 25), min(WIDTH, water_right), 62):
+                bubble_y = water_y - 9 - int((self.time * 23 + bubble_x) % 19)
                 pygame.draw.circle(self.screen, (64, 132, 145), (bubble_x, bubble_y), 2, 1)
 
-        horizon_y = int(468 - cam_y)
-        if -2 < horizon_y < HEIGHT + 2:
-            pygame.draw.line(self.screen, (35, 76, 80), (0, horizon_y), (WIDTH, horizon_y), 2)
+        # Suspended cables and widely spaced pylons make the east bridge readable as one structure.
+        bridge_y = int(88 - cam_y)
+        bridge_left, bridge_right = int(2760 - cam_x), int(3810 - cam_x)
+        if bridge_right > 0 and bridge_left < WIDTH:
+            left_x, right_x = max(0, bridge_left), min(WIDTH, bridge_right)
+            pygame.draw.line(self.screen, (17, 34, 47), (left_x, bridge_y + 12),
+                             (right_x, bridge_y + 12), 8)
+            pygame.draw.line(self.screen, (112, 145, 165), (left_x, bridge_y + 8),
+                             (right_x, bridge_y + 8), 2)
+            for world_x in (2800, 3100, 3410, 3700):
+                px, _ = world_point(world_x, 0)
+                if -20 <= px <= WIDTH + 20:
+                    pygame.draw.line(self.screen, (31, 52, 68), (px, bridge_y - 30),
+                                     (px, bridge_y + 18), 9)
+                    pygame.draw.line(self.screen, (126, 174, 186), (px, bridge_y - 30),
+                                     (px, bridge_y + 18), 2)
+                    pygame.draw.circle(self.screen, (164, 226, 203), (px, bridge_y - 30), 5)
+
+        # Foundry heat vents sit behind the floor hazard and distinguish this room from the Pump.
+        foundry_left, foundry_right = int(2680 - cam_x), int(3700 - cam_x)
+        foundry_y = int(470 - cam_y)
+        if foundry_right > 0 and foundry_left < WIDTH and -10 < foundry_y < HEIGHT + 10:
+            for world_x in range(2740, 3670, 170):
+                px = int(world_x - cam_x)
+                if 0 <= px <= WIDTH:
+                    pygame.draw.rect(self.screen, (40, 25, 31), (px, foundry_y - 32, 56, 28))
+                    pygame.draw.rect(self.screen, (126, 65, 53), (px, foundry_y - 32, 56, 28), 2)
+                    pygame.draw.line(self.screen, (222, 129, 76), (px + 8, foundry_y - 10),
+                                     (px + 48, foundry_y - 10), 2)
+
+        # The final gate is a single architectural landmark, not a row of random arches.
+        gate_x, gate_y = world_point(4550, 330)
+        if -120 < gate_x < WIDTH + 120 and -150 < gate_y < HEIGHT + 150:
+            gate_rect = pygame.Rect(gate_x - 74, gate_y - 122, 148, 244)
+            pygame.draw.rect(self.screen, (9, 19, 34), gate_rect, border_radius=70)
+            pygame.draw.rect(self.screen, (88, 162, 168), gate_rect, 4, border_radius=70)
+            pygame.draw.rect(self.screen, (24, 54, 65), gate_rect.inflate(-24, -24),
+                             2, border_radius=58)
+            pygame.draw.arc(self.screen, (140, 221, 190),
+                            gate_rect.inflate(-42, -38), math.pi, math.tau, 3)
+            pygame.draw.line(self.screen, (74, 132, 137),
+                             (gate_x, gate_y - 96), (gate_x, gate_y + 96), 2)
     def draw_world(self) -> None:
         theme = THEMES[self.level_index]
         accent, accent2 = theme["accent"], theme["accent2"]
