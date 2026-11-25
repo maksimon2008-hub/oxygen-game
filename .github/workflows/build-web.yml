@@ -8,6 +8,13 @@ on:
       - "neon_ruins_platformer/**"
       - "tests/**"
       - ".github/workflows/build-web.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "oxygen_web/**"
+      - "neon_ruins_platformer/**"
+      - "tests/**"
+      - ".github/workflows/build-web.yml"
   workflow_dispatch:
 
 permissions:
@@ -24,7 +31,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate browser Python source
@@ -59,6 +65,7 @@ jobs:
           fi
 
       - name: Commit updated browser archive
+        if: github.event_name == 'push'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
