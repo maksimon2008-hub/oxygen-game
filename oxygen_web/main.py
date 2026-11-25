@@ -7728,7 +7728,7 @@ class Game:
         draw_text(self.screen, self.font_s, level_label,
                   WHITE, (37, 51), shadow=False)
         if self.level_index == 0:
-            draw_text(self.screen, self.font_xs, "TAB  MAP", accent, (WIDTH - 112, 84), shadow=False)
+            draw_text(self.screen, self.font_xs, "TAB  MAP", theme["accent"], (WIDTH - 112, 84), shadow=False)
         draw_text(self.screen, self.font_xs, CHARACTERS[self.player.character_id]["name"],
                   CHARACTERS[self.player.character_id]["accent"], (WIDTH // 2, 76),
                   center=True, shadow=False)
