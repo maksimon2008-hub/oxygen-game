@@ -960,165 +960,37 @@ class Particle:
 # -----------------------------------------------------------------------------
 LEVELS = [
     {
-        "name": "THE LAST SIGNAL",
-        "subtitle": "FOLLOW THE RELAY. LEARN THE CITY.",
-        "width": 4850,
-        "top_bound": -330,
-        "camera_top": -420,
-        "camera_bottom": 300,
-        "fall_limit": 820,
-        "spawn": (80, 410),
+        "name": "AUTUMN HILLS // OXYGEN",
+        "subtitle": "FOLLOW THE OLD PATH THROUGH THE RUINS",
+        "width": 22400,
+        "top_bound": 120,
+        "camera_top": 80,
+        "camera_bottom": 780,
+        "fall_limit": 1030,
+        "spawn": (156, 432),
         "wall_jump": True,
-        "rooms": [
-            (0, 930, -20, 475, "ARRIVAL CAUSEWAY"),
-            (930, 860, -35, 475, "BROKEN FLOODGATE"),
-            (1100, 700, 515, 690, "DRAINAGE UNDERPASS"),
-            (1790, 950, -30, 475, "PUMP ATRIUM"),
-            (760, 1660, -95, 160, "WEST RELAY WALK"),
-            (2740, 1070, -80, 135, "SIGNAL BRIDGE"),
-            (2680, 1020, -25, 475, "EAST FOUNDRY"),
-            (3700, 1150, -20, 475, "LAST GATE"),
-        ],
-        "room_connections": [
-            ("ARRIVAL CAUSEWAY", "BROKEN FLOODGATE", "main route: jump the broken causeway"),
-            ("BROKEN FLOODGATE", "PUMP ATRIUM", "main route: ground-level approach"),
-            ("BROKEN FLOODGATE", "DRAINAGE UNDERPASS", "optional drop through the open floodgate floor"),
-            ("DRAINAGE UNDERPASS", "PUMP ATRIUM", "lower exit stair returns to the main floor"),
-            ("PUMP ATRIUM", "WEST RELAY WALK", "pump-core climb reaches the upper junction"),
-            ("WEST RELAY WALK", "ARRIVAL CAUSEWAY", "west return ramp closes the loop"),
-            ("PUMP ATRIUM", "SIGNAL BRIDGE", "upper route crosses over the foundry"),
-            ("SIGNAL BRIDGE", "LAST GATE", "east descent bypasses the foundry floor hazard"),
-            ("PUMP ATRIUM", "EAST FOUNDRY", "ground-level main route"),
-            ("EAST FOUNDRY", "LAST GATE", "moving bridge crosses the foundry gap"),
-        ],
+        "rooms": ((0,1320,100,475,"AUTUMN GATE"),(1320,2740,100,475,"LANTERN PATH"),(2740,4140,100,475,"BROKEN SHRINE"),(4140,5300,100,475,"THE SHOP"),(5300,7020,100,475,"RED CANOPY"),(7020,8640,100,475,"HUNTER'S REACH"),(8640,10400,100,475,"OLD ROOTS"),(10400,12200,100,475,"FLOODED ROOTS"),(12200,13580,100,475,"SECOND PORTAL"),(13580,15120,100,475,"CRUMBLING CANOPY"),(15120,16480,100,475,"OUN'TARDE RUN"),(16480,18680,100,475,"BROKEN SHRINE"),(18680,20200,100,475,"FINAL ASCENT"),(20200,20800,100,475,"LAST SHOP"),(20800,22400,100,475,"LEAF MONSTER")),
+        "room_connections": [["AUTUMN GATE","LANTERN PATH","main route: Autumn Hills traversal"],["LANTERN PATH","BROKEN SHRINE","main route: Autumn Hills traversal"],["BROKEN SHRINE","THE SHOP","main route: Autumn Hills traversal"],["THE SHOP","RED CANOPY","main route: Autumn Hills traversal"],["RED CANOPY","HUNTER'S REACH","main route: Autumn Hills traversal"],["HUNTER'S REACH","OLD ROOTS","main route: Autumn Hills traversal"],["OLD ROOTS","FLOODED ROOTS","main route: Autumn Hills traversal"],["FLOODED ROOTS","SECOND PORTAL","main route: Autumn Hills traversal"],["SECOND PORTAL","CRUMBLING CANOPY","main route: Autumn Hills traversal"],["CRUMBLING CANOPY","OUN'TARDE RUN","main route: Autumn Hills traversal"],["OUN'TARDE RUN","BROKEN SHRINE","main route: Autumn Hills traversal"],["BROKEN SHRINE","FINAL ASCENT","main route: Autumn Hills traversal"],["FINAL ASCENT","LAST SHOP","main route: Autumn Hills traversal"],["LAST SHOP","LEAF MONSTER","main route: Autumn Hills traversal"],["FLOODED ROOTS","SECOND PORTAL","upper return route"],["OUN'TARDE RUN","BROKEN SHRINE","optional lower seal route"],["BROKEN SHRINE","FINAL ASCENT","secret stair return"]],
         "region_landmarks": {
-            "arrival": (80, 475),
-            "floodgate": (1140, 475),
-            "drainage": (1370, 690),
-            "pump_floor": (1870, 475),
-            "pump_top": (2550, 135),
-            "west_return": (810, 415),
-            "signal_bridge": (3100, 135),
-            "foundry": (3300, 475),
-            "last_gate": (4740, 475),
-            "beacon_vault": (4580, 100),
+            "arrival": (150, 475), "lantern_path": (1800, 475),
+            "broken_shrine": (3300, 475), "shop": (4300, 475),
+            "red_canopy": (6000, 475), "hunters_reach": (7900, 475),
+            "old_roots": (9500, 475), "flooded_roots": (11600, 710),
+            "second_portal": (13000, 475), "final_ascent": (19500, 475),
+            "beacon_vault": (21400, 475)
         },
-        "platforms": [
-            # Main route: seven substantial floor sections, with only three meaningful openings.
-            (0, 475, 930, 100),
-            (1040, 475, 270, 100),
-            (1460, 475, 330, 100),
-            (1790, 475, 890, 100),
-            (2680, 475, 410, 100),
-            (3210, 475, 490, 100),
-            (3700, 475, 1150, 100),
-
-            # Arrival: three readable ledges teach the jump rhythm and keep the first stretch calm.
-            (290, 390, 160, 18),
-            (500, 335, 170, 18),
-            (790, 390, 150, 18),
-            (940, 410, 100, 18),
-
-            # Floodgate: one small lip at the optional drop, then a raised continuation.
-            (1060, 340, 150, 18),
-            (1330, 455, 90, 18),
-            (1420, 390, 150, 18),
-            (1640, 330, 160, 18),
-
-            # Lower drainage passage and its short, stepped return into the Pump Atrium.
-            (1100, 690, 700, 60),
-            (1160, 610, 150, 18),
-            (1440, 610, 150, 18),
-            (1570, 610, 140, 18),
-            (1680, 530, 140, 18),
-            (1780, 450, 140, 18),
-
-            # The Pump Atrium: a compact stair wraps around the pump core and reaches the upper junction.
-            (1980, 390, 150, 18),
-            (2130, 305, 150, 18),
-            (2290, 330, 160, 18),
-            (2280, 220, 150, 18),
-            (2430, 135, 300, 18),
-
-            # The west upper return: a segmented service gallery, followed by three descent steps.
-            (2140, 160, 250, 18),
-            (1860, 160, 250, 18),
-            (1580, 160, 250, 18),
-            (1300, 160, 250, 18),
-            (1020, 160, 250, 18),
-            (760, 160, 230, 18),
-            (1000, 220, 120, 18),
-            (950, 245, 150, 18),
-            (850, 330, 150, 18),
-            (740, 415, 170, 18),
-
-            # East upper bridge: crosses above the Foundry pit and descends into the Last Gate district.
-            (2760, 135, 430, 18),
-            (3220, 135, 360, 18),
-            (3610, 135, 180, 18),
-            (3650, 225, 150, 18),
-            (3770, 315, 150, 18),
-            (3890, 405, 150, 18),
-
-            # Two Foundry perches are reachable from the lower route and provide a readable hazard overlook.
-            (2630, 390, 160, 18),
-            (2860, 335, 180, 18),
-
-            # Optional beacon mast in the final area: its only purpose is the signal-vault secret and overlook.
-            (4210, 390, 160, 18),
-            (4350, 300, 160, 18),
-            (4490, 210, 160, 18),
-            (4480, 100, 250, 18),
-        ],
-        "moving_platforms": [
-            # Bridges the single 120 px Foundry gap; the player can also use a full jump.
-            (3090, 430, 130, 16, "horizontal", 45, 0.90, 0.0),
-        ],
+        "platforms": [[0,475,1320,24],[1360,475,1200,24],[2640,475,1260,24],[4100,475,90,24],[4330,475,130,24],[4500,475,1560,24],[6180,475,780,24],[7060,475,1420,24],[8560,475,200,24],[11000,475,140,24],[11140,475,1140,24],[12340,475,1180,24],[13580,475,1440,24],[15120,475,1240,24],[16480,475,140,24],[16780,475,940,24],[17780,475,420,24],[18680,475,1420,24],[20200,475,1580,24],[21960,475,440,24],[370,411,124,15],[610,379,140,15],[860,403,144,15],[1460,410,164,15],[1700,356,136,15],[2000,400,144,15],[2380,379,152,15],[2780,395,160,15],[3050,342,144,15],[3320,391,156,15],[3620,350,140,15],[3800,429,180,15],[4580,420,164,15],[4800,360,136,15],[5080,305,156,15],[5320,381,164,15],[5640,405,140,15],[5870,359,136,15],[6100,308,144,15],[6400,388,172,15],[6750,345,140,15],[7090,405,140,15],[7350,355,156,15],[7620,307,144,15],[7910,384,140,15],[8200,342,140,15],[8770,403,150,15],[9080,345,140,15],[9460,381,164,15],[9800,330,148,15],[10170,388,148,15],[11180,394,140,15],[11480,343,150,15],[11790,389,152,15],[12120,353,152,15],[12520,404,156,15],[12870,350,156,15],[13280,384,140,15],[13620,397,140,15],[13920,345,140,15],[14240,389,148,15],[14620,345,144,15],[15000,394,148,15],[15340,350,144,15],[15680,381,144,15],[16100,337,148,15],[16600,397,160,15],[16920,347,150,15],[17240,388,140,15],[17560,337,144,15],[18000,389,150,15],[18320,346,148,15],[18740,403,152,15],[19050,352,140,15],[19360,388,150,15],[19680,339,144,15],[20040,394,144,15],[3940,598,500,20],[4440,336,40,284],[4480,336,124,15],[8760,719,2240,51],[10340,652,760,26],[16460,652,220,17],[16460,693,2480,65],[18200,642,140,15],[18380,591,140,15],[18560,540,130,15],[8830,591,148,15],[9120,653,120,15],[9520,572,132,15],[9840,632,124,15],[10200,545,140,15],[10540,591,136,15],[10840,521,128,15]],
+        "moving_platforms": [[3690,416,84,12,"horizontal",110,1.25,0.2],[9260,510,80,12,"horizontal",120,1.1,1.1],[13820,407,84,12,"vertical",68,1.35,2.1]],
         "launch_pads": [],
-        "coins": [
-            # Keep the original first sixteen coin positions and their save keys stable.
-            (365, 352), (575, 292), (850, 350), (1085, 297),
-            (1480, 345), (1720, 287), (2095, 345), (2345, 287),
-            (2705, 345), (2945, 290), (120, 425), (740, 420),
-            (1370, 420), (1980, 420), (2570, 420), (3180, 420),
-
-            # Rewards now follow the optional lower route, upper return, and Foundry bypass.
-            (1180, 650), (1370, 650), (1510, 575), (1660, 490),
-            (1850, 425), (2025, 345), (2170, 260), (2340, 175),
-            (2510, 100), (1040, 195), (1320, 125), (1680, 125),
-            (3100, 95), (3550, 95), (4300, 360), (4580, 60),
-        ],
-        "drones": [
-            (650, 395, 500, 800),
-            (1510, 650, 1420, 1640),
-            (2960, 420, 2780, 3060),
-            (3470, 105, 3310, 3610),
-        ],
-        "seekers": [
-            # OXYGEN hunter units guard the Foundry floor and its upper approach.
-            (2920, 260, 2780, 3090),
-            (3500, 255, 3320, 3660),
-        ],
+        "coins": [[410,381],[480,345],[550,381],[780,336],[860,302],[940,336],[1150,381],[1480,345],[1580,305],[1690,330],[2090,352],[2180,321],[2270,352],[2870,352],[2960,266],[3060,352],[3420,345],[3520,308],[3640,345],[4640,375],[4780,323],[4880,305],[5210,269],[5460,368],[5720,378],[5940,317],[6060,292],[6280,324],[6440,350],[6660,313],[7160,371],[7320,314],[7520,307],[7800,339],[8100,291],[8260,324],[8940,345],[9160,301],[9360,371],[9660,295],[10000,374],[10240,342],[10560,495],[10800,432],[11260,352],[11400,265],[11700,352],[12000,316],[12480,365],[12700,308],[12960,355],[13200,350],[13740,355],[14000,311],[14380,345],[14680,307],[15180,375],[15420,316],[15720,350],[16020,301],[16640,365],[16920,302],[17220,350],[17560,304],[18020,353],[18300,311],[18860,359],[19140,316],[19460,355],[19780,302],[20100,349],[20460,349]],
+        "drones": [[860,450,760,1000],[2020,450,2000,2000],[2900,450,2800,3150],[3490,450,3490,3490],[4880,450,4600,5120],[5650,450,5650,5650],[6380,363,6320,6540],[7320,450,7160,7520],[7980,450,7860,8220],[9500,450,9360,9660],[12540,450,12400,12760],[13000,450,13000,13000],[13800,450,13700,14000],[14700,450,14700,14700],[15400,450,15400,15800],[16080,450,16020,16160],[16760,450,16760,16760],[17040,450,16880,17180],[17400,450,17340,17500],[18100,450,18000,18360],[19560,450,19560,19560],[20100,450,19940,20200]],
+        "seekers": [[6780,334,6780,6780],[8320,381,8320,8320],[9140,316,9140,9140],[11660,310,11660,11660],[14300,323,14300,14300],[18980,342,18980,18980]],
+        "spiders": [],
         "turrets": [],
-        "spikes": [
-            (2860, 452, 66),
-            (3340, 452, 66),
-        ],
-        "checkpoints": [
-            (650, 475),
-            (1620, 475),
-            (2630, 475),
-            (3900, 475),
-        ],
-        "secrets": [
-            # Keep the original four secret indices and positions stable for old saves.
-            (1030, 175, 100, 65, "WEST OBSERVATION NICHE"),
-            (1850, 120, 105, 65, "PUMP MAINTENANCE NOOK"),
-            (3100, 120, 105, 65, "OVERLOOK RELAY CACHE"),
-            (4520, 55, 110, 65, "SIGNAL MAST VAULT"),
-            (1320, 645, 100, 55, "DRAINAGE CACHE"),
-        ],
-        "exit": (4740, 393),
+        "spikes": [],
+        "checkpoints": [],
+        "secrets": [[370,250,190,100,"AUTUMN GATE CACHE"],[2960,180,220,100,"BROKEN SHRINE CACHE"],[8430,240,220,110,"OLD ROOTS OVERLOOK"],[16460,430,420,110,"POWER SEAL CHAMBER"],[17800,260,180,100,"ROOT RETURN CACHE"]],
+        "exit": (22270, 393)
     },
     {
         "name": "PURPLE STATIC",
